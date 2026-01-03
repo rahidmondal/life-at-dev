@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Life@Dev
 
-## Getting Started
+A strategic life simulation game where you navigate a software developer's career from student to tech veteran. Make critical decisions, manage your energy and stress, build your skills, and discover multiple paths to success—including hidden easter eggs for the most strategic players.
 
-First, run the development server:
+## ✨ Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 🎮 Core Gameplay
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Multiple Starting Paths**: Choose between CS degree with family support or self-taught bootcamp route
+- **Action-Based Progression**: Spend weeks on activities like building side projects, grinding LeetCode, networking, or freelancing
+- **Resource Management**: Balance energy, stress, money, coding skills, and reputation to survive and thrive
+- **Career Advancement**: Progress through 6 distinct career paths from intern to CTO, distinguished fellow, or tech mogul
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 💼 Career Paths
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Corporate Ladder**: Traditional tech company progression
+- **Individual Contributor (IC)**: Deep technical specialization
+- **Management Track**: Lead teams and organizations
+- **Hustler Path**: Freelance and indie entrepreneurship
+- **Business Track**: Scale to tech mogul status
+- **Specialist Route**: Become a security expert or distinguished engineer
 
-## Learn More
+### 📊 Game Systems
 
-To learn more about Next.js, take a look at the following resources:
+- **52-Week Years**: Plan your actions carefully with limited weeks per year
+- **Stat Scaling**: Coding and reputation scale from 0-1000 for long-term progression
+- **Dynamic Income**: Freelance payouts scale with your coding skill and reputation
+- **Smart Promotions**: Auto-promote at junior/mid levels, manual job hunt at senior+ for career pivots
+- **Family Support**: Rent coverage for first 4 years in CS Student path
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛠️ Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Frontend Framework
 
-## Deploy on Vercel
+- **Next.js 16.1** - React framework with App Router
+- **React 19.2** - Latest React with new features
+- **TypeScript 5** - Type-safe development
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Styling
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Tailwind CSS 4** - Utility-first CSS framework
+- **PostCSS** - CSS processing
+
+### Code Quality
+
+- **ESLint 9** - TypeScript and React linting
+- **Prettier 3.6** - Code formatting
+- **TypeScript ESLint 8** - TypeScript-specific linting rules
+
+### State Management
+
+- **React Context API** - Global game state management
+- **useReducer** - Complex state logic with game reducer pattern
