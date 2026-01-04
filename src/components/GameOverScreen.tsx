@@ -1,6 +1,7 @@
 'use client';
 
 import LifeSummary from '@/components/LifeSummary';
+import { ScoreCard } from '@/components/ScoreCard';
 import { useGame } from '@/context/GameContext';
 
 export function GameOverScreen() {
@@ -119,13 +120,14 @@ export function GameOverScreen() {
           </div>
         </div>
 
-        {/* TODO Phase 3: Score calculation and leaderboard integration */}
-        {/*
-        <div className="text-gray-500 font-mono text-sm">
-          <p>Score: {calculateScore(finalStats)} points</p>
-          <p>Rank: #??? on global leaderboard</p>
-        </div>
-        */}
+        {/* Final Score Section */}
+        <ScoreCard
+          finalStats={finalStats}
+          reason={reason}
+          isEasterEggWin={isEasterEggWin}
+          themeBorder={theme.border}
+          themeText={theme.text}
+        />
 
         {/* Actions */}
         <div className="space-y-4">
