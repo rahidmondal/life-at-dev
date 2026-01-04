@@ -15,7 +15,7 @@ export function GameScreen() {
             <span className="font-mono text-xl text-emerald-400">&lt;/&gt;</span>
           </div>
           <div>
-            <h1 className="font-mono text-2xl font-bold text-emerald-400">Life @ Dev</h1>
+            <h1 className="font-mono text-2xl font-bold text-emerald-400">Life@Dev</h1>
             <p className="font-mono text-xs text-gray-400">Survive the grind. Climb the ladder.</p>
           </div>
         </div>

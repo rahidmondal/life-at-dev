@@ -2,7 +2,7 @@
 
 import { getInterviewSession, type InterviewQuestion } from '@/data/interviews';
 import { Job } from '@/types/game';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface InterviewModalProps {
   targetJob: Job;
@@ -20,16 +20,81 @@ interface AnswerRecord {
 
 const PASSING_SCORE = 2; // Need 2/3 to pass
 
+// Loading messages for the retro aesthetic
+const LOADING_MESSAGES = [
+  'CONNECTING TO NEURAL NET...',
+  'ESTABLISHING UPLINK...',
+  'GENERATING INTERVIEW PROTOCOL...',
+  'ANALYZING JOB REQUIREMENTS...',
+  'COMPILING QUESTIONS...',
+];
+
 export default function InterviewModal({ targetJob, onComplete, onCancel }: InterviewModalProps) {
-  // Generate 3 questions for this interview session
-  const questions = useMemo<InterviewQuestion[]>(() => getInterviewSession(targetJob), [targetJob]);
+  // Loading and question state
+  const [isLoading, setIsLoading] = useState(true);
+  const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
+  const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
+  const [questionSource, setQuestionSource] = useState<'gemini' | 'fallback'>('fallback');
 
   const [currentStep, setCurrentStep] = useState<InterviewStep>(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
   const [showFeedback, setShowFeedback] = useState(false);
 
-  const currentQuestion = typeof currentStep === 'number' ? questions[currentStep] : null;
+  // Fetch questions from API with fallback
+  const fetchQuestions = useCallback(async () => {
+    setIsLoading(true);
+
+    // Cycle through loading messages for effect
+    let messageIndex = 0;
+    const messageInterval = setInterval(() => {
+      messageIndex = (messageIndex + 1) % LOADING_MESSAGES.length;
+      setLoadingMessage(LOADING_MESSAGES[messageIndex]);
+    }, 800);
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+
+      const response = await fetch('/api/interview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job: targetJob }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.questions && Array.isArray(data.questions) && data.questions.length === 3) {
+        setQuestions(data.questions);
+        setQuestionSource('gemini');
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.warn('Failed to fetch AI questions, using fallback:', error);
+      // Fallback to hardcoded questions
+      const fallbackQuestions = getInterviewSession(targetJob);
+      setQuestions(fallbackQuestions);
+      setQuestionSource('fallback');
+    } finally {
+      clearInterval(messageInterval);
+      setIsLoading(false);
+    }
+  }, [targetJob]);
+
+  // Fetch questions on mount
+  useEffect(() => {
+    fetchQuestions();
+  }, [fetchQuestions]);
+
+  const currentQuestion = typeof currentStep === 'number' && questions.length > 0 ? questions[currentStep] : null;
   const score = answers.filter(a => a.correct).length;
   const passed = score >= PASSING_SCORE;
 
@@ -92,7 +157,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
         <div className="mb-6 border-b-2 border-emerald-500/30 pb-4">
           <div className="flex items-center justify-between">
             <h2 className="font-mono text-2xl font-bold text-emerald-500">// JOB INTERVIEW</h2>
-            {typeof currentStep === 'number' && (
+            {!isLoading && typeof currentStep === 'number' && (
               <div className="flex gap-2">
                 {[0, 1, 2].map(step => (
                   <div
@@ -114,15 +179,63 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
           <p className="font-mono text-sm text-emerald-500/70">
             Position: <span className="text-white">{targetJob.title}</span>
           </p>
-          <p className="mt-1 font-mono text-xs text-emerald-500/50">
-            {currentStep === 'results'
-              ? 'Interview Complete'
-              : `Question ${typeof currentStep === 'number' ? currentStep + 1 : 0} of 3 • Pass: ${PASSING_SCORE}/${questions.length} correct`}
-          </p>
+          {!isLoading && (
+            <p className="mt-1 font-mono text-xs text-emerald-500/50">
+              {currentStep === 'results'
+                ? 'Interview Complete'
+                : `Question ${typeof currentStep === 'number' ? currentStep + 1 : 0} of 3 • Pass: ${PASSING_SCORE}/${questions.length} correct`}
+              {questionSource === 'gemini' && (
+                <span className="ml-2 text-cyan-400/60">⚡ AI-Generated</span>
+              )}
+            </p>
+          )}
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-16">
+            {/* Terminal-style loading animation */}
+            <div className="mb-6 flex items-center gap-2">
+              <div className="h-4 w-4 animate-pulse rounded-full bg-emerald-500" />
+              <div
+                className="h-4 w-4 animate-pulse rounded-full bg-emerald-500"
+                style={{ animationDelay: '0.2s' }}
+              />
+              <div
+                className="h-4 w-4 animate-pulse rounded-full bg-emerald-500"
+                style={{ animationDelay: '0.4s' }}
+              />
+            </div>
+
+            {/* Loading message with terminal effect */}
+            <div className="mb-4 rounded border border-emerald-500/30 bg-emerald-500/5 px-6 py-3">
+              <p className="font-mono text-emerald-500">
+                <span className="animate-pulse text-cyan-400">&gt;</span> {loadingMessage}
+                <span className="ml-1 inline-block animate-pulse">_</span>
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-1 w-64 overflow-hidden rounded bg-gray-800">
+              <div className="h-full w-full origin-left animate-pulse bg-gradient-to-r from-emerald-500 via-cyan-400 to-emerald-500" />
+            </div>
+
+            <p className="mt-4 font-mono text-xs text-gray-500">
+              Preparing interview for Level {targetJob.level} {targetJob.path} position...
+            </p>
+
+            {/* Cancel button during loading */}
+            <button
+              onClick={onCancel}
+              className="mt-6 rounded border border-red-500/50 px-4 py-2 font-mono text-xs text-red-500/70 transition-all hover:border-red-500 hover:bg-red-500/10 hover:text-red-500"
+            >
+              CANCEL
+            </button>
+          </div>
+        )}
+
         {/* Question Phase */}
-        {typeof currentStep === 'number' && currentQuestion && (
+        {!isLoading && typeof currentStep === 'number' && currentQuestion && (
           <>
             {!showFeedback ? (
               <>
@@ -219,7 +332,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
         )}
 
         {/* Results Phase */}
-        {currentStep === 'results' && (
+        {!isLoading && currentStep === 'results' && (
           <>
             <div
               className={`mb-6 rounded border-2 p-6 text-center ${
@@ -238,7 +351,12 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
 
             {/* Answer Summary */}
             <div className="mb-6 space-y-2">
-              <p className="font-mono text-xs text-gray-500">ANSWER BREAKDOWN</p>
+              <p className="font-mono text-xs text-gray-500">
+                ANSWER BREAKDOWN
+                {questionSource === 'gemini' && (
+                  <span className="ml-2 text-cyan-400/60">• Questions powered by AI</span>
+                )}
+              </p>
               {answers.map((answer, index) => (
                 <div
                   key={index}
