@@ -1,7 +1,9 @@
 'use client';
 
 import LifeSummary from '@/components/LifeSummary';
+import { ScoreCard } from '@/components/ScoreCard';
 import { useGame } from '@/context/GameContext';
+import { getPlayerTags } from '@/logic/tags';
 
 export function GameOverScreen() {
   const { state, dispatch } = useGame();
@@ -63,7 +65,7 @@ export function GameOverScreen() {
 
         {/* Life Summary - Narrative */}
         <div className={`mx-auto max-w-3xl border-2 ${theme.border} bg-black/80 p-8 text-left`}>
-          <LifeSummary stats={finalStats} gameOver={state.gameOver} />
+          <LifeSummary stats={finalStats} gameOver={state.gameOver} eventLog={state.eventLog} />
         </div>
 
         {/* Final Stats Grid */}
@@ -119,13 +121,46 @@ export function GameOverScreen() {
           </div>
         </div>
 
-        {/* TODO Phase 3: Score calculation and leaderboard integration */}
-        {/*
-        <div className="text-gray-500 font-mono text-sm">
-          <p>Score: {calculateScore(finalStats)} points</p>
-          <p>Rank: #??? on global leaderboard</p>
-        </div>
-        */}
+        {/* Player Tags Section */}
+        {(() => {
+          const playerTags = getPlayerTags(finalStats);
+          if (playerTags.length === 0) return null;
+
+          return (
+            <div className="mx-auto max-w-3xl">
+              <div className={`border-2 ${theme.border} bg-black/80 p-6`}>
+                <h2 className="mb-4 font-mono text-xl font-bold text-gray-100">// PLAYER TAGS</h2>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {playerTags.map((tag, index) => (
+                    <div
+                      key={index}
+                      className={`group relative rounded-full border-2 border-current px-4 py-2 transition-all hover:scale-105 ${tag.color}`}
+                      title={tag.description}
+                    >
+                      <span className="font-mono text-sm font-bold">
+                        {tag.emoji} {tag.label}
+                      </span>
+                      {/* Tooltip on hover */}
+                      <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded border border-gray-700 bg-black px-3 py-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <p className="font-mono text-xs text-gray-300">{tag.description}</p>
+                        <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-700" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Final Score Section */}
+        <ScoreCard
+          finalStats={finalStats}
+          reason={reason}
+          isEasterEggWin={isEasterEggWin}
+          themeBorder={theme.border}
+          themeText={theme.text}
+        />
 
         {/* Actions */}
         <div className="space-y-4">
