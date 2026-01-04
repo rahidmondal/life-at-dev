@@ -10,9 +10,6 @@ interface InterviewQuestion {
   explanation: string;
 }
 
-// Initialize Gemini client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-
 // Difficulty mapping based on job level
 function getDifficultyLabel(level: number): string {
   switch (level) {
@@ -51,10 +48,16 @@ function getPathContext(path: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check for API key
+    // Validate API key exists before proceeding
     if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'GEMINI_API_KEY environment variable is not configured' },
+        { status: 500 }
+      );
     }
+
+    // Initialize Gemini client after validation
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     // Parse request body
     const body = await request.json();
@@ -115,49 +118,60 @@ You MUST respond with ONLY a valid JSON array in this exact format, no markdown 
     // Call Gemini API with timeout
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
-    const result = await Promise.race([
-      model.generateContent(prompt),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000)),
-    ]);
+    let timeoutId: NodeJS.Timeout | null = null;
 
-    const response = await result.response;
-    const text = response.text();
+    try {
+      const result = await Promise.race([
+        model.generateContent(prompt),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Timeout')), 15000);
+        }),
+      ]);
 
-    // Parse and validate the response
-    // Clean up potential markdown code blocks
-    let cleanedText = text.trim();
-    if (cleanedText.startsWith('```json')) {
-      cleanedText = cleanedText.slice(7);
-    } else if (cleanedText.startsWith('```')) {
-      cleanedText = cleanedText.slice(3);
-    }
-    if (cleanedText.endsWith('```')) {
-      cleanedText = cleanedText.slice(0, -3);
-    }
-    cleanedText = cleanedText.trim();
+      const response = await result.response;
+      const text = response.text();
 
-    const questions: InterviewQuestion[] = JSON.parse(cleanedText);
+      // Parse and validate the response
+      // Clean up potential markdown code blocks
+      let cleanedText = text.trim();
+      if (cleanedText.startsWith('```json')) {
+        cleanedText = cleanedText.slice(7);
+      } else if (cleanedText.startsWith('```')) {
+        cleanedText = cleanedText.slice(3);
+      }
+      if (cleanedText.endsWith('```')) {
+        cleanedText = cleanedText.slice(0, -3);
+      }
+      cleanedText = cleanedText.trim();
 
-    // Validate the structure
-    if (!Array.isArray(questions) || questions.length !== 3) {
-      throw new Error('Invalid response: expected exactly 3 questions');
-    }
+      const questions: InterviewQuestion[] = JSON.parse(cleanedText);
 
-    for (const q of questions) {
-      if (
-        typeof q.question !== 'string' ||
-        !Array.isArray(q.options) ||
-        q.options.length !== 4 ||
-        typeof q.correctIndex !== 'number' ||
-        q.correctIndex < 0 ||
-        q.correctIndex > 3 ||
-        typeof q.explanation !== 'string'
-      ) {
-        throw new Error('Invalid question structure');
+      // Validate the structure
+      if (!Array.isArray(questions) || questions.length !== 3) {
+        throw new Error('Invalid response: expected exactly 3 questions');
+      }
+
+      for (const q of questions) {
+        if (
+          typeof q.question !== 'string' ||
+          !Array.isArray(q.options) ||
+          q.options.length !== 4 ||
+          typeof q.correctIndex !== 'number' ||
+          q.correctIndex < 0 ||
+          q.correctIndex > 3 ||
+          typeof q.explanation !== 'string'
+        ) {
+          throw new Error('Invalid question structure');
+        }
+      }
+
+      return NextResponse.json({ questions, source: 'gemini' });
+    } finally {
+      // Clean up timeout to prevent memory leak
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
     }
-
-    return NextResponse.json({ questions, source: 'gemini' });
   } catch (error) {
     console.error('Gemini API error:', error);
     return NextResponse.json(

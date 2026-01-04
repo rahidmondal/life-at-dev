@@ -139,48 +139,50 @@ export function getPlayerTags(stats: GameStats): PlayerTag[] {
   // CAREER PATH TAGS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  switch (currentJob.path) {
-    case 'corporate':
-      tags.push({
-        label: 'Corporate Drone',
-        emoji: '🏢',
-        description: 'Climbed the corporate ladder',
-        color: 'text-gray-400',
-      });
-      break;
-    case 'management':
-      tags.push({
-        label: 'The Suit',
-        emoji: '👔',
-        description: 'Traded coding for meetings',
-        color: 'text-indigo-400',
-      });
-      break;
-    case 'hustler':
-      tags.push({
-        label: 'Lone Wolf',
-        emoji: '🐺',
-        description: 'Did it your own way',
-        color: 'text-emerald-400',
-      });
-      break;
-    case 'specialist':
-    case 'ic':
-      tags.push({
-        label: 'Architect',
-        emoji: '📐',
-        description: 'Master of technical excellence',
-        color: 'text-blue-400',
-      });
-      break;
-    case 'business':
-      tags.push({
-        label: 'Visionary',
-        emoji: '🚀',
-        description: 'Built something bigger than code',
-        color: 'text-pink-400',
-      });
-      break;
+  if (currentJob && currentJob.path) {
+    switch (currentJob.path) {
+      case 'corporate':
+        tags.push({
+          label: 'Corporate Drone',
+          emoji: '🏢',
+          description: 'Climbed the corporate ladder',
+          color: 'text-gray-400',
+        });
+        break;
+      case 'management':
+        tags.push({
+          label: 'The Suit',
+          emoji: '👔',
+          description: 'Traded coding for meetings',
+          color: 'text-indigo-400',
+        });
+        break;
+      case 'hustler':
+        tags.push({
+          label: 'Lone Wolf',
+          emoji: '🐺',
+          description: 'Did it your own way',
+          color: 'text-emerald-400',
+        });
+        break;
+      case 'specialist':
+      case 'ic':
+        tags.push({
+          label: 'Architect',
+          emoji: '📐',
+          description: 'Master of technical excellence',
+          color: 'text-blue-400',
+        });
+        break;
+      case 'business':
+        tags.push({
+          label: 'Visionary',
+          emoji: '🚀',
+          description: 'Built something bigger than code',
+          color: 'text-pink-400',
+        });
+        break;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
