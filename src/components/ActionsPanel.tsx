@@ -75,15 +75,36 @@ export function ActionsPanel() {
       }
 
       if (availableJobs.length === 1) {
-        setTimeout(() => {
-          dispatch({
-            type: 'ANSWER_INTERVIEW',
-            payload: {
-              correct: true,
-              newJob: availableJobs[0],
-            },
-          });
-        }, 500);
+        const singleJob = availableJobs[0];
+
+        // Check if interview is required for this job
+        if (requiresInterview(singleJob)) {
+          // Check requirements before proceeding to interview
+          const requirementCheck = meetsJobRequirements(singleJob, stats.coding, stats.reputation, stats.money);
+
+          if (!requirementCheck.meets) {
+            // Show rejection popup
+            setRejectionReasons(requirementCheck.failureReasons);
+            setShowRejectionPopup(true);
+            return;
+          }
+
+          // Requirements met - start interview
+          setInterviewTargetJob(singleJob);
+          setIsYearEndInterview(false);
+          setShowInterviewModal(true);
+        } else {
+          // No interview needed (e.g., script-kiddie, intern)
+          setTimeout(() => {
+            dispatch({
+              type: 'ANSWER_INTERVIEW',
+              payload: {
+                correct: true,
+                newJob: singleJob,
+              },
+            });
+          }, 500);
+        }
       } else {
         setAvailableJobsList(availableJobs);
         setIsGraduation(false);
