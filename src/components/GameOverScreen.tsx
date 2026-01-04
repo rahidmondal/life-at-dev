@@ -64,7 +64,7 @@ export function GameOverScreen() {
 
         {/* Life Summary - Narrative */}
         <div className={`mx-auto max-w-3xl border-2 ${theme.border} bg-black/80 p-8 text-left`}>
-          <LifeSummary stats={finalStats} gameOver={state.gameOver} />
+          <LifeSummary stats={finalStats} gameOver={state.gameOver} eventLog={state.eventLog} />
         </div>
 
         {/* Final Stats Grid */}

@@ -106,7 +106,7 @@ You MUST respond with ONLY a valid JSON array in this exact format, no markdown 
 ]`;
 
     // Call Gemini API with timeout
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
     const result = await Promise.race([
       model.generateContent(prompt),

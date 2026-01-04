@@ -1,13 +1,30 @@
-import { GameOver, GameStats } from '@/types/game';
+'use client';
+
+import { GameOver, GameStats, LogEntry } from '@/types/game';
+import { useCallback, useEffect, useState } from 'react';
 
 interface LifeSummaryProps {
   stats: GameStats;
   gameOver: GameOver;
+  eventLog?: LogEntry[];
 }
 
-export default function LifeSummary({ stats, gameOver }: LifeSummaryProps) {
-  // Generate narrative based on ending type and stats
-  const generateNarrative = (): string[] => {
+// Loading messages for the retro aesthetic
+const LOADING_MESSAGES = [
+  'ANALYZING LIFE DATA...',
+  'COMPILING MEMORIES...',
+  'PROCESSING CAREER TRAJECTORY...',
+  'GENERATING NARRATIVE...',
+];
+
+export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSummaryProps) {
+  const [narrative, setNarrative] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
+  const [isAiGenerated, setIsAiGenerated] = useState(false);
+
+  // Generate fallback narrative based on ending type and stats
+  const generateNarrative = useCallback((): string[] => {
     const { age, currentJob, coding, reputation, money } = stats;
     const yearsPlayed = age - 18;
 
@@ -59,22 +76,114 @@ export default function LifeSummary({ stats, gameOver }: LifeSummaryProps) {
         : `You're sitting on $${money.toLocaleString()} - comfortable and secure.`,
       `You survived the grind. You climbed the ladder. You won.`,
     ];
-  };
+  }, [stats, gameOver.reason]);
 
-  const narrative = generateNarrative();
+  // Fetch AI-generated narrative
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchNarrative = async () => {
+      setIsLoading(true);
+
+      // Cycle through loading messages for effect
+      let messageIndex = 0;
+      const messageInterval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % LOADING_MESSAGES.length;
+        setLoadingMessage(LOADING_MESSAGES[messageIndex]);
+      }, 700);
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+        const response = await fetch('/api/summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stats,
+            gameOver,
+            eventLog,
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (isMounted && data.narrative && Array.isArray(data.narrative) && data.narrative.length > 0) {
+          setNarrative(data.narrative);
+          setIsAiGenerated(true);
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (error) {
+        console.warn('Failed to fetch AI narrative, using fallback:', error);
+        if (isMounted) {
+          setNarrative(generateNarrative());
+          setIsAiGenerated(false);
+        }
+      } finally {
+        clearInterval(messageInterval);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchNarrative();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [stats, gameOver, eventLog, generateNarrative]);
 
   return (
     <div className="space-y-4">
       <h3 className="border-b border-emerald-500/30 pb-2 font-mono text-lg font-bold text-emerald-500">
         // LIFE SUMMARY
+        {isAiGenerated && !isLoading && (
+          <span className="ml-2 text-xs font-normal text-cyan-400/60">⚡ AI-Generated</span>
+        )}
       </h3>
-      <div className="space-y-3 font-mono text-sm leading-relaxed text-white/90">
-        {narrative.map((line, index) => (
-          <p key={index} className={index === narrative.length - 1 ? 'text-emerald-500 font-bold' : ''}>
-            {line}
-          </p>
-        ))}
-      </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center py-8">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" />
+            <div
+              className="h-3 w-3 animate-pulse rounded-full bg-emerald-500"
+              style={{ animationDelay: '0.2s' }}
+            />
+            <div
+              className="h-3 w-3 animate-pulse rounded-full bg-emerald-500"
+              style={{ animationDelay: '0.4s' }}
+            />
+          </div>
+          <div className="rounded border border-emerald-500/30 bg-emerald-500/5 px-4 py-2">
+            <p className="font-mono text-sm text-emerald-500">
+              <span className="animate-pulse text-cyan-400">&gt;</span> {loadingMessage}
+              <span className="ml-1 inline-block animate-pulse">_</span>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Narrative Content */}
+      {!isLoading && (
+        <div className="space-y-3 font-mono text-sm leading-relaxed text-white/90">
+          {narrative.map((line, index) => (
+            <p key={index} className={index === narrative.length - 1 ? 'font-bold text-emerald-500' : ''}>
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
 
       {/* Stats Card */}
       <div className="mt-6 rounded border-2 border-emerald-500/30 bg-emerald-500/5 p-4">
