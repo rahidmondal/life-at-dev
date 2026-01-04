@@ -2,7 +2,7 @@
 
 import { getInterviewSession, type InterviewQuestion } from '@/data/interviews';
 import { Job } from '@/types/game';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface InterviewModalProps {
   targetJob: Job;
@@ -41,58 +41,76 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
   const [showFeedback, setShowFeedback] = useState(false);
 
-  // Fetch questions from API with fallback
-  const fetchQuestions = useCallback(async () => {
-    setIsLoading(true);
-
-    // Cycle through loading messages for effect
-    let messageIndex = 0;
-    const messageInterval = setInterval(() => {
-      messageIndex = (messageIndex + 1) % LOADING_MESSAGES.length;
-      setLoadingMessage(LOADING_MESSAGES[messageIndex]);
-    }, 800);
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
-
-      const response = await fetch('/api/interview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ job: targetJob }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.questions && Array.isArray(data.questions) && data.questions.length === 3) {
-        setQuestions(data.questions);
-        setQuestionSource('gemini');
-      } else {
-        throw new Error('Invalid response format');
-      }
-    } catch (error) {
-      console.warn('Failed to fetch AI questions, using fallback:', error);
-      // Fallback to hardcoded questions
-      const fallbackQuestions = getInterviewSession(targetJob);
-      setQuestions(fallbackQuestions);
-      setQuestionSource('fallback');
-    } finally {
-      clearInterval(messageInterval);
-      setIsLoading(false);
-    }
-  }, [targetJob]);
-
   // Fetch questions on mount
   useEffect(() => {
+    let messageInterval: NodeJS.Timeout | null = null;
+    let isMounted = true;
+
+    const fetchQuestions = async () => {
+      setIsLoading(true);
+
+      // Cycle through loading messages for effect
+      let messageIndex = 0;
+      messageInterval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % LOADING_MESSAGES.length;
+        setLoadingMessage(LOADING_MESSAGES[messageIndex]);
+      }, 800);
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+
+        const response = await fetch('/api/interview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job: targetJob }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (isMounted && data.questions && Array.isArray(data.questions) && data.questions.length === 3) {
+          setQuestions(data.questions);
+          setQuestionSource('gemini');
+        } else if (!isMounted) {
+          return; // Component unmounted, don't update state
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (error) {
+        console.warn('Failed to fetch AI questions, using fallback:', error);
+        if (isMounted) {
+          // Fallback to hardcoded questions
+          const fallbackQuestions = getInterviewSession(targetJob);
+          setQuestions(fallbackQuestions);
+          setQuestionSource('fallback');
+        }
+      } finally {
+        if (messageInterval) {
+          clearInterval(messageInterval);
+        }
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
     fetchQuestions();
-  }, [fetchQuestions]);
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (messageInterval) {
+        clearInterval(messageInterval);
+      }
+    };
+  }, [targetJob]);
 
   const currentQuestion = typeof currentStep === 'number' && questions.length > 0 ? questions[currentStep] : null;
   const score = answers.filter(a => a.correct).length;
@@ -379,12 +397,12 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
               <p className="font-mono text-sm text-gray-300">
                 {passed ? (
                   <>
-                    Congratulations! You&apos;ve demonstrated the skills needed for{' '}
+                    Congratulations! You've demonstrated the skills needed for{' '}
                     <span className="text-emerald-400">{targetJob.title}</span>. Welcome to the team!
                   </>
                 ) : (
                   <>
-                    Unfortunately, you didn&apos;t meet the interview requirements for{' '}
+                    Unfortunately, you didn't meet the interview requirements for{' '}
                     <span className="text-red-400">{targetJob.title}</span>. Keep studying and try again next time.
                   </>
                 )}

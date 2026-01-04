@@ -60,7 +60,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const job = body.job as Job;
 
-    if (!job || !job.title || !job.path || !job.level) {
+    if (
+      !job ||
+      !job.title ||
+      !job.path ||
+      !job.level ||
+      !job.requirements ||
+      typeof job.requirements !== 'object'
+    ) {
       return NextResponse.json({ error: 'Invalid job data' }, { status: 400 });
     }
 

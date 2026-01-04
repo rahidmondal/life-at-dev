@@ -51,7 +51,7 @@ function gameDataToToml(stats: GameStats, gameOver: GameOver, eventLog: LogEntry
       tomlString += `\n[[history]]\n`;
       tomlString += `id = ${entry.id}\n`;
       tomlString += `type = "${entry.type}"\n`;
-      tomlString += `event = "${entry.event.replace(/"/g, '\\"').replace(/\n/g, ' ')}"\n`;
+      tomlString += `event = "${entry.event.replace(/"/g, '\\\"').replace(/\n/g, ' ')}"\n`;
     }
   }
 
@@ -144,23 +144,34 @@ Remember: Output ONLY the TOML, nothing else.`;
     // Call Gemini API with timeout
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
-    const result = await Promise.race([
-      model.generateContent(prompt),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 20000)),
-    ]);
+    let timeoutId: NodeJS.Timeout | null = null;
 
-    const response = await result.response;
-    const text = response.text();
+    try {
+      const result = await Promise.race([
+        model.generateContent(prompt),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Timeout')), 20000);
+        }),
+      ]);
 
-    // Parse the TOML response
-    const narrative = parseSummaryFromToml(text);
+      const response = await result.response;
+      const text = response.text();
 
-    // Validate we got a reasonable response
-    if (narrative.length < 3 || narrative.length > 10) {
-      throw new Error('Invalid narrative length');
+      // Parse the TOML response
+      const narrative = parseSummaryFromToml(text);
+
+      // Validate we got a reasonable response
+      if (narrative.length < 3 || narrative.length > 10) {
+        throw new Error('Invalid narrative length');
+      }
+
+      return NextResponse.json({ narrative, source: 'gemini' });
+    } finally {
+      // Clean up timeout to prevent memory leak
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
-
-    return NextResponse.json({ narrative, source: 'gemini' });
   } catch (error) {
     console.error('Summary API error:', error);
     return NextResponse.json(

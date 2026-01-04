@@ -18,6 +18,11 @@ export function getPlayerTags(stats: GameStats): PlayerTag[] {
     startingJobId,
   } = stats;
 
+  // Defensive check - return empty tags if critical data is missing
+  if (!currentJob || !actionHistory) {
+    return tags;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SKILL VS FAME TAGS
   // ═══════════════════════════════════════════════════════════════════════════

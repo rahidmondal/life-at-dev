@@ -25,6 +25,7 @@ export interface GameState {
 }
 
 export function createInitialState(): GameState {
+  const startingJob = getStartingJob();
   return {
     phase: 'start',
     stats: {
@@ -34,13 +35,13 @@ export function createInitialState(): GameState {
       money: 1000,
       coding: 50,
       reputation: 0,
-      currentJob: getStartingJob(),
+      currentJob: startingJob,
       age: 18,
       yearsWorked: 0,
       totalEarned: 0,
       actionHistory: [],
       jobChanges: 0,
-      startingJobId: 'unemployed',
+      startingJobId: startingJob.id,
     },
     eventLog: [],
     gameOver: null,
