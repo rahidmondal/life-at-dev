@@ -31,6 +31,16 @@ export interface GameStats {
   totalEarned: number;
   actionHistory: string[];
   familySupportYearsLeft?: number;
+  jobChanges?: number;
+  startingJobId?: string;
+}
+
+// Player tag for game over screen
+export interface PlayerTag {
+  label: string;
+  emoji: string;
+  description: string;
+  color: string;
 }
 
 export interface ActionCost {

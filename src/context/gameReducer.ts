@@ -39,6 +39,8 @@ export function createInitialState(): GameState {
       yearsWorked: 0,
       totalEarned: 0,
       actionHistory: [],
+      jobChanges: 0,
+      startingJobId: 'unemployed',
     },
     eventLog: [],
     gameOver: null,
@@ -108,6 +110,7 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
         initialState.stats.money = 0;
         initialState.stats.coding = 100;
         initialState.stats.reputation = 20;
+        initialState.stats.startingJobId = 'cs-student';
 
         return {
           ...initialState,
@@ -134,6 +137,7 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
         initialState.stats.coding = 100;
         initialState.stats.reputation = 20;
         initialState.stats.familySupportYearsLeft = 4;
+        initialState.stats.startingJobId = 'cs-student-easy';
 
         return {
           ...initialState,
@@ -515,7 +519,11 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
 
     case 'PROMOTE': {
       const { newJob } = action.payload;
-      const newStats = { ...state.stats, currentJob: newJob };
+      const newStats = {
+        ...state.stats,
+        currentJob: newJob,
+        jobChanges: (state.stats.jobChanges ?? 0) + 1,
+      };
 
       return {
         ...state,
@@ -562,7 +570,11 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
       const { passed, job } = action.payload;
 
       if (passed) {
-        const newStats = { ...state.stats, currentJob: job };
+        const newStats = {
+          ...state.stats,
+          currentJob: job,
+          jobChanges: (state.stats.jobChanges ?? 0) + 1,
+        };
 
         // Check for game over (victory) after promotion
         const gameOver = checkGameOver(newStats);
