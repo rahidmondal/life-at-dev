@@ -2,24 +2,44 @@
 
 import { useGame } from '@/context/GameContext';
 import { getActionsByCategory, getUnavailabilityReason, isActionAvailable } from '@/data/actions';
+import { meetsJobRequirements, requiresInterview } from '@/data/interviews';
 import { getAvailablePromotions, shouldShowGraduationCeremony } from '@/data/jobs';
 import { executeAction } from '@/logic/actions';
 import { generateRandomEvent } from '@/logic/events';
 import { Job } from '@/types/game';
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const GraduationModal = dynamic(() => import('./GraduationModal'), { ssr: false });
+const InterviewModal = dynamic(() => import('./InterviewModal'), { ssr: false });
 
 type Tab = 'work' | 'shop' | 'invest';
 
 export function ActionsPanel() {
   const { state, dispatch } = useGame();
-  const { stats } = state;
+  const { stats, pendingYearEndInterview } = state;
   const [activeTab, setActiveTab] = useState<Tab>('work');
   const [showJobSelectionModal, setShowJobSelectionModal] = useState(false);
   const [availableJobsList, setAvailableJobsList] = useState<Job[]>([]);
   const [isGraduation, setIsGraduation] = useState(false);
+
+  // Interview modal state
+  const [showInterviewModal, setShowInterviewModal] = useState(false);
+  const [interviewTargetJob, setInterviewTargetJob] = useState<Job | null>(null);
+  const [isYearEndInterview, setIsYearEndInterview] = useState(false);
+
+  // Rejection popup state
+  const [showRejectionPopup, setShowRejectionPopup] = useState(false);
+  const [rejectionReasons, setRejectionReasons] = useState<string[]>([]);
+
+  // Handle pending year-end interviews
+  useEffect(() => {
+    if (pendingYearEndInterview && !showInterviewModal) {
+      setInterviewTargetJob(pendingYearEndInterview);
+      setIsYearEndInterview(true);
+      setShowInterviewModal(true);
+    }
+  }, [pendingYearEndInterview, showInterviewModal]);
 
   const actions = getActionsByCategory(activeTab);
 
@@ -104,14 +124,90 @@ export function ActionsPanel() {
   };
 
   const handleJobSelect = (job: Job) => {
-    dispatch({
-      type: 'ANSWER_INTERVIEW',
-      payload: {
-        correct: true,
-        newJob: job,
-      },
-    });
     setShowJobSelectionModal(false);
+
+    // Check if interview is required for this job
+    if (!requiresInterview(job)) {
+      // No interview needed (e.g., script-kiddie, unemployed)
+      dispatch({
+        type: 'ANSWER_INTERVIEW',
+        payload: {
+          correct: true,
+          newJob: job,
+        },
+      });
+      return;
+    }
+
+    // Check requirements before proceeding to interview
+    const requirementCheck = meetsJobRequirements(job, stats.coding, stats.reputation, stats.money);
+
+    if (!requirementCheck.meets) {
+      // Show rejection popup
+      setRejectionReasons(requirementCheck.failureReasons);
+      setShowRejectionPopup(true);
+      return;
+    }
+
+    // Requirements met - start interview (job hunt, not year-end)
+    setInterviewTargetJob(job);
+    setIsYearEndInterview(false);
+    setShowInterviewModal(true);
+  };
+
+  const handleInterviewComplete = (passed: boolean) => {
+    setShowInterviewModal(false);
+
+    if (isYearEndInterview && interviewTargetJob) {
+      // Year-end interview - use dedicated action
+      dispatch({
+        type: 'YEAR_END_INTERVIEW_RESULT',
+        payload: {
+          passed,
+          job: interviewTargetJob,
+        },
+      });
+    } else if (passed && interviewTargetJob) {
+      // Regular job hunt interview - passed
+      dispatch({
+        type: 'ANSWER_INTERVIEW',
+        payload: {
+          correct: true,
+          newJob: interviewTargetJob,
+        },
+      });
+    } else {
+      // Regular job hunt interview - failed
+      dispatch({
+        type: 'ANSWER_INTERVIEW',
+        payload: {
+          correct: false,
+        },
+      });
+    }
+
+    setInterviewTargetJob(null);
+    setIsYearEndInterview(false);
+  };
+
+  const handleInterviewCancel = () => {
+    setShowInterviewModal(false);
+    setInterviewTargetJob(null);
+
+    // If cancelling a year-end interview, clear the pending state and apply penalty
+    if (isYearEndInterview) {
+      dispatch({ type: 'CLEAR_PENDING_INTERVIEW' });
+      // Apply stress penalty for skipping year-end interview
+      dispatch({
+        type: 'APPLY_EVENT',
+        payload: {
+          effects: { stress: 5 },
+          message: 'Declined performance review interview. (+5 stress)',
+        },
+      });
+    }
+
+    setIsYearEndInterview(false);
   };
 
   const handleJobSelectionCancel = () => {
@@ -304,6 +400,47 @@ export function ActionsPanel() {
           onCancel={handleJobSelectionCancel}
           isGraduation={isGraduation}
         />
+      )}
+
+      {/* Interview Modal */}
+      {showInterviewModal && interviewTargetJob && (
+        <InterviewModal
+          targetJob={interviewTargetJob}
+          onComplete={handleInterviewComplete}
+          onCancel={handleInterviewCancel}
+        />
+      )}
+
+      {/* Rejection Popup */}
+      {showRejectionPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md rounded border-2 border-red-500 bg-black p-6 shadow-xl shadow-red-500/20">
+            <div className="mb-4 text-center">
+              <div className="mb-3 text-5xl">📋❌</div>
+              <h3 className="font-mono text-xl font-bold text-red-500">RESUME REJECTED</h3>
+            </div>
+
+            <div className="mb-6 rounded border border-red-500/30 bg-red-500/5 p-4">
+              <p className="mb-3 font-mono text-sm text-gray-300">
+                Your application was rejected. Skillset does not match job requirements:
+              </p>
+              <ul className="space-y-1">
+                {rejectionReasons.map((reason, index) => (
+                  <li key={index} className="font-mono text-sm text-red-400">
+                    • {reason}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <button
+              onClick={() => setShowRejectionPopup(false)}
+              className="w-full rounded border-2 border-gray-500 bg-gray-500/10 px-4 py-2 font-mono text-sm font-bold text-gray-400 transition-all hover:bg-gray-500 hover:text-black"
+            >
+              &gt;&gt; CLOSE
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

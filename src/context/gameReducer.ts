@@ -12,13 +12,16 @@ export type GameActionType =
   | { type: 'GAME_OVER'; payload: GameOver }
   | { type: 'RESET_GAME' }
   | { type: 'ADD_LOG'; payload: LogEntry }
-  | { type: 'PROMOTE'; payload: { newJob: Job } };
+  | { type: 'PROMOTE'; payload: { newJob: Job } }
+  | { type: 'CLEAR_PENDING_INTERVIEW' }
+  | { type: 'YEAR_END_INTERVIEW_RESULT'; payload: { passed: boolean; job: Job } };
 
 export interface GameState {
   phase: GamePhase;
   stats: GameStats;
   eventLog: LogEntry[];
   gameOver: GameOver | null;
+  pendingYearEndInterview?: Job; // Job to interview for at year-end
 }
 
 export function createInitialState(): GameState {
@@ -39,6 +42,7 @@ export function createInitialState(): GameState {
     },
     eventLog: [],
     gameOver: null,
+    pendingYearEndInterview: undefined,
   };
 }
 
@@ -296,31 +300,52 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
 
       // Note: Senior Developer and above never auto-promote (player chooses career path)
       const isSeniorOrAbove = newStats.currentJob.level >= 3;
-      const shouldAutoPromote = availablePromotions.length === 1 && !isSeniorOrAbove;
+      // Jobs that don't require interviews can still auto-promote
+      const noInterviewJobs = ['unemployed', 'cs-student', 'script-kiddie', 'cs-student-easy', 'intern'];
+      const canAutoPromote = availablePromotions.length === 1 && !isSeniorOrAbove;
+      const promotionJob = availablePromotions[0];
+      const requiresInterview = promotionJob && !noInterviewJobs.includes(promotionJob.id);
 
-      if (shouldAutoPromote) {
-        // If on cs-student-easy with family support, allow promotion but clear support
-        if (newStats.currentJob.id === 'cs-student-easy' && newStats.familySupportYearsLeft) {
-          const promotion = availablePromotions[0];
-          newStats.currentJob = promotion;
-          newStats.familySupportYearsLeft = 0;
+      let pendingInterview: Job | undefined = undefined;
+
+      if (canAutoPromote && promotionJob) {
+        if (requiresInterview) {
+          // Set pending interview instead of auto-promoting
+          pendingInterview = promotionJob;
+
+          // Handle family support expiration for cs-student-easy
+          if (newStats.currentJob.id === 'cs-student-easy' && newStats.familySupportYearsLeft) {
+            newStats.familySupportYearsLeft = 0;
+          }
 
           logMessages.push({
             id: generateLogId(),
             timestamp: Date.now(),
-            message: `> 🎉 PROMOTED to ${promotion.title}! New salary: $${promotion.yearlyPay.toLocaleString()}/year`,
-            type: 'success',
+            message: `> 📋 Performance review triggered! Interview required for ${promotionJob.title}.`,
+            type: 'info',
           });
-        } else if (newStats.currentJob.id !== 'cs-student-easy') {
-          const promotion = availablePromotions[0];
-          newStats.currentJob = promotion;
+        } else {
+          // No interview needed - auto-promote (e.g., intern)
+          if (newStats.currentJob.id === 'cs-student-easy' && newStats.familySupportYearsLeft) {
+            newStats.currentJob = promotionJob;
+            newStats.familySupportYearsLeft = 0;
 
-          logMessages.push({
-            id: generateLogId(),
-            timestamp: Date.now(),
-            message: `> 🎉 PROMOTED to ${promotion.title}! New salary: $${promotion.yearlyPay.toLocaleString()}/year`,
-            type: 'success',
-          });
+            logMessages.push({
+              id: generateLogId(),
+              timestamp: Date.now(),
+              message: `> 🎉 PROMOTED to ${promotionJob.title}! New salary: $${promotionJob.yearlyPay.toLocaleString()}/year`,
+              type: 'success',
+            });
+          } else if (newStats.currentJob.id !== 'cs-student-easy') {
+            newStats.currentJob = promotionJob;
+
+            logMessages.push({
+              id: generateLogId(),
+              timestamp: Date.now(),
+              message: `> 🎉 PROMOTED to ${promotionJob.title}! New salary: $${promotionJob.yearlyPay.toLocaleString()}/year`,
+              type: 'success',
+            });
+          }
         }
       } else if (availablePromotions.length > 0 && (isSeniorOrAbove || availablePromotions.length > 1)) {
         logMessages.push({
@@ -417,6 +442,7 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
         ...state,
         stats: newStats,
         eventLog: [...state.eventLog, ...logMessages],
+        pendingYearEndInterview: pendingInterview,
       };
     }
 
@@ -523,6 +549,81 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
 
     case 'RESET_GAME': {
       return createInitialState();
+    }
+
+    case 'CLEAR_PENDING_INTERVIEW': {
+      return {
+        ...state,
+        pendingYearEndInterview: undefined,
+      };
+    }
+
+    case 'YEAR_END_INTERVIEW_RESULT': {
+      const { passed, job } = action.payload;
+
+      if (passed) {
+        const newStats = { ...state.stats, currentJob: job };
+
+        // Check for game over (victory) after promotion
+        const gameOver = checkGameOver(newStats);
+        if (gameOver) {
+          return {
+            ...state,
+            phase: 'gameover',
+            stats: newStats,
+            pendingYearEndInterview: undefined,
+            eventLog: [
+              ...state.eventLog,
+              {
+                id: generateLogId(),
+                timestamp: Date.now(),
+                message: `> 🎉 Performance review PASSED! Promoted to ${job.title}!`,
+                type: 'success',
+              },
+              {
+                id: generateLogId(),
+                timestamp: Date.now(),
+                message: `> GAME OVER: ${gameOver.message}`,
+                type: 'success',
+              },
+            ],
+            gameOver,
+          };
+        }
+
+        return {
+          ...state,
+          stats: newStats,
+          pendingYearEndInterview: undefined,
+          eventLog: [
+            ...state.eventLog,
+            {
+              id: generateLogId(),
+              timestamp: Date.now(),
+              message: `> 🎉 Performance review PASSED! Promoted to ${job.title}! New salary: $${job.yearlyPay.toLocaleString()}/year`,
+              type: 'success',
+            },
+          ],
+        };
+      } else {
+        // Failed interview - apply stress penalty, stay in current job
+        const newStats = applyStatChanges(state.stats, { stress: 10 });
+
+        return {
+          ...state,
+          stats: newStats,
+          pendingYearEndInterview: undefined,
+          eventLog: [
+            ...state.eventLog,
+            {
+              id: generateLogId(),
+              timestamp: Date.now(),
+              message: '> ❌ Performance review FAILED. Staying in current role. (+10 stress)',
+              type: 'error',
+            },
+          ],
+        };
+      }
     }
 
     default:
