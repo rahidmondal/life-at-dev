@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { ActionsPanel } from './ActionsPanel';
 import { EventLog } from './EventLog';
 import { ProTipsPanel } from './ProTipsPanel';
@@ -11,9 +12,7 @@ export function GameScreen() {
       {/* Header */}
       <header className="flex items-center justify-between border-b border-gray-800 bg-black px-6 py-4">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-emerald-500 bg-emerald-950">
-            <span className="font-mono text-xl text-emerald-400">&lt;/&gt;</span>
-          </div>
+          <Image src="/logo-sm.png" alt="Life @ Dev" width={100} height={100} className="rounded-lg" />
           <div>
             <h1 className="font-mono text-2xl font-bold text-emerald-400">Life@Dev</h1>
             <p className="font-mono text-xs text-gray-400">Survive the grind. Climb the ladder.</p>

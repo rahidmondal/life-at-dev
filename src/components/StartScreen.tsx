@@ -3,6 +3,7 @@
 import HowToPlayModal from '@/components/HowToPlayModal';
 import StartingPathModal from '@/components/StartingPathModal';
 import { useGame } from '@/context/GameContext';
+import Image from 'next/image';
 import { useState } from 'react';
 
 export function StartScreen() {
@@ -23,22 +24,9 @@ export function StartScreen() {
     <>
       <div className="flex min-h-screen items-center justify-center bg-black px-4">
         <div className="w-full max-w-4xl space-y-12 text-center">
-          {/* Title */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-emerald-500 bg-emerald-950">
-                <span className="font-mono text-3xl text-emerald-400">&lt;/&gt;</span>
-              </div>
-              <div className="text-left">
-                <h1 className="font-mono text-5xl font-bold text-emerald-400">Life @ Dev</h1>
-                <p className="font-mono text-sm text-gray-400">Survive the grind. Climb the ladder.</p>
-              </div>
-            </div>
-          </div>
-
           {/* Main Content */}
           <div className="space-y-8">
-            <div className="mx-auto text-6xl">💻</div>
+            <Image src="/logo.png" alt="Life @ Dev Logo" width={400} height={300} className="mx-auto" />
 
             <h2 className="font-mono text-3xl font-bold text-emerald-400">
               Ready to Hack Your Way
@@ -90,9 +78,6 @@ export function StartScreen() {
               ? How to Play
             </button>
           </div>
-
-          {/* Footer hint */}
-          <p className="font-mono text-xs text-gray-600">Master the mechanics, dominate the game</p>
         </div>
       </div>
 
