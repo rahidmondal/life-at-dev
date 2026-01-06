@@ -6,16 +6,18 @@ interface StartingPathModalProps {
 
 export default function StartingPathModal({ onSelect }: StartingPathModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-4xl overflow-hidden rounded-xl border-2 border-emerald-500 bg-zinc-950 shadow-2xl shadow-emerald-500/20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-3 backdrop-blur-sm sm:px-4">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl border-2 border-emerald-500 bg-zinc-950 shadow-2xl shadow-emerald-500/20">
         {/* Header */}
-        <div className="border-b-2 border-emerald-500 bg-emerald-950/30 px-6 py-4">
-          <h2 className="font-mono text-2xl font-bold text-emerald-400">Choose Your Starting Path</h2>
-          <p className="font-mono text-sm text-gray-400">This choice is permanent for this run</p>
+        <div className="border-b-2 border-emerald-500 bg-emerald-950/30 px-3 py-3 sm:px-4 sm:py-4 lg:px-6">
+          <h2 className="font-mono text-lg font-bold text-emerald-400 sm:text-xl lg:text-2xl">
+            Choose Your Starting Path
+          </h2>
+          <p className="font-mono text-xs text-gray-400 sm:text-sm">This choice is permanent for this run</p>
         </div>
 
         {/* Path Options */}
-        <div className="grid gap-6 p-6 md:grid-cols-3">
+        <div className="grid gap-3 p-3 sm:gap-4 sm:p-4 md:grid-cols-3 lg:gap-6 lg:p-6">
           {/* Option A - CS Student */}
           <button
             onClick={() => {
@@ -55,8 +57,8 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
 
               <div className="rounded border border-cyan-500/30 bg-cyan-950/30 p-3">
                 <p className="font-mono text-xs italic text-cyan-200">
-                  &quot;Slower start, but structured growth. You&apos;ll need to grind through negative income, but your
-                  skills will grow faster.&quot;
+                  "Slower start, but structured growth. You'll need to grind through negative income, but your skills
+                  will grow faster"
                 </p>
               </div>
 
@@ -112,8 +114,8 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
 
               <div className="rounded border border-green-500/30 bg-green-950/30 p-3">
                 <p className="font-mono text-xs italic text-green-200">
-                  &quot;Family covers tuition and rent. Build skills and get promoted to paid jobs. When promoted or
-                  after 4 years, you&apos;re on your own.&quot;
+                  "Family covers tuition and rent. Build skills and get promoted to paid jobs. When promoted or after 4
+                  years, you're on your own."
                 </p>
               </div>
 
@@ -169,8 +171,8 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
 
               <div className="rounded border border-emerald-500/30 bg-emerald-950/30 p-3">
                 <p className="font-mono text-xs italic text-emerald-200">
-                  &quot;No degree. No safety net. Maximum freedom. You&apos;ll need to freelance and grind hard, but
-                  progression is in your hands.&quot;
+                  "No degree. No safety net. Maximum freedom. You'll need to freelance and grind hard, but progression
+                  is in your hands."
                 </p>
               </div>
 

@@ -45,77 +45,79 @@ export function GameOverScreen() {
   const theme = themes[reason];
 
   return (
-    <div className={`flex min-h-screen items-center justify-center ${theme.bg} px-4 py-12`}>
-      <div className="w-full max-w-4xl space-y-8 text-center">
+    <div className={`flex min-h-screen items-center justify-center ${theme.bg} px-3 py-6 sm:px-4 sm:py-12`}>
+      <div className="w-full max-w-4xl space-y-4 text-center sm:space-y-8">
         {/* Title */}
-        <div className="space-y-4">
-          <div className="text-8xl">{theme.emoji}</div>
-          <h1 className={`font-mono text-6xl font-bold ${theme.text}`}>{theme.title}</h1>
+        <div className="space-y-2 sm:space-y-4">
+          <div className="text-5xl sm:text-6xl lg:text-8xl">{theme.emoji}</div>
+          <h1 className={`font-mono text-3xl font-bold sm:text-4xl lg:text-6xl ${theme.text}`}>{theme.title}</h1>
           {isEasterEggWin && (
-            <p className="font-mono text-sm text-purple-500/80">
-              You truly hacked your way to the top. You&apos;re just like <em>Blue Shirt Guy</em>.
+            <p className="font-mono text-xs text-purple-500/80 sm:text-sm">
+              You truly hacked your way to the top. You're just like <em>Blue Shirt Guy</em>.
             </p>
           )}
         </div>
 
         {/* Message */}
-        <div className={`mx-auto max-w-2xl border-2 ${theme.border} bg-black/50 p-8`}>
-          <p className="font-mono text-xl text-gray-300">{message}</p>
+        <div className={`mx-auto max-w-2xl border-2 ${theme.border} bg-black/50 p-4 sm:p-6 lg:p-8`}>
+          <p className="font-mono text-base text-gray-300 sm:text-lg lg:text-xl">{message}</p>
         </div>
 
         {/* Life Summary - Narrative */}
-        <div className={`mx-auto max-w-3xl border-2 ${theme.border} bg-black/80 p-8 text-left`}>
+        <div className={`mx-auto max-w-3xl border-2 ${theme.border} bg-black/80 p-4 text-left sm:p-6 lg:p-8`}>
           <LifeSummary stats={finalStats} gameOver={state.gameOver} eventLog={state.eventLog} />
         </div>
 
         {/* Final Stats Grid */}
         <div className="mx-auto max-w-3xl">
-          <div className={`border-2 ${theme.border} bg-black/80 p-6`}>
-            <h2 className="mb-6 font-mono text-2xl font-bold text-gray-100">CAREER METRICS</h2>
+          <div className={`border-2 ${theme.border} bg-black/80 p-4 sm:p-6`}>
+            <h2 className="mb-4 font-mono text-lg font-bold text-gray-100 sm:mb-6 sm:text-xl lg:text-2xl">
+              CAREER METRICS
+            </h2>
 
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
               <div className="space-y-1">
                 <p className="font-mono text-xs text-gray-500">AGE</p>
-                <p className="font-mono text-3xl font-bold text-emerald-400">{finalStats.age}</p>
+                <p className="font-mono text-2xl font-bold text-emerald-400 sm:text-3xl">{finalStats.age}</p>
               </div>
 
               <div className="space-y-1">
                 <p className="font-mono text-xs text-gray-500">YEARS WORKED</p>
-                <p className="font-mono text-3xl font-bold text-cyan-400">{finalStats.yearsWorked}</p>
+                <p className="font-mono text-2xl font-bold text-cyan-400 sm:text-3xl">{finalStats.yearsWorked}</p>
               </div>
 
               <div className="space-y-1">
                 <p className="font-mono text-xs text-gray-500">TOTAL EARNED</p>
-                <p className="font-mono text-2xl font-bold text-yellow-400">
+                <p className="font-mono text-xl font-bold text-yellow-400 sm:text-2xl">
                   ${Math.floor(finalStats.totalEarned / 1000)}k
                 </p>
               </div>
 
               <div className="space-y-1">
                 <p className="font-mono text-xs text-gray-500">FINAL ROLE</p>
-                <p className="font-mono text-sm font-bold text-purple-400">{finalStats.currentJob.title}</p>
+                <p className="font-mono text-xs font-bold text-purple-400 sm:text-sm">{finalStats.currentJob.title}</p>
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-4 border-t border-gray-700 pt-6 md:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-700 pt-4 sm:mt-6 sm:gap-4 sm:pt-6 lg:grid-cols-4">
               <div>
                 <p className="font-mono text-xs text-gray-500">Coding</p>
-                <p className="font-mono text-xl font-bold text-emerald-400">{finalStats.coding}</p>
+                <p className="font-mono text-lg font-bold text-emerald-400 sm:text-xl">{finalStats.coding}</p>
               </div>
 
               <div>
                 <p className="font-mono text-xs text-gray-500">Reputation</p>
-                <p className="font-mono text-xl font-bold text-yellow-400">{finalStats.reputation}</p>
+                <p className="font-mono text-lg font-bold text-yellow-400 sm:text-xl">{finalStats.reputation}</p>
               </div>
 
               <div>
                 <p className="font-mono text-xs text-gray-500">Final Stress</p>
-                <p className="font-mono text-xl font-bold text-red-400">{finalStats.stress}</p>
+                <p className="font-mono text-lg font-bold text-red-400 sm:text-xl">{finalStats.stress}</p>
               </div>
 
               <div>
                 <p className="font-mono text-xs text-gray-500">Final Money</p>
-                <p className="font-mono text-xl font-bold text-green-400">${finalStats.money}</p>
+                <p className="font-mono text-lg font-bold text-green-400 sm:text-xl">${finalStats.money}</p>
               </div>
             </div>
           </div>

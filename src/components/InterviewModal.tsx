@@ -18,9 +18,8 @@ interface AnswerRecord {
   correct: boolean;
 }
 
-const PASSING_SCORE = 2; // Need 2/3 to pass
+const PASSING_SCORE = 2;
 
-// Loading messages for the retro aesthetic
 const LOADING_MESSAGES = [
   'CONNECTING TO NEURAL NET...',
   'ESTABLISHING UPLINK...',
@@ -30,7 +29,6 @@ const LOADING_MESSAGES = [
 ];
 
 export default function InterviewModal({ targetJob, onComplete, onCancel }: InterviewModalProps) {
-  // Loading and question state
   const [isLoading, setIsLoading] = useState(true);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
@@ -41,7 +39,6 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
   const [showFeedback, setShowFeedback] = useState(false);
 
-  // Fetch questions on mount
   useEffect(() => {
     let messageInterval: NodeJS.Timeout | null = null;
     let isMounted = true;
@@ -49,7 +46,6 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
     const fetchQuestions = async () => {
       setIsLoading(true);
 
-      // Cycle through loading messages for effect
       let messageIndex = 0;
       messageInterval = setInterval(() => {
         messageIndex = (messageIndex + 1) % LOADING_MESSAGES.length;
@@ -58,7 +54,9 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, 20000);
 
         const response = await fetch('/api/interview', {
           method: 'POST',
@@ -79,14 +77,13 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
           setQuestions(data.questions);
           setQuestionSource('gemini');
         } else if (!isMounted) {
-          return; // Component unmounted, don't update state
+          return;
         } else {
           throw new Error('Invalid response format');
         }
       } catch (error) {
         console.warn('Failed to fetch AI questions, using fallback:', error);
         if (isMounted) {
-          // Fallback to hardcoded questions
           const fallbackQuestions = getInterviewSession(targetJob);
           setQuestions(fallbackQuestions);
           setQuestionSource('fallback');
@@ -103,7 +100,6 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
 
     fetchQuestions();
 
-    // Cleanup function
     return () => {
       isMounted = false;
       if (messageInterval) {
@@ -149,13 +145,11 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
 
   const getOptionStyle = (index: number) => {
     if (!showFeedback) {
-      // Not submitted yet - show selection state
       return selectedOption === index
         ? 'border-cyan-400 bg-cyan-400/10 text-cyan-400'
         : 'border-emerald-500/30 text-emerald-500/70 hover:border-emerald-500 hover:bg-emerald-500/5 hover:text-emerald-500';
     }
 
-    // After submission - show correct/incorrect
     const isCorrect = index === currentQuestion?.correctIndex;
     const wasSelected = selectedOption === index;
 
@@ -169,18 +163,18 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-2xl rounded border-2 border-emerald-500 bg-black p-6 shadow-xl shadow-emerald-500/20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded border-2 border-emerald-500 bg-black p-3 shadow-xl shadow-emerald-500/20 sm:p-4 lg:p-6">
         {/* Header */}
-        <div className="mb-6 border-b-2 border-emerald-500/30 pb-4">
+        <div className="mb-4 border-b-2 border-emerald-500/30 pb-3 sm:mb-6 sm:pb-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-mono text-2xl font-bold text-emerald-500">// JOB INTERVIEW</h2>
+            <h2 className="font-mono text-lg font-bold text-emerald-500 sm:text-xl lg:text-2xl">// JOB INTERVIEW</h2>
             {!isLoading && typeof currentStep === 'number' && (
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2">
                 {[0, 1, 2].map(step => (
                   <div
                     key={step}
-                    className={`h-3 w-3 rounded-full border-2 ${
+                    className={`h-2.5 w-2.5 rounded-full border-2 sm:h-3 sm:w-3 ${
                       step < currentStep
                         ? answers[step]?.correct
                           ? 'border-emerald-500 bg-emerald-500'
@@ -194,7 +188,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
               </div>
             )}
           </div>
-          <p className="font-mono text-sm text-emerald-500/70">
+          <p className="font-mono text-xs text-emerald-500/70 sm:text-sm">
             Position: <span className="text-white">{targetJob.title}</span>
           </p>
           {!isLoading && (
@@ -202,9 +196,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
               {currentStep === 'results'
                 ? 'Interview Complete'
                 : `Question ${typeof currentStep === 'number' ? currentStep + 1 : 0} of 3 • Pass: ${PASSING_SCORE}/${questions.length} correct`}
-              {questionSource === 'gemini' && (
-                <span className="ml-2 text-cyan-400/60">⚡ AI-Generated</span>
-              )}
+              {questionSource === 'gemini' && <span className="ml-2 text-cyan-400/60">⚡ AI-Generated</span>}
             </p>
           )}
         </div>
@@ -215,14 +207,8 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
             {/* Terminal-style loading animation */}
             <div className="mb-6 flex items-center gap-2">
               <div className="h-4 w-4 animate-pulse rounded-full bg-emerald-500" />
-              <div
-                className="h-4 w-4 animate-pulse rounded-full bg-emerald-500"
-                style={{ animationDelay: '0.2s' }}
-              />
-              <div
-                className="h-4 w-4 animate-pulse rounded-full bg-emerald-500"
-                style={{ animationDelay: '0.4s' }}
-              />
+              <div className="h-4 w-4 animate-pulse rounded-full bg-emerald-500" style={{ animationDelay: '0.2s' }} />
+              <div className="h-4 w-4 animate-pulse rounded-full bg-emerald-500" style={{ animationDelay: '0.4s' }} />
             </div>
 
             {/* Loading message with terminal effect */}
@@ -235,7 +221,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
 
             {/* Progress bar */}
             <div className="h-1 w-64 overflow-hidden rounded bg-gray-800">
-              <div className="h-full w-full origin-left animate-pulse bg-gradient-to-r from-emerald-500 via-cyan-400 to-emerald-500" />
+              <div className="h-full w-full origin-left animate-pulse bg-linear-to-r from-emerald-500 via-cyan-400 to-emerald-500" />
             </div>
 
             <p className="mt-4 font-mono text-xs text-gray-500">
@@ -266,7 +252,9 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
                     {currentQuestion.options.map((option, index) => (
                       <button
                         key={index}
-                        onClick={() => setSelectedOption(index)}
+                        onClick={() => {
+                          setSelectedOption(index);
+                        }}
                         className={`w-full rounded border-2 p-3 text-left font-mono transition-all ${getOptionStyle(index)}`}
                       >
                         <span className="mr-3 text-xs">[{String.fromCharCode(65 + index)}]</span>
@@ -308,9 +296,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
                       >
                         <span className="mr-3 text-xs">[{String.fromCharCode(65 + index)}]</span>
                         {option}
-                        {index === currentQuestion.correctIndex && (
-                          <span className="ml-2 text-emerald-400">✓</span>
-                        )}
+                        {index === currentQuestion.correctIndex && <span className="ml-2 text-emerald-400">✓</span>}
                         {selectedOption === index && index !== currentQuestion.correctIndex && (
                           <span className="ml-2 text-red-400">✗</span>
                         )}
@@ -362,8 +348,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
                 {passed ? 'INTERVIEW PASSED!' : 'INTERVIEW FAILED'}
               </p>
               <p className="font-mono text-xl text-white">
-                Score: <span className={passed ? 'text-emerald-400' : 'text-red-400'}>{score}</span>/
-                {questions.length}
+                Score: <span className={passed ? 'text-emerald-400' : 'text-red-400'}>{score}</span>/{questions.length}
               </p>
             </div>
 
@@ -385,7 +370,9 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
                   <span className="font-mono text-sm text-gray-400">
                     Q{index + 1}: {questions[index].question.slice(0, 40)}...
                   </span>
-                  <span className={`font-mono text-sm font-bold ${answer.correct ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span
+                    className={`font-mono text-sm font-bold ${answer.correct ? 'text-emerald-400' : 'text-red-400'}`}
+                  >
                     {answer.correct ? '✓ Correct' : '✗ Wrong'}
                   </span>
                 </div>

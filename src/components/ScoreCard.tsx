@@ -23,7 +23,7 @@ export function ScoreCard({ finalStats, reason, isEasterEggWin, themeBorder, the
         reason,
         isEasterEggWin,
       }),
-    [finalStats, reason, isEasterEggWin]
+    [finalStats, reason, isEasterEggWin],
   );
 
   const breakdownText = useMemo(() => getScoreBreakdownText(scoreBreakdown), [scoreBreakdown]);
@@ -35,7 +35,9 @@ export function ScoreCard({ finalStats, reason, isEasterEggWin, themeBorder, the
         <div className="flex items-center justify-between">
           <h2 className="font-mono text-2xl font-bold text-gray-100">FINAL SCORE</h2>
           <button
-            onClick={() => setShowBreakdown(!showBreakdown)}
+            onClick={() => {
+              setShowBreakdown(!showBreakdown);
+            }}
             className="font-mono text-xs text-gray-500 transition-colors hover:text-gray-300"
             title="Toggle score breakdown"
           >

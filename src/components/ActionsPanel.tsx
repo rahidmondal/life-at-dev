@@ -23,16 +23,13 @@ export function ActionsPanel() {
   const [availableJobsList, setAvailableJobsList] = useState<Job[]>([]);
   const [isGraduation, setIsGraduation] = useState(false);
 
-  // Interview modal state
   const [showInterviewModal, setShowInterviewModal] = useState(false);
   const [interviewTargetJob, setInterviewTargetJob] = useState<Job | null>(null);
   const [isYearEndInterview, setIsYearEndInterview] = useState(false);
 
-  // Rejection popup state
   const [showRejectionPopup, setShowRejectionPopup] = useState(false);
   const [rejectionReasons, setRejectionReasons] = useState<string[]>([]);
 
-  // Handle pending year-end interviews
   useEffect(() => {
     if (pendingYearEndInterview && !showInterviewModal) {
       setInterviewTargetJob(pendingYearEndInterview);
@@ -55,7 +52,6 @@ export function ActionsPanel() {
       const availableJobs = getAvailablePromotions(stats.currentJob, stats.coding, stats.reputation, stats.money);
 
       if (availableJobs.length === 0) {
-        // No jobs available, just execute the action (costs resources, shows feedback)
         executeAction(action, stats, dispatch);
         return;
       }
@@ -77,24 +73,19 @@ export function ActionsPanel() {
       if (availableJobs.length === 1) {
         const singleJob = availableJobs[0];
 
-        // Check if interview is required for this job
         if (requiresInterview(singleJob)) {
-          // Check requirements before proceeding to interview
           const requirementCheck = meetsJobRequirements(singleJob, stats.coding, stats.reputation, stats.money);
 
           if (!requirementCheck.meets) {
-            // Show rejection popup
             setRejectionReasons(requirementCheck.failureReasons);
             setShowRejectionPopup(true);
             return;
           }
 
-          // Requirements met - start interview
           setInterviewTargetJob(singleJob);
           setIsYearEndInterview(false);
           setShowInterviewModal(true);
         } else {
-          // No interview needed (e.g., script-kiddie, intern)
           setTimeout(() => {
             dispatch({
               type: 'ANSWER_INTERVIEW',
@@ -147,9 +138,7 @@ export function ActionsPanel() {
   const handleJobSelect = (job: Job) => {
     setShowJobSelectionModal(false);
 
-    // Check if interview is required for this job
     if (!requiresInterview(job)) {
-      // No interview needed (e.g., script-kiddie, unemployed)
       dispatch({
         type: 'ANSWER_INTERVIEW',
         payload: {
@@ -160,17 +149,14 @@ export function ActionsPanel() {
       return;
     }
 
-    // Check requirements before proceeding to interview
     const requirementCheck = meetsJobRequirements(job, stats.coding, stats.reputation, stats.money);
 
     if (!requirementCheck.meets) {
-      // Show rejection popup
       setRejectionReasons(requirementCheck.failureReasons);
       setShowRejectionPopup(true);
       return;
     }
 
-    // Requirements met - start interview (job hunt, not year-end)
     setInterviewTargetJob(job);
     setIsYearEndInterview(false);
     setShowInterviewModal(true);
@@ -180,7 +166,6 @@ export function ActionsPanel() {
     setShowInterviewModal(false);
 
     if (isYearEndInterview && interviewTargetJob) {
-      // Year-end interview - use dedicated action
       dispatch({
         type: 'YEAR_END_INTERVIEW_RESULT',
         payload: {
@@ -189,7 +174,6 @@ export function ActionsPanel() {
         },
       });
     } else if (passed && interviewTargetJob) {
-      // Regular job hunt interview - passed
       dispatch({
         type: 'ANSWER_INTERVIEW',
         payload: {
@@ -198,7 +182,6 @@ export function ActionsPanel() {
         },
       });
     } else {
-      // Regular job hunt interview - failed
       dispatch({
         type: 'ANSWER_INTERVIEW',
         payload: {
@@ -215,10 +198,8 @@ export function ActionsPanel() {
     setShowInterviewModal(false);
     setInterviewTargetJob(null);
 
-    // If cancelling a year-end interview, clear the pending state and apply penalty
     if (isYearEndInterview) {
       dispatch({ type: 'CLEAR_PENDING_INTERVIEW' });
-      // Apply stress penalty for skipping year-end interview
       dispatch({
         type: 'APPLY_EVENT',
         payload: {
@@ -243,7 +224,7 @@ export function ActionsPanel() {
           onClick={() => {
             setActiveTab('work');
           }}
-          className={`flex-1 border-r border-gray-800 px-6 py-3 font-mono text-sm font-bold transition-colors ${
+          className={`flex-1 border-r border-gray-800 px-3 py-2 font-mono text-xs font-bold transition-colors sm:px-4 sm:py-3 sm:text-sm lg:px-6 ${
             activeTab === 'work'
               ? 'bg-emerald-950 text-emerald-400'
               : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
@@ -255,7 +236,7 @@ export function ActionsPanel() {
           onClick={() => {
             setActiveTab('shop');
           }}
-          className={`flex-1 border-r border-gray-800 px-6 py-3 font-mono text-sm font-bold transition-colors ${
+          className={`flex-1 border-r border-gray-800 px-3 py-2 font-mono text-xs font-bold transition-colors sm:px-4 sm:py-3 sm:text-sm lg:px-6 ${
             activeTab === 'shop'
               ? 'bg-emerald-950 text-emerald-400'
               : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
@@ -267,7 +248,7 @@ export function ActionsPanel() {
           onClick={() => {
             setActiveTab('invest');
           }}
-          className={`flex-1 px-6 py-3 font-mono text-sm font-bold transition-colors ${
+          className={`flex-1 px-3 py-2 font-mono text-xs font-bold transition-colors sm:px-4 sm:py-3 sm:text-sm lg:px-6 ${
             activeTab === 'invest'
               ? 'bg-emerald-950 text-emerald-400'
               : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
@@ -278,15 +259,15 @@ export function ActionsPanel() {
       </div>
 
       {/* Tab Label */}
-      <div className="border-b border-gray-800 bg-black px-6 py-4">
-        <h3 className="font-mono text-sm font-bold text-emerald-400">
+      <div className="border-b border-gray-800 bg-black px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
+        <h3 className="font-mono text-xs font-bold text-emerald-400 sm:text-sm">
           ⚡ {activeTab === 'work' ? 'DAILY GRIND' : activeTab === 'shop' ? 'RECOVERY & GEAR' : 'CAREER ADVANCEMENT'}
         </h3>
       </div>
 
       {/* Actions Grid */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
           {actions.map(action => {
             const available = isActionAvailable(action, stats.energy, stats.money, stats.reputation);
             const reason = getUnavailabilityReason(action, stats.energy, stats.money, stats.reputation);
@@ -298,7 +279,7 @@ export function ActionsPanel() {
                   handleAction(action.id);
                 }}
                 disabled={!available}
-                className={`group relative overflow-hidden rounded-lg border-2 p-4 text-left transition-all ${
+                className={`group relative min-h-11 overflow-hidden rounded-lg border-2 p-3 text-left transition-all sm:p-4 ${
                   available
                     ? action.id === 'side-project'
                       ? 'border-pink-500 bg-pink-950 hover:bg-pink-900 hover:shadow-lg hover:shadow-pink-500/20'
@@ -307,17 +288,17 @@ export function ActionsPanel() {
                 }`}
               >
                 {/* Header */}
-                <div className="mb-3 flex items-start justify-between">
+                <div className="mb-2 flex flex-col gap-2 sm:mb-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex-1">
                     <h4
-                      className={`mb-1 font-mono text-base font-bold leading-tight ${available ? (action.id === 'side-project' ? 'text-pink-400' : 'text-emerald-400') : 'text-gray-600'}`}
+                      className={`mb-1 font-mono text-sm font-bold leading-tight sm:text-base ${available ? (action.id === 'side-project' ? 'text-pink-400' : 'text-emerald-400') : 'text-gray-600'}`}
                     >
                       {action.name}
                     </h4>
                     <p className="font-mono text-xs leading-relaxed text-gray-400">{action.description}</p>
                   </div>
                   <div
-                    className={`ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 ${
+                    className={`flex h-10 w-16 shrink-0 items-center justify-center rounded-full border-2 sm:ml-3 sm:w-10 ${
                       available ? 'border-cyan-400 bg-cyan-500/20' : 'border-gray-700 bg-gray-800'
                     }`}
                   >
@@ -328,10 +309,10 @@ export function ActionsPanel() {
                 </div>
 
                 {/* Costs & Rewards */}
-                <div className="space-y-2 border-t border-gray-800 pt-3">
+                <div className="space-y-2 border-t border-gray-800 pt-2 sm:pt-3">
                   {/* Costs - Highlighted in red box */}
                   {(action.cost.energy > 0 || action.cost.stress > 0 || action.cost.money > 0) && (
-                    <div className="flex flex-wrap gap-2 rounded bg-red-950/20 px-2 py-1">
+                    <div className="flex flex-wrap gap-1.5 rounded bg-red-950/20 p-1.5 sm:gap-2 sm:p-2">
                       {action.cost.weeks > 0 && (
                         <span className="font-mono text-xs font-bold text-red-400">⏱️ {action.cost.weeks}w</span>
                       )}
@@ -353,7 +334,7 @@ export function ActionsPanel() {
                     action.reward.money > 0 ||
                     action.reward.energy > 0 ||
                     action.reward.stress < 0) && (
-                    <div className="flex flex-wrap gap-2 rounded bg-emerald-950/20 px-2 py-1">
+                    <div className="flex flex-wrap gap-1.5 rounded bg-emerald-950/20 p-1.5 sm:gap-2 sm:p-2">
                       {action.reward.coding > 0 && (
                         <span className="font-mono text-xs font-bold text-emerald-400">💻 +{action.reward.coding}</span>
                       )}
@@ -377,7 +358,7 @@ export function ActionsPanel() {
 
                 {/* Unavailable reason */}
                 {!available && reason && (
-                  <div className="mt-2 rounded bg-red-950/50 px-2 py-1">
+                  <div className="mt-2 rounded bg-red-950/50 p-1.5 sm:p-2">
                     <p className="font-mono text-xs text-red-400">🔒 {reason}</p>
                   </div>
                 )}
@@ -392,12 +373,12 @@ export function ActionsPanel() {
         </div>
       </div>
 
-      {/* Next Year Button (Fixed at bottom) */}
-      <div className="border-t border-gray-800 bg-gray-950 p-6">
+      {/* Next Year Button */}
+      <div className="border-t border-gray-800 bg-gray-950 p-3 sm:p-4 lg:p-6">
         <button
           onClick={handleNextYear}
           disabled={stats.weeks > 0}
-          className={`group relative w-full overflow-hidden rounded-lg py-4 font-mono text-lg font-bold transition-all ${
+          className={`group relative w-full overflow-hidden rounded-lg py-3 font-mono text-base font-bold transition-all sm:py-4 sm:text-lg ${
             stats.weeks <= 0
               ? 'bg-emerald-500 text-black hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/50'
               : 'cursor-not-allowed bg-gray-800 text-gray-600'
@@ -405,7 +386,7 @@ export function ActionsPanel() {
         >
           <span className="relative z-10 flex items-center justify-center gap-2">
             ⏭️ Next Year
-            {stats.weeks > 0 && <span className="text-sm">({stats.weeks} weeks remaining)</span>}
+            {stats.weeks > 0 && <span className="hidden text-sm sm:inline">({stats.weeks} weeks remaining)</span>}
           </span>
           {stats.weeks <= 0 && (
             <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
@@ -455,7 +436,9 @@ export function ActionsPanel() {
             </div>
 
             <button
-              onClick={() => setShowRejectionPopup(false)}
+              onClick={() => {
+                setShowRejectionPopup(false);
+              }}
               className="w-full rounded border-2 border-gray-500 bg-gray-500/10 px-4 py-2 font-mono text-sm font-bold text-gray-400 transition-all hover:bg-gray-500 hover:text-black"
             >
               &gt;&gt; CLOSE
