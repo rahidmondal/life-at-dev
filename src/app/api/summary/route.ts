@@ -179,7 +179,7 @@ Remember: Output ONLY the TOML, nothing else.`;
         error: 'Failed to generate summary',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

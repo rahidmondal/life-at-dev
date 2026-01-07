@@ -156,14 +156,8 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
         <div className="flex flex-col items-center justify-center py-8">
           <div className="mb-4 flex items-center gap-2">
             <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" />
-            <div
-              className="h-3 w-3 animate-pulse rounded-full bg-emerald-500"
-              style={{ animationDelay: '0.2s' }}
-            />
-            <div
-              className="h-3 w-3 animate-pulse rounded-full bg-emerald-500"
-              style={{ animationDelay: '0.4s' }}
-            />
+            <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" style={{ animationDelay: '0.2s' }} />
+            <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500" style={{ animationDelay: '0.4s' }} />
           </div>
           <div className="rounded border border-emerald-500/30 bg-emerald-500/5 px-4 py-2">
             <p className="font-mono text-sm text-emerald-500">

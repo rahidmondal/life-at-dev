@@ -50,10 +50,7 @@ export async function POST(request: NextRequest) {
   try {
     // Validate API key exists before proceeding
     if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json(
-        { error: 'GEMINI_API_KEY environment variable is not configured' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'GEMINI_API_KEY environment variable is not configured' }, { status: 500 });
     }
 
     // Initialize Gemini client after validation
@@ -63,14 +60,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const job = body.job as Job;
 
-    if (
-      !job ||
-      !job.title ||
-      !job.path ||
-      !job.level ||
-      !job.requirements ||
-      typeof job.requirements !== 'object'
-    ) {
+    if (!job || !job.title || !job.path || !job.level || !job.requirements || typeof job.requirements !== 'object') {
       return NextResponse.json({ error: 'Invalid job data' }, { status: 400 });
     }
 
@@ -179,7 +169,7 @@ You MUST respond with ONLY a valid JSON array in this exact format, no markdown 
         error: 'Failed to generate questions',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

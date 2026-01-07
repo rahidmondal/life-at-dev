@@ -21,11 +21,7 @@ interface CalculateScoreParams {
  * Calculate the final score based on game outcome and stats.
  * Returns both the total score and a breakdown of how it was calculated.
  */
-export function calculateScore({
-  finalStats,
-  reason,
-  isEasterEggWin = false,
-}: CalculateScoreParams): ScoreBreakdown {
+export function calculateScore({ finalStats, reason, isEasterEggWin = false }: CalculateScoreParams): ScoreBreakdown {
   // Base points for completing a run
   const basePoints = 100;
 
@@ -71,8 +67,7 @@ export function calculateScore({
   }
 
   // Calculate subtotal before multiplier
-  const subtotal =
-    basePoints + jobLevelBonus + wealthBonus + codingBonus + reputationBonus + efficiencyBonus;
+  const subtotal = basePoints + jobLevelBonus + wealthBonus + codingBonus + reputationBonus + efficiencyBonus;
 
   // Outcome Multiplier
   let outcomeMultiplier: number;
