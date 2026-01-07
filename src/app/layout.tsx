@@ -16,8 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Life @ Dev',
   description: 'A high-stakes developer life simulator. Survive the grind, climb the ladder, reach the top.',
-  icons: {
-    icon: '/logo.png',
+  appleWebApp: {
+    title: 'Life @ Dev',
+    statusBarStyle: 'black-translucent',
   },
 };
 
