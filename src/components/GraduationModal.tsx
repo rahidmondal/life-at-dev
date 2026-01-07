@@ -54,24 +54,24 @@ export default function GraduationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
-      <div className="w-full max-w-4xl rounded border-2 border-emerald-500 bg-black p-8 shadow-xl shadow-emerald-500/30">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-3 sm:p-4">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded border-2 border-emerald-500 bg-black p-4 shadow-xl shadow-emerald-500/30 sm:p-6 lg:p-8">
         {/* Header */}
-        <div className="mb-8 border-b-2 border-emerald-500/30 pb-6 text-center">
-          <div className="mb-4 text-6xl">{isGraduation ? '🎓' : '💼'}</div>
-          <h2 className="mb-3 font-mono text-3xl font-bold text-emerald-500">
+        <div className="mb-4 border-b-2 border-emerald-500/30 pb-4 text-center sm:mb-6 sm:pb-6 lg:mb-8">
+          <div className="mb-3 text-4xl sm:text-5xl lg:mb-4 lg:text-6xl">{isGraduation ? '🎓' : '💼'}</div>
+          <h2 className="mb-2 font-mono text-xl font-bold text-emerald-500 sm:text-2xl lg:mb-3 lg:text-3xl">
             {isGraduation ? '// GRADUATION CEREMONY' : '// CAREER OPPORTUNITY'}
           </h2>
-          <p className="font-mono text-lg text-emerald-400">
+          <p className="font-mono text-sm text-emerald-400 sm:text-base lg:text-lg">
             {isGraduation ? "Congratulations! You've completed your studies." : 'Choose your next career move'}
           </p>
-          <p className="mt-2 font-mono text-sm text-gray-400">
+          <p className="mt-1 font-mono text-xs text-gray-400 sm:mt-2 sm:text-sm">
             {isGraduation ? 'Now choose your career path...' : 'Multiple opportunities available...'}
           </p>
         </div>
 
         {/* Career Paths */}
-        <div className="mb-6 space-y-4">
+        <div className="mb-4 space-y-3 sm:mb-6 sm:space-y-4">
           {Object.entries(jobsByPath).map(([path, jobs]) => {
             const info = pathInfo[path] ?? {
               title: 'Other',

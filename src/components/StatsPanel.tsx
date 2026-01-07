@@ -10,13 +10,13 @@ export function StatsPanel() {
   const nextJob = getNextJobSuggestion(stats.currentJob);
 
   return (
-    <div className="flex h-full flex-col gap-6 overflow-y-auto border-r border-gray-800 bg-black p-6">
+    <div className="flex h-full flex-col gap-4 overflow-y-auto border-r border-gray-800 bg-black p-3 sm:gap-6 sm:p-4 lg:p-6">
       {/* Header */}
-      <div className="space-y-2 border-b border-emerald-500/20 pb-4">
+      <div className="space-y-2 border-b border-emerald-500/20 pb-3">
         <p className="font-mono text-xs text-gray-500">📅 Age: {stats.age}</p>
         <div className="flex items-center gap-2">
           <span className="font-mono text-sm text-gray-400">💼</span>
-          <p className="font-mono text-sm font-bold text-emerald-400">{stats.currentJob.title}</p>
+          <p className="font-mono text-xs font-bold text-emerald-400 sm:text-sm">{stats.currentJob.title}</p>
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="font-mono text-gray-500">💵 Salary:</span>
@@ -37,7 +37,7 @@ export function StatsPanel() {
           <p className="font-mono text-xs text-cyan-400">Week {52 - stats.weeks} / 52</p>
         </div>
 
-        {/* Circular progress or bar */}
+        {/* Progress bar */}
         <div className="relative h-3 overflow-hidden rounded-full bg-gray-800">
           <div
             className="h-full bg-linear-to-r from-cyan-500 to-cyan-400 transition-all duration-300"
@@ -45,7 +45,7 @@ export function StatsPanel() {
           />
         </div>
 
-        <p className="text-center font-mono text-2xl font-bold text-cyan-400">{stats.weeks}</p>
+        <p className="text-center font-mono text-xl font-bold text-cyan-400 sm:text-2xl">{stats.weeks}</p>
         <p className="text-center font-mono text-xs text-gray-500">weeks remaining</p>
       </div>
 
@@ -94,8 +94,8 @@ export function StatsPanel() {
             ${stats.money.toLocaleString()}
           </p>
         </div>
-        <div className="rounded bg-gray-900 p-3">
-          <p className="text-center font-mono text-2xl font-bold text-green-400">
+        <div className="rounded bg-gray-900 p-2 sm:p-3">
+          <p className="text-center font-mono text-xl font-bold text-green-400 sm:text-2xl">
             ${stats.money < 0 ? '-' : ''}
             {Math.abs(stats.money).toLocaleString()}
           </p>
@@ -127,11 +127,11 @@ export function StatsPanel() {
       </div>
 
       {/* Next Unlock */}
-      <div className="mt-auto space-y-2 border-t border-gray-800 pt-4">
+      <div className="mt-auto space-y-2 border-t border-gray-800 pt-3 sm:pt-4">
         <p className="font-mono text-xs font-bold text-gray-500">🔓 NEXT UNLOCK</p>
         {nextJob ? (
-          <div className="space-y-1 rounded bg-gray-900 p-3">
-            <p className="font-mono text-sm font-bold text-purple-400">{nextJob.title}</p>
+          <div className="space-y-1 rounded bg-gray-900 p-2 sm:p-3">
+            <p className="font-mono text-xs font-bold text-purple-400 sm:text-sm">{nextJob.title}</p>
             <p className="font-mono text-xs text-gray-400">
               Requires: {nextJob.requirements.coding} skill, {nextJob.requirements.reputation} reputation
             </p>
@@ -145,7 +145,7 @@ export function StatsPanel() {
       </div>
 
       {/* Career Stats */}
-      <div className="space-y-2 border-t border-gray-800 pt-4">
+      <div className="space-y-2 border-t border-gray-800 pt-3 sm:pt-4">
         <p className="font-mono text-xs font-bold text-gray-500">📊 CAREER STATS</p>
         <div className="space-y-1">
           <p className="font-mono text-xs text-gray-400">Years Worked: {stats.yearsWorked}</p>

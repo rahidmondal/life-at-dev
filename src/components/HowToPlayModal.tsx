@@ -6,28 +6,30 @@ interface HowToPlayModalProps {
 
 export default function HowToPlayModal({ onClose }: HowToPlayModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="h-[90vh] w-full max-w-4xl overflow-hidden rounded border-2 border-cyan-400 bg-black shadow-xl shadow-cyan-400/20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded border-2 border-cyan-400 bg-black shadow-xl shadow-cyan-400/20">
         {/* Header */}
-        <div className="border-b-2 border-cyan-400/30 bg-cyan-400/5 p-4">
-          <h2 className="font-mono text-2xl font-bold text-cyan-400">// HOW TO PLAY</h2>
+        <div className="border-b-2 border-cyan-400/30 bg-cyan-400/5 p-3 sm:p-4">
+          <h2 className="font-mono text-lg font-bold text-cyan-400 sm:text-xl lg:text-2xl">// HOW TO PLAY</h2>
           <p className="mt-1 font-mono text-xs text-cyan-400/70">Master the game, climb the ladder</p>
         </div>
 
         {/* Scrollable content */}
-        <div className="h-[calc(100%-140px)] overflow-y-auto p-6">
+        <div className="max-h-[calc(90vh-100px)] overflow-y-auto p-3 sm:p-4 lg:p-6">
           {/* Game Overview */}
-          <section className="mb-6">
-            <h3 className="mb-3 font-mono text-lg font-bold text-emerald-500">📖 GAME OVERVIEW</h3>
-            <p className="mb-2 font-mono text-sm leading-relaxed text-white/90">
+          <section className="mb-4 sm:mb-6">
+            <h3 className="mb-2 font-mono text-base font-bold text-emerald-500 sm:mb-3 sm:text-lg">📖 GAME OVERVIEW</h3>
+            <p className="mb-2 font-mono text-xs leading-relaxed text-white/90 sm:text-sm">
               Life @ Dev simulates a developer's career over multiple years. You start with 52 weeks per year and must
               balance work, learning, and well-being to climb the career ladder.
             </p>
           </section>
 
           {/* Win Conditions */}
-          <section className="mb-6">
-            <h3 className="mb-3 font-mono text-lg font-bold text-emerald-500">🏆 WIN CONDITIONS</h3>
+          <section className="mb-4 sm:mb-6">
+            <h3 className="mb-2 font-mono text-base font-bold text-emerald-500 sm:mb-3 sm:text-lg">
+              🏆 WIN CONDITIONS
+            </h3>
             <div className="space-y-2 font-mono text-sm text-white/90">
               <p>Reach one of these top-tier positions:</p>
               <ul className="ml-4 list-disc space-y-1 text-emerald-500/80">
@@ -123,7 +125,7 @@ export default function HowToPlayModal({ onClose }: HowToPlayModalProps) {
                   <strong>Side Project:</strong> +8 coding, +5 rep (3 weeks)
                 </li>
                 <li>
-                  <strong>Hackathon:</strong> +20 coding, high stress (2 weeks)
+                  <strong>Hackathons:</strong> +20 coding, high stress (2 weeks)
                 </li>
                 <li>
                   <strong>Network Online:</strong> +10 rep ($100, 1 week)
@@ -223,10 +225,10 @@ export default function HowToPlayModal({ onClose }: HowToPlayModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-t-2 border-cyan-400/30 bg-cyan-400/5 p-4">
+        <div className="border-t-2 border-cyan-400/30 bg-cyan-400/5 p-3 sm:p-4">
           <button
             onClick={onClose}
-            className="w-full rounded border-2 border-cyan-400 bg-cyan-400/10 px-4 py-2 font-mono text-sm font-bold text-cyan-400 transition-all hover:bg-cyan-400 hover:text-black"
+            className="w-full rounded border-2 border-cyan-400 bg-cyan-400/10 px-4 py-2 font-mono text-xs font-bold text-cyan-400 transition-all hover:bg-cyan-400 hover:text-black sm:text-sm"
           >
             &gt;&gt; GOT IT, LET&apos;S PLAY
           </button>
