@@ -25,8 +25,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<{ id: string; message: string; type?: 'success' | 'error' | 'info' }[]>([]);
   const lastActionRef = useRef<string | null>(null);
   const isSavingRef = useRef(false);
+  const lastSavedPhaseRef = useRef<string | null>(null);
 
-  // Check for saved game on mount and auto-restore only on refresh
   useEffect(() => {
     const checkSave = async () => {
       if (!isStorageAvailable()) {
@@ -71,13 +71,28 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      sessionStorage.removeItem('life-dev-session');
+      sessionStorage.removeItem('on-home-screen');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  useEffect(() => {
     const performAutosave = async () => {
       if (!isStorageAvailable() || isSavingRef.current) return;
 
-      const shouldAutosave = lastActionRef.current === 'YEAR_END_REVIEW' || lastActionRef.current === 'GAME_OVER';
+      const shouldAutosavePhases = ['year-end', 'game-over'];
+      const isAutosavePhase = shouldAutosavePhases.includes(state.phase);
 
-      if (shouldAutosave && state.phase !== 'start') {
+      if (isAutosavePhase && lastSavedPhaseRef.current !== state.phase && state.phase !== 'start') {
         isSavingRef.current = true;
+        lastSavedPhaseRef.current = state.phase;
         try {
           await saveGame(state, true);
           setHasSavedGame(true);
@@ -92,7 +107,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     void performAutosave();
   }, [state]);
 
-  // Manual save function
   const saveGameManually = async () => {
     if (!isStorageAvailable()) {
       addToast('Save unavailable', 'error');
@@ -114,7 +128,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Resume game function
   const resumeGame = async () => {
     if (!isStorageAvailable()) {
       addToast('Load unavailable', 'error');
@@ -136,7 +149,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Restart game function
   const restartGame = async () => {
     try {
       if (isStorageAvailable()) {
@@ -144,14 +156,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
       setHasSavedGame(false);
       dispatch({ type: 'RESET_GAME' });
+      sessionStorage.removeItem('life-dev-session');
+      sessionStorage.removeItem('on-home-screen');
+      lastSavedPhaseRef.current = null;
     } catch (error) {
       console.error('Restart failed:', error instanceof Error ? error.message : 'Unknown error');
       setHasSavedGame(false);
       dispatch({ type: 'RESET_GAME' });
+      lastSavedPhaseRef.current = null;
     }
   };
 
-  // Navigate to home screen (preserves save)
   const goToHomeScreen = () => {
     sessionStorage.setItem('on-home-screen', 'true');
     dispatch({ type: 'RESET_GAME' });
