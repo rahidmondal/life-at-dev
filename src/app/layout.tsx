@@ -1,3 +1,4 @@
+import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 import { GameProvider } from '@/context/GameContext';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black`}>
+        <ServiceWorkerRegistration />
         <GameProvider>{children}</GameProvider>
       </body>
     </html>
