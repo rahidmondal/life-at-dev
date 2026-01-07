@@ -2,15 +2,40 @@
 
 import { useGame } from '@/context/GameContext';
 import { getNextJobSuggestion } from '@/logic/yearEnd';
+import { useState } from 'react';
 
 export function StatsPanel() {
-  const { state } = useGame();
+  const { state, saveGameManually, isStorageReady } = useGame();
   const { stats } = state;
+  const [isSaving, setIsSaving] = useState(false);
 
   const nextJob = getNextJobSuggestion(stats.currentJob);
 
+  const handleSave = async () => {
+    setIsSaving(true);
+    await saveGameManually();
+    setTimeout(() => {
+      setIsSaving(false);
+    }, 300);
+  };
+
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto border-r border-gray-800 bg-black p-3 sm:gap-6 sm:p-4 lg:p-6">
+      {/* Save Button - Desktop Only */}
+      {isStorageReady && (
+        <button
+          onClick={handleSave}
+          disabled={isSaving}
+          className={`hidden w-full rounded-lg border-2 px-4 py-3 font-mono text-sm font-bold transition-all lg:block ${
+            isSaving
+              ? 'animate-pulse border-emerald-400 bg-emerald-500 text-black'
+              : 'border-emerald-500 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-black'
+          }`}
+        >
+          {isSaving ? '💾 Saving...' : '💾 Save Game'}
+        </button>
+      )}
+
       {/* Header */}
       <div className="space-y-2 border-b border-emerald-500/20 pb-3">
         <p className="font-mono text-xs text-gray-500">📅 Age: {stats.age}</p>

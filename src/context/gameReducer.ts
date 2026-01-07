@@ -11,6 +11,7 @@ export type GameActionType =
   | { type: 'ADVANCE_WEEK' }
   | { type: 'GAME_OVER'; payload: GameOver }
   | { type: 'RESET_GAME' }
+  | { type: 'RESTORE_STATE'; payload: GameState }
   | { type: 'ADD_LOG'; payload: LogEntry }
   | { type: 'PROMOTE'; payload: { newJob: Job } }
   | { type: 'CLEAR_PENDING_INTERVIEW' }
@@ -21,7 +22,7 @@ export interface GameState {
   stats: GameStats;
   eventLog: LogEntry[];
   gameOver: GameOver | null;
-  pendingYearEndInterview?: Job; // Job to interview for at year-end
+  pendingYearEndInterview?: Job;
 }
 
 export function createInitialState(): GameState {
@@ -560,6 +561,10 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
       return createInitialState();
     }
 
+    case 'RESTORE_STATE': {
+      return action.payload;
+    }
+
     case 'CLEAR_PENDING_INTERVIEW': {
       return {
         ...state,
@@ -577,7 +582,6 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
           jobChanges: (state.stats.jobChanges ?? 0) + 1,
         };
 
-        // Check for game over (victory) after promotion
         const gameOver = checkGameOver(newStats);
         if (gameOver) {
           return {
@@ -619,7 +623,6 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
           ],
         };
       } else {
-        // Failed interview - apply stress penalty, stay in current job
         const newStats = applyStatChanges(state.stats, { stress: 10 });
 
         return {

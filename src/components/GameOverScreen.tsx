@@ -6,12 +6,12 @@ import { useGame } from '@/context/GameContext';
 import { getPlayerTags } from '@/logic/tags';
 
 export function GameOverScreen() {
-  const { state, dispatch } = useGame();
+  const { state, restartGame } = useGame();
 
   if (!state.gameOver) return null;
 
-  const handleRestart = () => {
-    dispatch({ type: 'RESET_GAME' });
+  const handleRestart = async () => {
+    await restartGame();
   };
 
   const { reason, finalStats, message, isEasterEggWin } = state.gameOver;

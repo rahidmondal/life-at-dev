@@ -1,23 +1,44 @@
 'use client';
 
 import HowToPlayModal from '@/components/HowToPlayModal';
+import { RestartConfirmModal } from '@/components/RestartConfirmModal';
 import StartingPathModal from '@/components/StartingPathModal';
 import { useGame } from '@/context/GameContext';
 import Image from 'next/image';
 import { useState } from 'react';
 
 export function StartScreen() {
-  const { dispatch } = useGame();
+  const { dispatch, hasSavedGame, isStorageReady, resumeGame, restartGame } = useGame();
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showPathSelection, setShowPathSelection] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
   const handleStartGame = () => {
+    sessionStorage.removeItem('on-home-screen');
     setShowPathSelection(true);
   };
 
   const handlePathSelect = (path: 'student' | 'student-easy' | 'self-taught') => {
     dispatch({ type: 'START_GAME', payload: { path } });
     setShowPathSelection(false);
+  };
+
+  const handleResume = async () => {
+    sessionStorage.removeItem('on-home-screen');
+    await resumeGame();
+  };
+
+  const handleRestartClick = () => {
+    setShowRestartConfirm(true);
+  };
+
+  const handleRestartConfirm = async () => {
+    setShowRestartConfirm(false);
+    await restartGame();
+  };
+
+  const handleRestartCancel = () => {
+    setShowRestartConfirm(false);
   };
 
   return (
@@ -68,13 +89,37 @@ export function StartScreen() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
-            <button
-              onClick={handleStartGame}
-              className="group relative min-h-11 overflow-hidden rounded-lg bg-emerald-500 px-8 py-3 font-mono text-base font-bold text-black transition-all hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/50 sm:px-12 sm:py-4 sm:text-lg lg:text-xl"
-            >
-              <span className="relative z-10 flex items-center justify-center gap-2">▶ Start Game</span>
-              <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-            </button>
+            {isStorageReady && hasSavedGame ? (
+              <>
+                {/* Resume Game - Primary */}
+                <button
+                  onClick={handleResume}
+                  className="group relative min-h-11 overflow-hidden rounded-lg bg-emerald-500 px-8 py-3 font-mono text-base font-bold text-black transition-all hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/50 sm:px-12 sm:py-4 sm:text-lg lg:text-xl"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">▶ Resume Game</span>
+                  <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                </button>
+
+                {/* Restart Game - Secondary */}
+                <button
+                  onClick={handleRestartClick}
+                  className="min-h-11 rounded-lg border-2 border-red-400 bg-red-400/10 px-6 py-3 font-mono text-base font-bold text-red-400 transition-all hover:bg-red-400 hover:text-black sm:px-8 sm:py-4 sm:text-lg"
+                >
+                  🔄 Restart Game
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Start Game - When no save exists */}
+                <button
+                  onClick={handleStartGame}
+                  className="group relative min-h-11 overflow-hidden rounded-lg bg-emerald-500 px-8 py-3 font-mono text-base font-bold text-black transition-all hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/50 sm:px-12 sm:py-4 sm:text-lg lg:text-xl"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">▶ Start Game</span>
+                  <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                </button>
+              </>
+            )}
 
             <button
               onClick={() => {
@@ -97,6 +142,7 @@ export function StartScreen() {
         />
       )}
       {showPathSelection && <StartingPathModal onSelect={handlePathSelect} />}
+      {showRestartConfirm && <RestartConfirmModal onConfirm={handleRestartConfirm} onCancel={handleRestartCancel} />}
     </>
   );
 }

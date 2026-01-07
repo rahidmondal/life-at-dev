@@ -8,7 +8,16 @@ const __dirname = dirname(__filename);
 
 const eslintConfig = [
   {
-    ignores: ['node_modules/**', '.next/**', 'out/**', 'build/**', 'next-env.d.ts', '*.config.js', '*.config.mjs'],
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'build/**',
+      'next-env.d.ts',
+      '*.config.js',
+      '*.config.mjs',
+      'public/sw.js',
+    ],
   },
 
   ...tseslint.configs.strictTypeChecked,
