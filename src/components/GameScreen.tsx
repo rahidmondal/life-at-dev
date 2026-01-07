@@ -1,5 +1,6 @@
 'use client';
 
+import { useGame } from '@/context/GameContext';
 import Image from 'next/image';
 import { useState } from 'react';
 import { ActionsPanel } from './ActionsPanel';
@@ -9,6 +10,16 @@ import { StatsPanel } from './StatsPanel';
 
 export function GameScreen() {
   const [mobileTab, setMobileTab] = useState<'stats' | 'events' | 'tips'>('stats');
+  const { saveGameManually, isStorageReady } = useGame();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await saveGameManually();
+    setTimeout(() => {
+      setIsSaving(false);
+    }, 300);
+  };
 
   return (
     <div className="flex h-screen flex-col bg-black">
@@ -97,6 +108,22 @@ export function GameScreen() {
           {mobileTab === 'tips' && <ProTipsPanel />}
         </div>
       </div>
+
+      {/* Floating Save Button - Mobile & Tablet Only */}
+      {isStorageReady && (
+        <button
+          onClick={handleSave}
+          disabled={isSaving}
+          className={`fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full border-2 font-mono text-2xl shadow-lg backdrop-blur-sm transition-all lg:hidden ${
+            isSaving
+              ? 'animate-pulse border-emerald-400 bg-emerald-500 text-black'
+              : 'border-emerald-500 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-black active:scale-95'
+          }`}
+          aria-label="Save Game"
+        >
+          💾
+        </button>
+      )}
     </div>
   );
 }

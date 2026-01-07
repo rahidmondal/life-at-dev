@@ -1,19 +1,224 @@
 'use client';
 
-import React, { createContext, ReactNode, useContext, useReducer } from 'react';
+import { clearSave, hasSave, isStorageAvailable, loadGame, saveGame } from '@/storage/gameStorage';
+import React, { createContext, ReactNode, useContext, useEffect, useReducer, useRef, useState } from 'react';
 import { createInitialState, GameActionType, gameReducer, GameState } from './gameReducer';
 
 interface GameContextType {
   state: GameState;
   dispatch: React.Dispatch<GameActionType>;
+  hasSavedGame: boolean;
+  isStorageReady: boolean;
+  saveGameManually: () => Promise<void>;
+  resumeGame: () => Promise<void>;
+  restartGame: () => Promise<void>;
+  addToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, createInitialState());
+  const [hasSavedGame, setHasSavedGame] = useState(false);
+  const [isStorageReady, setIsStorageReady] = useState(false);
+  const [toasts, setToasts] = useState<{ id: string; message: string; type?: 'success' | 'error' | 'info' }[]>([]);
+  const lastActionRef = useRef<string | null>(null);
+  const isSavingRef = useRef(false);
 
-  return <GameContext.Provider value={{ state, dispatch }}>{children}</GameContext.Provider>;
+  // Check for saved game on mount
+  useEffect(() => {
+    const checkSave = async () => {
+      if (!isStorageAvailable()) {
+        setIsStorageReady(true);
+        setHasSavedGame(false);
+        return;
+      }
+
+      try {
+        const saveExists = await hasSave();
+        setHasSavedGame(saveExists);
+        setIsStorageReady(true);
+      } catch (error) {
+        console.error('Storage check failed:', error instanceof Error ? error.message : 'Unknown error');
+        setIsStorageReady(true);
+        setHasSavedGame(false);
+      }
+    };
+
+    void checkSave();
+  }, []);
+
+  // Autosave on specific actions
+  useEffect(() => {
+    const performAutosave = async () => {
+      if (!isStorageAvailable() || isSavingRef.current) return;
+
+      const shouldAutosave =
+        lastActionRef.current === 'PERFORM_ACTION' ||
+        lastActionRef.current === 'YEAR_END_REVIEW' ||
+        lastActionRef.current === 'GAME_OVER';
+
+      if (shouldAutosave && state.phase !== 'start') {
+        isSavingRef.current = true;
+        try {
+          await saveGame(state, true);
+          setHasSavedGame(true);
+        } catch (error) {
+          console.error('Autosave failed:', error instanceof Error ? error.message : 'Unknown error');
+        } finally {
+          isSavingRef.current = false;
+        }
+      }
+    };
+
+    void performAutosave();
+  }, [state]);
+
+  // Manual save function
+  const saveGameManually = async () => {
+    if (!isStorageAvailable()) {
+      addToast('Save unavailable', 'error');
+      return;
+    }
+
+    if (state.phase === 'start') {
+      addToast('No game to save', 'info');
+      return;
+    }
+
+    try {
+      await saveGame(state, false);
+      setHasSavedGame(true);
+      addToast('Game Saved!', 'success');
+    } catch (error) {
+      console.error('Manual save failed:', error instanceof Error ? error.message : 'Unknown error');
+      addToast('Save failed', 'error');
+    }
+  };
+
+  // Resume game function
+  const resumeGame = async () => {
+    if (!isStorageAvailable()) {
+      addToast('Load unavailable', 'error');
+      return;
+    }
+
+    try {
+      const savedState: GameState | null = await loadGame();
+      if (savedState) {
+        dispatch({ type: 'RESTORE_STATE', payload: savedState });
+        addToast('Game Resumed!', 'success');
+      } else {
+        addToast('No save found', 'error');
+        setHasSavedGame(false);
+      }
+    } catch (error) {
+      console.error('Resume failed:', error instanceof Error ? error.message : 'Unknown error');
+      addToast('Load failed', 'error');
+    }
+  };
+
+  // Restart game function
+  const restartGame = async () => {
+    try {
+      if (isStorageAvailable()) {
+        await clearSave();
+      }
+      setHasSavedGame(false);
+      dispatch({ type: 'RESET_GAME' });
+    } catch (error) {
+      console.error('Restart failed:', error instanceof Error ? error.message : 'Unknown error');
+      setHasSavedGame(false);
+      dispatch({ type: 'RESET_GAME' });
+    }
+  };
+
+  const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = `toast-${String(Date.now())}-${String(Math.random())}`;
+    setToasts(prev => [...prev, { id, message, type }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  const wrappedDispatch = (action: GameActionType) => {
+    lastActionRef.current = action.type;
+    dispatch(action);
+  };
+
+  return (
+    <GameContext.Provider
+      value={{
+        state,
+        dispatch: wrappedDispatch,
+        hasSavedGame,
+        isStorageReady,
+        saveGameManually,
+        resumeGame,
+        restartGame,
+        addToast,
+      }}
+    >
+      {children}
+      {/* Toast Container */}
+      {toasts.map(toast => (
+        <Toast
+          key={toast.id}
+          {...toast}
+          onClose={() => {
+            removeToast(toast.id);
+          }}
+        />
+      ))}
+    </GameContext.Provider>
+  );
+}
+
+function Toast({
+  message,
+  type = 'success',
+  onClose,
+}: {
+  message: string;
+  type?: 'success' | 'error' | 'info';
+  onClose: () => void;
+}) {
+  const [isExiting, setIsExiting] = useState(false);
+
+  useEffect(() => {
+    const exitTimer = setTimeout(() => {
+      setIsExiting(true);
+    }, 1700);
+    const closeTimer = setTimeout(onClose, 2000);
+    return () => {
+      clearTimeout(exitTimer);
+      clearTimeout(closeTimer);
+    };
+  }, [onClose]);
+
+  const styles = {
+    success: 'bg-emerald-500/90 text-black border-emerald-400',
+    error: 'bg-red-500/90 text-white border-red-400',
+    info: 'bg-cyan-500/90 text-black border-cyan-400',
+  };
+
+  const icons = {
+    success: '💾',
+    error: '❌',
+    info: 'ℹ️',
+  };
+
+  return (
+    <div
+      className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-lg border-2 px-4 py-3 font-mono text-sm font-bold shadow-lg backdrop-blur-sm transition-all duration-300 sm:bottom-6 sm:right-6 sm:px-6 sm:py-4 sm:text-base ${
+        styles[type]
+      } ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`}
+    >
+      <span className="text-lg sm:text-xl">{icons[type]}</span>
+      <span>{message}</span>
+    </div>
+  );
 }
 
 export function useGame() {
