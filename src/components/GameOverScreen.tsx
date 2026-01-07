@@ -1,29 +1,17 @@
 'use client';
 
 import LifeSummary from '@/components/LifeSummary';
-import { RestartConfirmModal } from '@/components/RestartConfirmModal';
 import { ScoreCard } from '@/components/ScoreCard';
 import { useGame } from '@/context/GameContext';
 import { getPlayerTags } from '@/logic/tags';
-import { useState } from 'react';
 
 export function GameOverScreen() {
   const { state, restartGame } = useGame();
-  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
   if (!state.gameOver) return null;
 
-  const handleRestartClick = () => {
-    setShowRestartConfirm(true);
-  };
-
-  const handleRestartConfirm = async () => {
-    setShowRestartConfirm(false);
+  const handleRestart = async () => {
     await restartGame();
-  };
-
-  const handleRestartCancel = () => {
-    setShowRestartConfirm(false);
   };
 
   const { reason, finalStats, message, isEasterEggWin } = state.gameOver;
@@ -179,7 +167,7 @@ export function GameOverScreen() {
         {/* Actions */}
         <div className="space-y-4">
           <button
-            onClick={handleRestartClick}
+            onClick={handleRestart}
             className="group relative overflow-hidden rounded-lg bg-emerald-500 px-12 py-4 font-mono text-xl font-bold text-black transition-all hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/50"
           >
             <span className="relative z-10">▶ Play Again</span>
@@ -196,9 +184,6 @@ export function GameOverScreen() {
           */}
         </div>
       </div>
-
-      {/* Restart Confirmation Modal */}
-      {showRestartConfirm && <RestartConfirmModal onConfirm={handleRestartConfirm} onCancel={handleRestartCancel} />}
     </div>
   );
 }

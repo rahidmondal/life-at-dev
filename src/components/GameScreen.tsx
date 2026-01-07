@@ -1,5 +1,6 @@
 'use client';
 
+import { LeaveGameModal } from '@/components/LeaveGameModal';
 import { useGame } from '@/context/GameContext';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -10,8 +11,9 @@ import { StatsPanel } from './StatsPanel';
 
 export function GameScreen() {
   const [mobileTab, setMobileTab] = useState<'stats' | 'events' | 'tips'>('stats');
-  const { saveGameManually, isStorageReady } = useGame();
+  const { saveGameManually, isStorageReady, goToHomeScreen } = useGame();
   const [isSaving, setIsSaving] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -21,11 +23,28 @@ export function GameScreen() {
     }, 300);
   };
 
+  const handleLogoClick = () => {
+    setShowLeaveModal(true);
+  };
+
+  const handleGoHome = () => {
+    setShowLeaveModal(false);
+    goToHomeScreen();
+  };
+
+  const handleCancelLeave = () => {
+    setShowLeaveModal(false);
+  };
+
   return (
     <div className="flex h-screen flex-col bg-black">
       {/* Header */}
       <header className="flex items-center justify-between border-b border-gray-800 bg-black px-3 py-3 sm:px-4 sm:py-4 lg:px-6">
-        <div className="flex items-center gap-2 sm:gap-4">
+        <button
+          onClick={handleLogoClick}
+          className="flex items-center gap-2 transition-opacity hover:opacity-80 active:opacity-60 sm:gap-4"
+          aria-label="Go to home screen"
+        >
           <Image
             src="/logo-sm.png"
             alt="Life @ Dev"
@@ -37,7 +56,7 @@ export function GameScreen() {
             <h1 className="font-mono text-lg font-bold text-emerald-400 sm:text-xl lg:text-2xl">Life@Dev</h1>
             <p className="hidden font-mono text-xs text-gray-400 sm:block">Survive the grind. Climb the ladder.</p>
           </div>
-        </div>
+        </button>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -124,6 +143,9 @@ export function GameScreen() {
           💾
         </button>
       )}
+
+      {/* Leave Game Modal */}
+      {showLeaveModal && <LeaveGameModal onGoHome={handleGoHome} onCancel={handleCancelLeave} />}
     </div>
   );
 }

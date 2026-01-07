@@ -14,6 +14,7 @@ export function StartScreen() {
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
   const handleStartGame = () => {
+    sessionStorage.removeItem('on-home-screen');
     setShowPathSelection(true);
   };
 
@@ -23,6 +24,7 @@ export function StartScreen() {
   };
 
   const handleResume = async () => {
+    sessionStorage.removeItem('on-home-screen');
     await resumeGame();
   };
 

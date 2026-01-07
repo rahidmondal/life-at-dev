@@ -12,6 +12,7 @@ interface GameContextType {
   saveGameManually: () => Promise<void>;
   resumeGame: () => Promise<void>;
   restartGame: () => Promise<void>;
+  goToHomeScreen: () => void;
   addToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
@@ -25,7 +26,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const lastActionRef = useRef<string | null>(null);
   const isSavingRef = useRef(false);
 
-  // Check for saved game on mount and auto-restore
+  // Check for saved game on mount and auto-restore only on refresh
   useEffect(() => {
     const checkSave = async () => {
       if (!isStorageAvailable()) {
@@ -36,11 +37,28 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
       try {
         const savedState: GameState | null = await loadGame();
+
         if (savedState) {
           setHasSavedGame(true);
-          // Auto-restore saved state on mount (handles refresh)
-          dispatch({ type: 'RESTORE_STATE', payload: savedState });
+
+          const isOnHomeScreen = sessionStorage.getItem('on-home-screen') === 'true';
+
+          const isRefresh = sessionStorage.getItem('life-dev-session') === 'active';
+
+          sessionStorage.setItem('life-dev-session', 'active');
+
+          if (isOnHomeScreen) {
+            setIsStorageReady(true);
+            return;
+          }
+
+          if (isRefresh) {
+            dispatch({ type: 'RESTORE_STATE', payload: savedState });
+          }
+        } else {
+          setHasSavedGame(false);
         }
+
         setIsStorageReady(true);
       } catch (error) {
         console.error('Storage check failed:', error instanceof Error ? error.message : 'Unknown error');
@@ -133,6 +151,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Navigate to home screen (preserves save)
+  const goToHomeScreen = () => {
+    sessionStorage.setItem('on-home-screen', 'true');
+    dispatch({ type: 'RESET_GAME' });
+  };
+
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     const id = `toast-${String(Date.now())}-${String(Math.random())}`;
     setToasts(prev => [...prev, { id, message, type }]);
@@ -157,6 +181,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         saveGameManually,
         resumeGame,
         restartGame,
+        goToHomeScreen,
         addToast,
       }}
     >
