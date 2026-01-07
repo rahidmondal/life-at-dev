@@ -1,6 +1,6 @@
 'use client';
 
-import { clearSave, hasSave, isStorageAvailable, loadGame, saveGame } from '@/storage/gameStorage';
+import { clearSave, isStorageAvailable, loadGame, saveGame } from '@/storage/gameStorage';
 import React, { createContext, ReactNode, useContext, useEffect, useReducer, useRef, useState } from 'react';
 import { createInitialState, GameActionType, gameReducer, GameState } from './gameReducer';
 
@@ -25,7 +25,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const lastActionRef = useRef<string | null>(null);
   const isSavingRef = useRef(false);
 
-  // Check for saved game on mount
+  // Check for saved game on mount and auto-restore
   useEffect(() => {
     const checkSave = async () => {
       if (!isStorageAvailable()) {
@@ -35,8 +35,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const saveExists = await hasSave();
-        setHasSavedGame(saveExists);
+        const savedState: GameState | null = await loadGame();
+        if (savedState) {
+          setHasSavedGame(true);
+          // Auto-restore saved state on mount (handles refresh)
+          dispatch({ type: 'RESTORE_STATE', payload: savedState });
+        }
         setIsStorageReady(true);
       } catch (error) {
         console.error('Storage check failed:', error instanceof Error ? error.message : 'Unknown error');
@@ -48,15 +52,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     void checkSave();
   }, []);
 
-  // Autosave on specific actions
   useEffect(() => {
     const performAutosave = async () => {
       if (!isStorageAvailable() || isSavingRef.current) return;
 
-      const shouldAutosave =
-        lastActionRef.current === 'PERFORM_ACTION' ||
-        lastActionRef.current === 'YEAR_END_REVIEW' ||
-        lastActionRef.current === 'GAME_OVER';
+      const shouldAutosave = lastActionRef.current === 'YEAR_END_REVIEW' || lastActionRef.current === 'GAME_OVER';
 
       if (shouldAutosave && state.phase !== 'start') {
         isSavingRef.current = true;
