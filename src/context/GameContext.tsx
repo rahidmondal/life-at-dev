@@ -14,6 +14,8 @@ interface GameContextType {
   restartGame: () => Promise<void>;
   goToHomeScreen: () => void;
   addToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  userApiKey: string | null;
+  setUserApiKey: (key: string | null) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -23,6 +25,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [hasSavedGame, setHasSavedGame] = useState(false);
   const [isStorageReady, setIsStorageReady] = useState(false);
   const [toasts, setToasts] = useState<{ id: string; message: string; type?: 'success' | 'error' | 'info' }[]>([]);
+  const [userApiKey, setUserApiKeyState] = useState<string | null>(() => {
+    // Initialize from sessionStorage (survives refresh but not browser close)
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('user-gemini-api-key');
+    }
+    return null;
+  });
   const lastActionRef = useRef<string | null>(null);
   const isSavingRef = useRef(false);
   const lastSavedPhaseRef = useRef<string | null>(null);
@@ -177,6 +186,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setToasts(prev => [...prev, { id, message, type }]);
   };
 
+  const setUserApiKey = (key: string | null) => {
+    setUserApiKeyState(key);
+    if (typeof window !== 'undefined') {
+      if (key) {
+        sessionStorage.setItem('user-gemini-api-key', key);
+      } else {
+        sessionStorage.removeItem('user-gemini-api-key');
+      }
+    }
+  };
+
   const removeToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
@@ -198,6 +218,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         restartGame,
         goToHomeScreen,
         addToast,
+        userApiKey,
+        setUserApiKey,
       }}
     >
       {children}
