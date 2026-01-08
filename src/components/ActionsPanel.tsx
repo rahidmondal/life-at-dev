@@ -17,7 +17,7 @@ type Tab = 'work' | 'shop' | 'invest';
 
 export function ActionsPanel() {
   const { state, dispatch } = useGame();
-  const { stats, pendingYearEndInterview } = state;
+  const { stats, pendingYearEndInterview, pendingJobSelection } = state;
   const [activeTab, setActiveTab] = useState<Tab>('work');
   const [showJobSelectionModal, setShowJobSelectionModal] = useState(false);
   const [availableJobsList, setAvailableJobsList] = useState<Job[]>([]);
@@ -29,6 +29,14 @@ export function ActionsPanel() {
 
   const [showRejectionPopup, setShowRejectionPopup] = useState(false);
   const [rejectionReasons, setRejectionReasons] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (pendingJobSelection && pendingJobSelection.length > 0) {
+      setAvailableJobsList(pendingJobSelection);
+      setIsGraduation(false);
+      setShowJobSelectionModal(true);
+    }
+  }, [pendingJobSelection]);
 
   useEffect(() => {
     if (pendingYearEndInterview && !showInterviewModal) {
@@ -53,6 +61,7 @@ export function ActionsPanel() {
 
       if (availableJobs.length === 0) {
         executeAction(action, stats, dispatch);
+        window.alert('No jobs found matching your current skills. Keep building your coding and reputation!');
         return;
       }
 
@@ -136,6 +145,10 @@ export function ActionsPanel() {
   };
 
   const handleJobSelect = (job: Job) => {
+    if (pendingJobSelection) {
+      dispatch({ type: 'CLEAR_PENDING_JOB_SELECTION' });
+    }
+
     setShowJobSelectionModal(false);
 
     if (!requiresInterview(job)) {
@@ -214,6 +227,9 @@ export function ActionsPanel() {
 
   const handleJobSelectionCancel = () => {
     setShowJobSelectionModal(false);
+    if (pendingJobSelection) {
+      dispatch({ type: 'CLEAR_PENDING_JOB_SELECTION' });
+    }
   };
 
   return (

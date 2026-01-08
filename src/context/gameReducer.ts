@@ -15,6 +15,7 @@ export type GameActionType =
   | { type: 'ADD_LOG'; payload: LogEntry }
   | { type: 'PROMOTE'; payload: { newJob: Job } }
   | { type: 'CLEAR_PENDING_INTERVIEW' }
+  | { type: 'CLEAR_PENDING_JOB_SELECTION' }
   | { type: 'YEAR_END_INTERVIEW_RESULT'; payload: { passed: boolean; job: Job } };
 
 export interface GameState {
@@ -23,6 +24,7 @@ export interface GameState {
   eventLog: LogEntry[];
   gameOver: GameOver | null;
   pendingYearEndInterview?: Job;
+  pendingJobSelection: Job[] | undefined;
 }
 
 export function createInitialState(): GameState {
@@ -47,6 +49,7 @@ export function createInitialState(): GameState {
     eventLog: [],
     gameOver: null,
     pendingYearEndInterview: undefined,
+    pendingJobSelection: undefined,
   };
 }
 
@@ -354,6 +357,7 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
           }
         }
       } else if (availablePromotions.length > 0 && (isSeniorOrAbove || availablePromotions.length > 1)) {
+        // Multiple promotions or senior+ needs modal choice
         logMessages.push({
           id: generateLogId(),
           timestamp: Date.now(),
@@ -569,6 +573,13 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
       return {
         ...state,
         pendingYearEndInterview: undefined,
+      };
+    }
+
+    case 'CLEAR_PENDING_JOB_SELECTION': {
+      return {
+        ...state,
+        pendingJobSelection: undefined,
       };
     }
 
