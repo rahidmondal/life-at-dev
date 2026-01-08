@@ -219,3 +219,69 @@ export function generateOfflineInterviewSet(path: CareerPath, level: number, cou
 
   return questions;
 }
+
+/**
+ * Summary Templates for Offline Fallback
+ * Three templates based on score ranges
+ */
+const SUMMARY_TEMPLATES = {
+  success: [
+    'You started as a humble {{path}} developer and ascended to level {{level}}.',
+    'Through {{score}} weeks of dedication, you built a legendary career.',
+    'Your code was clean, your deploys were smooth, and your stakeholders were happy.',
+    'You achieved what many only dream of: work-life balance and financial freedom.',
+    'The terminal may have closed, but your legacy lives on in production.',
+    'GG. You beat the game of life.',
+  ],
+  average: [
+    'You walked the path of a {{path}} developer, reaching level {{level}}.',
+    'After {{score}} weeks, you survived the grind—barely.',
+    'Some bugs were fixed, some features shipped, some deadlines missed.',
+    'You were neither a hero nor a villain, just another dev in the machine.',
+    "The game ended, but you're left wondering: what if you'd made different choices?",
+    'Press F to pay respects to your mediocre career.',
+  ],
+  burnout: [
+    'You tried to become a {{path}} legend, but made it only to level {{level}}.',
+    'After {{score}} weeks of endless sprints and crunch time, you broke.',
+    'The pull requests piled up. The tech debt consumed everything. The stress won.',
+    'You learned the hard way: no job is worth your mental health.',
+    'The terminal flickers one last time before going dark.',
+    'Game Over. Remember to take breaks, touch grass, and log off sometimes.',
+  ],
+};
+
+/**
+ * Generates an offline career summary when AI APIs fail
+ * TIER 3 fallback for the summary endpoint
+ *
+ * @param careerPath - The player's career path
+ * @param finalLevel - The final level achieved (1-4)
+ * @param totalScore - Total weeks survived (used for scoring)
+ * @returns A formatted narrative array
+ */
+export function generateOfflineSummary(careerPath: string, finalLevel: number, totalScore: number): string[] {
+  // Determine which template to use based on score
+  let template: string[];
+
+  if (totalScore >= 100) {
+    // High score = success
+    template = [...SUMMARY_TEMPLATES.success];
+  } else if (totalScore >= 50) {
+    // Mid score = average
+    template = [...SUMMARY_TEMPLATES.average];
+  } else {
+    // Low score = burnout
+    template = [...SUMMARY_TEMPLATES.burnout];
+  }
+
+  // Fill placeholders
+  const narrative = template.map(line =>
+    line
+      .replace(/\{\{path\}\}/g, careerPath)
+      .replace(/\{\{level\}\}/g, String(finalLevel))
+      .replace(/\{\{score\}\}/g, String(totalScore)),
+  );
+
+  return narrative;
+}
