@@ -87,15 +87,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const performAutosave = async () => {
       if (!isStorageAvailable() || isSavingRef.current) return;
 
-      const shouldAutosavePhases = ['year-end', 'game-over'];
-      const isAutosavePhase = shouldAutosavePhases.includes(state.phase);
+      const isGameOverSave = state.phase === 'gameover';
+      const isYearEndSave = lastActionRef.current === 'YEAR_END_REVIEW';
+      const saveMarker = isGameOverSave ? 'gameover' : isYearEndSave ? 'year-end' : null;
 
-      if (isAutosavePhase && lastSavedPhaseRef.current !== state.phase && state.phase !== 'start') {
+      if (saveMarker && lastSavedPhaseRef.current !== saveMarker && state.phase !== 'start') {
         isSavingRef.current = true;
-        lastSavedPhaseRef.current = state.phase;
+        lastSavedPhaseRef.current = saveMarker;
         try {
           await saveGame(state, true);
           setHasSavedGame(true);
+          const label = saveMarker === 'gameover' ? 'GAME OVER' : 'Year End';
+          dispatch({
+            type: 'ADD_LOG',
+            payload: {
+              id: `autosave-${String(Date.now())}`,
+              timestamp: Date.now(),
+              message: `> 💾 Autosaved (${label}).`,
+              type: 'info',
+            },
+          });
         } catch (error) {
           console.error('Autosave failed:', error instanceof Error ? error.message : 'Unknown error');
         } finally {
