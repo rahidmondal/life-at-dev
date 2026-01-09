@@ -23,7 +23,7 @@ export function generateContextHash(role: string, level: number, health: number,
   const eventBucket = Math.floor(eventCount / 5) * 5;
 
   // Create a deterministic hash that groups similar game states
-  return `${role}-lvl${level}-hp${healthBucket}-evt${eventBucket}`;
+  return `${role}-lvl${level.toString()}-hp${healthBucket.toString()}-evt${eventBucket.toString()}`;
 }
 
 /**
@@ -40,5 +40,5 @@ export function generateSummaryHash(path: string, level: number, score: number):
   const scoreBucket = Math.floor(score / 50) * 50;
 
   // Create deterministic hash for summary caching
-  return `summary-${path}-lvl${level}-score${scoreBucket}`;
+  return `summary-${path}-lvl${level.toString()}-score${scoreBucket.toString()}`;
 }

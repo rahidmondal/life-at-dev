@@ -1,22 +1,35 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
-import { Query } from 'node-appwrite';
 import { z } from 'zod';
+
+import { Query } from 'node-appwrite';
 
 import { createAdminClient } from '@/lib/server/appwrite';
 import { generateSummaryHash } from '@/lib/utils';
-import { generateOfflineSummary } from '@/logic/madLibs';
+import { generateOfflineSummary } from '@/logic/fallbackEngine';
 import { GameOver, GameStats } from '@/types/game';
 
-// Zod schema for summary validation
 const SummaryResponseSchema = z.object({
   summary: z.string().min(10),
 });
 
-interface SummaryRequestBody {
-  stats: GameStats;
-  gameOver: GameOver;
-}
+const SummaryRequestSchema = z.object({
+  stats: z.object({
+    currentJob: z.object({
+      title: z.string(),
+      path: z.string(),
+      level: z.number(),
+    }),
+    weeks: z.number(),
+    energy: z.number(),
+    stress: z.number(),
+    money: z.number(),
+    totalEarned: z.number(),
+  }),
+  gameOver: z.object({
+    reason: z.string(),
+  }),
+});
 
 /**
  * TIER 3: Offline Fallback (Mad-Libs Summary)
@@ -46,16 +59,15 @@ async function generateSummaryFromAI(
 
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  // Construct a concise prompt
   const prompt = `You are a retro game narrator for "Life at Dev", a terminal-style career simulation game.
 
 Write a short, witty career retrospective for a ${stats.currentJob.path} developer who reached level ${String(stats.currentJob.level)}.
 
 Game Stats:
 - Role: ${stats.currentJob.title}
-- Weeks Survived: ${stats.weeks}
-- Final Energy: ${stats.energy}%
-- Final Stress: ${stats.stress}%
+- Weeks Survived: ${String(stats.weeks)}
+- Final Energy: ${String(stats.energy)}%
+- Final Stress: ${String(stats.stress)}%
 - Money: $${stats.money.toLocaleString()}
 - Total Earned: $${stats.totalEarned.toLocaleString()}
 - Outcome: ${gameOver.reason}
@@ -83,7 +95,6 @@ You MUST respond with valid JSON matching this schema:
       },
     });
 
-    // Call API with timeout
     const result = await Promise.race([
       model.generateContent(prompt),
       new Promise<never>((_, reject) => {
@@ -96,19 +107,16 @@ You MUST respond with valid JSON matching this schema:
     const response = result.response;
     const text = response.text();
 
-    // Parse and validate with Zod
     const parsed = JSON.parse(text) as unknown;
     const validated = SummaryResponseSchema.parse(parsed);
 
     console.info('✅ [TIER 2] Gemini API success');
 
-    // Cache the result
     console.info('💾 [TIER 2] Caching summary...');
     cacheSummaryToAppwrite(contextHash, validated.summary).catch((err: unknown) => {
       console.error('⚠️ Failed to cache summary:', err);
     });
 
-    // Convert to array format (split by newlines)
     const narrative = validated.summary.split('\n').filter(line => line.trim().length > 0);
 
     return narrative.join('\n');
@@ -133,50 +141,63 @@ async function cacheSummaryToAppwrite(contextHash: string, summaryText: string):
   }
 
   try {
-    const { databases } = createAdminClient();
+    const { tablesDB } = createAdminClient();
 
-    await databases.createDocument({
+    const existing = await tablesDB.listRows({
       databaseId,
-      collectionId: 'ai_cache_summaries',
-      documentId: 'unique()',
-      data: {
-        context_hash: contextHash,
-        summary_text: summaryText,
-        usage_count: 1,
-      },
+      tableId: 'ai_cache_summaries',
+      queries: [Query.equal('context_hash', contextHash)],
     });
 
-    console.info('💾 [CACHE] Summary stored to Appwrite');
-  } catch (error) {
-    // Ignore duplicate key errors (race condition)
-    if (error && typeof error === 'object' && 'code' in error && error.code === 409) {
-      console.info('💾 [CACHE] Summary already exists (race condition)');
+    if (existing.total > 0 && existing.rows.length > 0) {
+      const result = await tablesDB.updateRow({
+        databaseId,
+        tableId: 'ai_cache_summaries',
+        rowId: existing.rows[0].$id,
+        data: {
+          usage_count: (existing.rows[0].usage_count as number) + 1,
+        },
+      });
+      console.info(`💾 [CACHE] Updated existing summary (ID: ${result.$id})`);
     } else {
-      throw error;
+      const result = await tablesDB.createRow({
+        databaseId,
+        tableId: 'ai_cache_summaries',
+        rowId: 'unique()',
+        data: {
+          context_hash: contextHash,
+          summary_text: summaryText,
+          usage_count: 1,
+        },
+        permissions: [],
+      });
+      console.info(`💾 [CACHE] Created new summary (ID: ${result.$id}, hash: ${contextHash})`);
     }
+  } catch (error) {
+    console.error('⚠️ [CACHE] Failed to store summary:', error);
   }
 }
 
 /**
  * Async increment usage count
  */
-async function incrementSummaryUsageCount(documentId: string): Promise<void> {
+async function incrementSummaryUsageCount(rowId: string): Promise<void> {
   const databaseId = process.env.APPWRITE_DATABASE_ID;
   if (!databaseId) return;
 
   try {
-    const { databases } = createAdminClient();
-    const doc = await databases.getDocument({
+    const { tablesDB } = createAdminClient();
+    const row = await tablesDB.getRow({
       databaseId,
-      collectionId: 'ai_cache_summaries',
-      documentId,
+      tableId: 'ai_cache_summaries',
+      rowId,
     });
 
-    const currentCount = typeof doc.usage_count === 'number' ? doc.usage_count : 1;
-    await databases.updateDocument({
+    const currentCount = typeof row.usage_count === 'number' ? row.usage_count : 1;
+    await tablesDB.updateRow({
       databaseId,
-      collectionId: 'ai_cache_summaries',
-      documentId,
+      tableId: 'ai_cache_summaries',
+      rowId,
       data: {
         usage_count: currentCount + 1,
       },
@@ -197,33 +218,32 @@ async function checkSummaryCache(contextHash: string): Promise<string | null> {
   }
 
   try {
-    console.info('🔍 [TIER 1] Checking Appwrite summary cache...');
-    const { databases } = createAdminClient();
+    console.info(`🔍 [TIER 1] Checking Appwrite summary cache for context_hash: ${contextHash}`);
+    const { tablesDB } = createAdminClient();
 
-    const response = await databases.listDocuments({
+    const response = await tablesDB.listRows({
       databaseId,
-      collectionId: 'ai_cache_summaries',
-      queries: [Query.equal('context_hash', contextHash), Query.limit(1)],
+      tableId: 'ai_cache_summaries',
+      queries: [Query.equal('context_hash', contextHash)],
     });
 
-    if (response.documents.length > 0) {
-      const doc = response.documents[0];
-      console.info('✅ [TIER 1] Cache HIT!');
-
-      const summaryText = doc.summary_text as string;
-
-      // Async increment usage count (don't await)
-      incrementSummaryUsageCount(doc.$id).catch(() => {
-        // Silently fail
-      });
-
-      return summaryText;
+    if (response.total === 0 || response.rows.length === 0) {
+      console.info(`❌ [TIER 1] Cache MISS - no rows found for context_hash: ${contextHash}`);
+      return null;
     }
 
-    console.info('❌ [TIER 1] Cache MISS');
-    return null;
+    const row = response.rows[0];
+    console.info(`✅ [TIER 1] Cache HIT! Found document ID: ${row.$id}`);
+    const summaryText = row.summary_text as string;
+
+    incrementSummaryUsageCount(row.$id).catch(() => {
+      console.error('⚠️ Failed to increment summary usage count');
+    });
+
+    return summaryText;
   } catch (error) {
-    console.error('⚠️ [TIER 1] Cache check failed:', error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.info(`❌ [TIER 1] Cache MISS - Error: ${errorMsg}`);
     return null;
   }
 }
@@ -233,42 +253,37 @@ async function checkSummaryCache(contextHash: string): Promise<string | null> {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Parse and validate input
-    const body = (await request.json()) as SummaryRequestBody;
-    const { stats, gameOver } = body;
-
-    // Runtime validation
-    if (!stats || typeof stats !== 'object' || !gameOver || typeof gameOver !== 'object') {
-      return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
+    const parseResult = SummaryRequestSchema.safeParse(await request.json());
+    if (!parseResult.success) {
+      return NextResponse.json({ error: 'Invalid request data', issues: parseResult.error.issues }, { status: 400 });
     }
 
-    if (!stats.currentJob?.path || !stats.currentJob.level) {
-      return NextResponse.json({ error: 'Invalid job data in stats' }, { status: 400 });
-    }
+    const { stats, gameOver } = parseResult.data;
 
-    // Generate context hash for cache lookup
-    const totalWeeks = stats.weeks || 0;
-    const contextHash = generateSummaryHash(stats.currentJob.path, stats.currentJob.level, totalWeeks);
+    const gameStats = stats as unknown as GameStats;
+    const gameOverData = gameOver as unknown as GameOver;
+
+    const totalWeeks = gameStats.weeks || 0;
+    const contextHash = generateSummaryHash(gameStats.currentJob.path, gameStats.currentJob.level, totalWeeks);
 
     console.info(`📊 Summary Context Hash: ${contextHash}`);
 
     // TIER 1: Check cache
     const cachedSummary = await checkSummaryCache(contextHash);
     if (cachedSummary) {
-      // Convert to array format if needed
       const narrative = cachedSummary.split('\n').filter(line => line.trim().length > 0);
       return NextResponse.json({ narrative, source: 'cache' });
     }
 
     // TIER 2: Try Gemini API
-    const aiSummary = await generateSummaryFromAI(stats, gameOver, contextHash);
+    const aiSummary = await generateSummaryFromAI(gameStats, gameOverData, contextHash);
     if (aiSummary) {
       const narrative = aiSummary.split('\n').filter(line => line.trim().length > 0);
       return NextResponse.json({ narrative, source: 'gemini' });
     }
 
     // TIER 3: Offline fallback
-    const fallbackNarrative = generateFallbackSummary(stats);
+    const fallbackNarrative = generateFallbackSummary(gameStats);
     return NextResponse.json({ narrative: fallbackNarrative, source: 'offline' });
   } catch (error) {
     console.error('❌ Summary API error:', error);

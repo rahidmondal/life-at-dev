@@ -5,10 +5,8 @@ import { z } from 'zod';
 
 import { createAdminClient } from '@/lib/server/appwrite';
 import { generateContextHash } from '@/lib/utils';
-import { generateOfflineInterviewSet } from '@/logic/madLibs';
-import { Job } from '@/types/game';
+import { generateOfflineInterviewSet } from '@/logic/fallbackEngine';
 
-// Zod schema for interview question validation
 const InterviewQuestionSchema = z.object({
   question: z.string(),
   options: z.array(z.string()).length(4),
@@ -17,6 +15,7 @@ const InterviewQuestionSchema = z.object({
 });
 
 const InterviewResponseSchema = z.array(InterviewQuestionSchema).length(3);
+const CareerPathSchema = z.enum(['corporate', 'ic', 'management', 'hustler', 'business', 'specialist']);
 
 interface InterviewQuestion {
   question: string;
@@ -25,15 +24,24 @@ interface InterviewQuestion {
   explanation: string;
 }
 
-interface RequestBody {
-  job: Job;
-  stats?: {
-    energy?: number;
-    eventCount?: number;
-  };
-}
+const JobInputSchema = z
+  .object({
+    title: z.string().min(1),
+    path: CareerPathSchema,
+    level: z.number().int().min(1).max(4),
+  })
+  .strict();
 
-// Difficulty mapping based on job level
+const BodySchema = z.object({
+  job: JobInputSchema,
+  stats: z
+    .object({
+      energy: z.number().optional(),
+      eventCount: z.number().optional(),
+    })
+    .optional(),
+});
+
 function getDifficultyLabel(level: number): string {
   switch (level) {
     case 1:
@@ -49,7 +57,6 @@ function getDifficultyLabel(level: number): string {
   }
 }
 
-// Path-specific context for better questions
 function getPathContext(path: string): string {
   switch (path) {
     case 'corporate':
@@ -73,7 +80,7 @@ function getPathContext(path: string): string {
  * TIER 3: Offline Fallback (Mad-Libs Engine)
  * Used when both cache and API fail
  */
-function generateFallbackQuestions(job: Job): InterviewQuestion[] {
+function generateFallbackQuestions(job: z.infer<typeof JobInputSchema>): InterviewQuestion[] {
   console.info('🔧 [TIER 3] Using offline Mad-Libs engine');
   return generateOfflineInterviewSet(job.path, job.level, 3);
 }
@@ -84,11 +91,10 @@ function generateFallbackQuestions(job: Job): InterviewQuestion[] {
  * @param userApiKey - Optional user-provided API key (BYOK)
  */
 async function generateQuestionsFromAI(
-  job: Job,
+  job: z.infer<typeof JobInputSchema>,
   contextHash: string,
   userApiKey?: string,
 ): Promise<InterviewQuestion[] | null> {
-  // Use user API key if provided, otherwise use server key
   const apiKey = userApiKey ?? process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -105,7 +111,6 @@ async function generateQuestionsFromAI(
   const difficulty = getDifficultyLabel(job.level);
   const context = getPathContext(job.path);
 
-  // Construct the prompt
   const prompt = `You are a technical interviewer for a tech company. Generate exactly 3 unique multiple-choice interview questions for a "${job.title}" position.
 
 Job Details:
@@ -146,7 +151,6 @@ You MUST respond with valid JSON array matching this schema:
   try {
     console.info('🤖 [TIER 2] Calling Gemini API...');
 
-    // Initialize model with JSON response mode
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash-lite',
       generationConfig: {
@@ -154,7 +158,6 @@ You MUST respond with valid JSON array matching this schema:
       },
     });
 
-    // Call API with timeout
     const result = await Promise.race([
       model.generateContent(prompt),
       new Promise<never>((_, reject) => {
@@ -167,13 +170,11 @@ You MUST respond with valid JSON array matching this schema:
     const response = result.response;
     const text = response.text();
 
-    // Parse and validate with Zod
     const parsed = JSON.parse(text) as unknown;
     const validated = InterviewResponseSchema.parse(parsed);
 
     console.info('✅ [TIER 2] Gemini API success');
 
-    // Only cache if using server API key (privacy: don't cache user key responses)
     if (!isUserKey) {
       console.info('💾 [TIER 2] Caching result...');
       cacheQuestionsToAppwrite(contextHash, validated, job.path).catch((err: unknown) => {
@@ -196,6 +197,7 @@ You MUST respond with valid JSON array matching this schema:
 
 /**
  * Async cache write to Appwrite
+ * Uses upsertRow with context_hash as rowId to prevent race conditions
  */
 async function cacheQuestionsToAppwrite(
   contextHash: string,
@@ -209,54 +211,65 @@ async function cacheQuestionsToAppwrite(
   }
 
   try {
-    const { databases } = createAdminClient();
+    const { tablesDB } = createAdminClient();
 
-    // Store as separate documents (one per question) or as a single document
-    // For simplicity, we'll store all 3 as a JSON string in a single doc
-    await databases.createDocument({
+    const existing = await tablesDB.listRows({
       databaseId,
-      collectionId: 'ai_cache_interviews',
-      documentId: 'unique()',
-      data: {
-        context_hash: contextHash,
-        question_text: questions.map(q => q.question).join(' | '),
-        options_json: JSON.stringify(questions),
-        role_tag: rolePath,
-        usage_count: 1,
-      },
+      tableId: 'ai_cache_interviews',
+      queries: [Query.equal('context_hash', contextHash)],
     });
 
-    console.info('💾 [CACHE] Stored to Appwrite');
-  } catch (error) {
-    // Ignore duplicate key errors (race condition)
-    if (error && typeof error === 'object' && 'code' in error && error.code === 409) {
-      console.info('💾 [CACHE] Already exists (race condition)');
+    if (existing.total > 0 && existing.rows.length > 0) {
+      const result = await tablesDB.updateRow({
+        databaseId,
+        tableId: 'ai_cache_interviews',
+        rowId: existing.rows[0].$id,
+        data: {
+          usage_count: (existing.rows[0].usage_count as number) + 1,
+        },
+      });
+      console.info(`💾 [CACHE] Updated existing interview (ID: ${result.$id})`);
     } else {
-      throw error;
+      const result = await tablesDB.createRow({
+        databaseId,
+        tableId: 'ai_cache_interviews',
+        rowId: 'unique()',
+        data: {
+          context_hash: contextHash,
+          question_text: questions.map(q => q.question).join(' | '),
+          options_json: JSON.stringify(questions),
+          role_tag: rolePath,
+          usage_count: 1,
+        },
+        permissions: [],
+      });
+      console.info(`💾 [CACHE] Created new interview (ID: ${result.$id}, hash: ${contextHash})`);
     }
+  } catch (error) {
+    console.error('⚠️ [CACHE] Failed to store:', error);
   }
 }
 
 /**
  * Async increment usage count
  */
-async function incrementUsageCount(documentId: string): Promise<void> {
+async function incrementUsageCount(rowId: string): Promise<void> {
   const databaseId = process.env.APPWRITE_DATABASE_ID;
   if (!databaseId) return;
 
   try {
-    const { databases } = createAdminClient();
-    const doc = await databases.getDocument({
+    const { tablesDB } = createAdminClient();
+    const row = await tablesDB.getRow({
       databaseId,
-      collectionId: 'ai_cache_interviews',
-      documentId,
+      tableId: 'ai_cache_interviews',
+      rowId,
     });
 
-    const currentCount = typeof doc.usage_count === 'number' ? doc.usage_count : 1;
-    await databases.updateDocument({
+    const currentCount = typeof row.usage_count === 'number' ? row.usage_count : 1;
+    await tablesDB.updateRow({
       databaseId,
-      collectionId: 'ai_cache_interviews',
-      documentId,
+      tableId: 'ai_cache_interviews',
+      rowId,
       data: {
         usage_count: currentCount + 1,
       },
@@ -277,34 +290,32 @@ async function checkCache(contextHash: string): Promise<InterviewQuestion[] | nu
   }
 
   try {
-    console.info('🔍 [TIER 1] Checking Appwrite cache...');
-    const { databases } = createAdminClient();
+    console.info(`🔍 [TIER 1] Checking Appwrite cache for context_hash: ${contextHash}`);
+    const { tablesDB } = createAdminClient();
 
-    const response = await databases.listDocuments({
+    const response = await tablesDB.listRows({
       databaseId,
-      collectionId: 'ai_cache_interviews',
-      queries: [Query.equal('context_hash', contextHash), Query.limit(1)],
+      tableId: 'ai_cache_interviews',
+      queries: [Query.equal('context_hash', contextHash)],
     });
 
-    if (response.documents.length > 0) {
-      const doc = response.documents[0];
-      console.info('✅ [TIER 1] Cache HIT!');
-
-      // Parse the cached questions
-      const questions = JSON.parse(doc.options_json as string) as InterviewQuestion[];
-
-      // Async increment usage count (don't await)
-      incrementUsageCount(doc.$id).catch(() => {
-        // Silently fail
-      });
-
-      return questions;
+    if (response.total === 0 || response.rows.length === 0) {
+      console.info(`❌ [TIER 1] Cache MISS - no rows found for context_hash: ${contextHash}`);
+      return null;
     }
 
-    console.info('❌ [TIER 1] Cache MISS');
-    return null;
+    const row = response.rows[0];
+    console.info(`✅ [TIER 1] Cache HIT! Found document ID: ${row.$id}`);
+    const questions = JSON.parse(row.options_json as string) as InterviewQuestion[];
+
+    incrementUsageCount(row.$id).catch(() => {
+      console.error('⚠️ Failed to increment usage count');
+    });
+
+    return questions;
   } catch (error) {
-    console.error('⚠️ [TIER 1] Cache check failed:', error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.info(`❌ [TIER 1] Cache MISS - Error: ${errorMsg}`);
     return null;
   }
 }
@@ -314,23 +325,19 @@ async function checkCache(contextHash: string): Promise<InterviewQuestion[] | nu
  */
 export async function POST(request: NextRequest) {
   try {
-    // Parse and validate input
-    const body = (await request.json()) as RequestBody;
-    const { job } = body;
-
-    // Runtime validation (JSON could be malformed)
-    if (!job || typeof job !== 'object' || !job.title || !job.path || !job.level) {
-      return NextResponse.json({ error: 'Invalid job data' }, { status: 400 });
+    const parseResult = BodySchema.safeParse(await request.json());
+    if (!parseResult.success) {
+      return NextResponse.json({ error: 'Invalid job data', issues: parseResult.error.issues }, { status: 400 });
     }
 
-    // Generate context hash for cache lookup
-    const energy = body.stats?.energy ?? 100;
-    const eventCount = body.stats?.eventCount ?? 0;
+    const { job, stats } = parseResult.data;
+
+    const energy = stats?.energy ?? 100;
+    const eventCount = stats?.eventCount ?? 0;
     const contextHash = generateContextHash(job.path, job.level, energy, eventCount);
 
     console.info(`📊 Context Hash: ${contextHash}`);
 
-    // Extract user API key from header (BYOK support)
     const userApiKey = request.headers.get('x-user-gemini-key') ?? undefined;
 
     // TIER 1: Check cache (skip if using user key for privacy)
@@ -349,13 +356,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ questions: aiQuestions, source: 'gemini' });
     }
 
-    // TIER 3: Fallback to offline generation
+    // TIER 3 : Offline Fallback (fallbackEngine Questions)
     const offlineQuestions = generateFallbackQuestions(job);
     return NextResponse.json({ questions: offlineQuestions, source: 'offline' });
   } catch (error) {
     console.error('❌ Fatal error in interview route:', error);
 
-    // Last resort: return generic error with fallback
     return NextResponse.json(
       {
         error: 'Service temporarily unavailable',
