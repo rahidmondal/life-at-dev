@@ -1,4 +1,4 @@
-const CACHE_NAME = 'life-dev-shell-v3';
+const CACHE_NAME = 'life-dev-shell-v4';
 
 const CORE_ASSETS = ['/', '/manifest.json', '/logo.png', '/offline.html'];
 
@@ -22,16 +22,27 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match('/offline.html');
+      }),
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cached => {
-      return (
-        cached ||
-        fetch(event.request).catch(() => {
-          if (event.request.mode === 'navigate') {
-            return caches.match('/offline.html');
-          }
-        })
-      );
+      if (cached) {
+        return cached;
+      }
+
+      return fetch(event.request).catch(() => {
+        return new Response('', {
+          status: 503,
+          statusText: 'Service Unavailable',
+        });
+      });
     }),
   );
 });
