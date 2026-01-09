@@ -1,6 +1,6 @@
 import { CareerPath } from '@/types/game';
 
-import { FILLERS, INTERVIEW_TEMPLATES, InterviewTemplate } from '@/data/madLibsTemplates';
+import { FILLERS, INTERVIEW_TEMPLATES, InterviewTemplate } from '@/data/fallbackEngineTemplates';
 
 /**
  * Mad-Libs Fallback Engine - Procedural Question Generator
