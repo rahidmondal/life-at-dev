@@ -29,11 +29,11 @@ function meetsJobRequirements(
   const reasons: string[] = [];
 
   if (coding < job.requirements.coding) {
-    reasons.push(`Need ${job.requirements.coding} coding skill (you have ${coding})`);
+    reasons.push(`Need ${String(job.requirements.coding)} coding skill (you have ${String(coding)})`);
   }
 
   if (reputation < job.requirements.reputation) {
-    reasons.push(`Need ${job.requirements.reputation} reputation (you have ${reputation})`);
+    reasons.push(`Need ${String(job.requirements.reputation)} reputation (you have ${String(reputation)})`);
   }
 
   if (job.requirements.money && money < job.requirements.money) {

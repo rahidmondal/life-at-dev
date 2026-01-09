@@ -123,10 +123,10 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          throw new Error(`API error: ${String(response.status)}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as { questions?: unknown; source?: string };
 
         if (isMounted && data.questions && Array.isArray(data.questions) && data.questions.length === 3) {
           setQuestions(data.questions as InterviewQuestion[]);
@@ -144,16 +144,14 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
           setQuestionSource('offline');
         }
       } finally {
-        if (messageInterval) {
-          clearInterval(messageInterval);
-        }
+        clearInterval(messageInterval);
         if (isMounted) {
           setIsLoading(false);
         }
       }
     };
 
-    fetchQuestions();
+    void fetchQuestions();
 
     return () => {
       isMounted = false;
@@ -241,7 +239,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
     if (isCorrect) {
       return 'border-emerald-500 bg-emerald-500/20 text-emerald-400';
     }
-    if (wasSelected && !isCorrect) {
+    if (wasSelected) {
       return 'border-red-500 bg-red-500/20 text-red-400';
     }
     return 'border-gray-700 text-gray-600 opacity-50';
@@ -281,7 +279,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
               <p className="font-mono text-xs text-emerald-500/50">
                 {currentStep === 'results'
                   ? 'Interview Complete'
-                  : `Question ${typeof currentStep === 'number' ? currentStep + 1 : 0} of 3 • Pass: ${PASSING_SCORE}/${questions.length} correct`}
+                  : `Question ${typeof currentStep === 'number' ? String(currentStep + 1) : '0'} of 3 • Pass: ${String(PASSING_SCORE)}/${String(questions.length)} correct`}
               </p>
               {/* Source Badge */}
               <div
@@ -319,7 +317,9 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
                     }}
                     placeholder="AIza..."
                     className="flex-1 rounded border border-cyan-500/50 bg-black px-2 py-1 font-mono text-xs text-white placeholder-gray-600 focus:border-cyan-500 focus:outline-none"
-                    onKeyDown={e => e.key === 'Enter' && handleSaveApiKey()}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleSaveApiKey();
+                    }}
                   />
                   <button
                     onClick={handleSaveApiKey}

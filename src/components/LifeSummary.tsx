@@ -112,10 +112,10 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          throw new Error(`API error: ${String(response.status)}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as { narrative?: unknown; source?: string };
 
         if (isMounted && data.narrative && Array.isArray(data.narrative) && data.narrative.length > 0) {
           setNarrative(data.narrative as string[]);
