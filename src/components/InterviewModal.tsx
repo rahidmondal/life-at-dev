@@ -129,9 +129,8 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
         const data = await response.json();
 
         if (isMounted && data.questions && Array.isArray(data.questions) && data.questions.length === 3) {
-          setQuestions(data.questions);
-          // Set source from API response (cache, gemini, or offline)
-          setQuestionSource(data.source || 'gemini');
+          setQuestions(data.questions as InterviewQuestion[]);
+          setQuestionSource((data.source as 'cache' | 'gemini' | 'offline' | undefined) ?? 'offline');
         } else if (!isMounted) {
           return;
         } else {
@@ -142,7 +141,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
         if (isMounted) {
           const fallbackQuestions = getInterviewSession(targetJob);
           setQuestions(fallbackQuestions);
-          setQuestionSource('fallback');
+          setQuestionSource('offline');
         }
       } finally {
         if (messageInterval) {
@@ -184,7 +183,6 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
       setUserApiKey(trimmedKey);
       setShowApiKeyInput(false);
       setApiKeyInput('');
-      // Trigger refetch by resetting loading
       setIsLoading(true);
       setQuestions([]);
     }

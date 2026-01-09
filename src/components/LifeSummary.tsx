@@ -21,7 +21,7 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
   const [narrative, setNarrative] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
-  const [isAiGenerated, setIsAiGenerated] = useState(false);
+  const [summarySource, setSummarySource] = useState<'cache' | 'gemini' | 'offline'>('offline');
 
   // Generate fallback narrative based on ending type and stats
   const generateNarrative = useCallback((): string[] => {
@@ -94,7 +94,9 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000);
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, 25000);
 
         const response = await fetch('/api/summary', {
           method: 'POST',
@@ -116,8 +118,8 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
         const data = await response.json();
 
         if (isMounted && data.narrative && Array.isArray(data.narrative) && data.narrative.length > 0) {
-          setNarrative(data.narrative);
-          setIsAiGenerated(true);
+          setNarrative(data.narrative as string[]);
+          setSummarySource((data.source as 'cache' | 'gemini' | 'offline' | undefined) ?? 'offline');
         } else {
           throw new Error('Invalid response format');
         }
@@ -125,7 +127,7 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
         console.warn('Failed to fetch AI narrative, using fallback:', error);
         if (isMounted) {
           setNarrative(generateNarrative());
-          setIsAiGenerated(false);
+          setSummarySource('offline');
         }
       } finally {
         clearInterval(messageInterval);
@@ -135,19 +137,33 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
       }
     };
 
-    fetchNarrative();
+    void fetchNarrative();
 
     return () => {
       isMounted = false;
     };
   }, [stats, gameOver, eventLog, generateNarrative]);
 
+  const getSourceBadge = (): { icon: string; label: string; color: string } => {
+    switch (summarySource) {
+      case 'cache':
+        return { icon: '⚡', label: 'Community Brain', color: 'text-emerald-400' };
+      case 'gemini':
+        return { icon: '✨', label: 'Live AI', color: 'text-blue-400' };
+      case 'offline':
+      default:
+        return { icon: '💾', label: 'Offline Backup', color: 'text-orange-400' };
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="border-b border-emerald-500/30 pb-2 font-mono text-lg font-bold text-emerald-500">
         // LIFE SUMMARY
-        {isAiGenerated && !isLoading && (
-          <span className="ml-2 text-xs font-normal text-cyan-400/60">⚡ AI-Generated</span>
+        {!isLoading && (
+          <span className={`ml-2 text-xs font-normal ${getSourceBadge().color}`}>
+            {getSourceBadge().icon} {getSourceBadge().label}
+          </span>
         )}
       </h3>
 

@@ -1,6 +1,6 @@
-const CACHE_NAME = 'life-dev-shell-v2';
+const CACHE_NAME = 'life-dev-shell-v3';
 
-const CORE_ASSETS = ['/', '/manifest.json', '/logo.png', 'logo-sm.png'];
+const CORE_ASSETS = ['/', '/manifest.json', '/logo.png', '/offline.html'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS)));
@@ -24,7 +24,14 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request).then(cached => {
-      return cached || fetch(event.request);
+      return (
+        cached ||
+        fetch(event.request).catch(() => {
+          if (event.request.mode === 'navigate') {
+            return caches.match('/offline.html');
+          }
+        })
+      );
     }),
   );
 });
