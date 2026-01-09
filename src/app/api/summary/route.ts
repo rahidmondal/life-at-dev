@@ -9,6 +9,9 @@ import { generateSummaryHash } from '@/lib/utils';
 import { generateOfflineSummary } from '@/logic/fallbackEngine';
 import { GameOver, GameStats } from '@/types/game';
 
+const CareerPathSchema = z.enum(['corporate', 'ic', 'management', 'hustler', 'business', 'specialist']);
+const GameOverReasonSchema = z.enum(['burnout', 'bankruptcy', 'victory']);
+
 const SummaryResponseSchema = z.object({
   summary: z.string().min(10),
 });
@@ -16,18 +19,22 @@ const SummaryResponseSchema = z.object({
 const SummaryRequestSchema = z.object({
   stats: z.object({
     currentJob: z.object({
-      title: z.string(),
-      path: z.string(),
-      level: z.number(),
+      title: z
+        .string()
+        .min(1)
+        .max(100)
+        .regex(/^[a-zA-Z0-9\s\-/()'&.]+$/, 'Invalid characters in title'),
+      path: CareerPathSchema,
+      level: z.number().int().min(1).max(4),
     }),
-    weeks: z.number(),
-    energy: z.number(),
-    stress: z.number(),
-    money: z.number(),
-    totalEarned: z.number(),
+    weeks: z.number().int().min(0).max(10000),
+    energy: z.number().int().min(0).max(100),
+    stress: z.number().int().min(0).max(100),
+    money: z.number().int(),
+    totalEarned: z.number().int().min(0),
   }),
   gameOver: z.object({
-    reason: z.string(),
+    reason: GameOverReasonSchema,
   }),
 });
 
@@ -122,9 +129,9 @@ You MUST respond with valid JSON matching this schema:
     return narrative.join('\n');
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('❌ [TIER 2] Zod validation failed:', error.issues);
+      console.error('[SECURITY] [TIER 2] AI response validation failed');
     } else {
-      console.error('❌ [TIER 2] Gemini API error:', error instanceof Error ? error.message : error);
+      console.error('[SECURITY] [TIER 2] Gemini API error:', error instanceof Error ? error.message : 'Unknown error');
     }
     return null;
   }
@@ -150,7 +157,7 @@ async function cacheSummaryToAppwrite(contextHash: string, summaryText: string):
     });
 
     if (existing.total > 0 && existing.rows.length > 0) {
-      const result = await tablesDB.updateRow({
+      await tablesDB.updateRow({
         databaseId,
         tableId: 'ai_cache_summaries',
         rowId: existing.rows[0].$id,
@@ -158,9 +165,9 @@ async function cacheSummaryToAppwrite(contextHash: string, summaryText: string):
           usage_count: (existing.rows[0].usage_count as number) + 1,
         },
       });
-      console.info(`💾 [CACHE] Updated existing summary (ID: ${result.$id})`);
+      console.info('[CACHE] Updated existing summary');
     } else {
-      const result = await tablesDB.createRow({
+      await tablesDB.createRow({
         databaseId,
         tableId: 'ai_cache_summaries',
         rowId: 'unique()',
@@ -171,7 +178,7 @@ async function cacheSummaryToAppwrite(contextHash: string, summaryText: string):
         },
         permissions: [],
       });
-      console.info(`💾 [CACHE] Created new summary (ID: ${result.$id}, hash: ${contextHash})`);
+      console.info('[CACHE] Created new summary entry');
     }
   } catch (error) {
     console.error('⚠️ [CACHE] Failed to store summary:', error);
@@ -250,12 +257,14 @@ async function checkSummaryCache(contextHash: string): Promise<string | null> {
 
 /**
  * Main POST handler - Tiered Defense Architecture
+ * Security: Strict Zod input validation to prevent prompt injection
  */
 export async function POST(request: NextRequest) {
   try {
     const parseResult = SummaryRequestSchema.safeParse(await request.json());
     if (!parseResult.success) {
-      return NextResponse.json({ error: 'Invalid request data', issues: parseResult.error.issues }, { status: 400 });
+      console.error('[SECURITY] Validation failed:', JSON.stringify(parseResult.error.issues));
+      return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
     }
 
     const { stats, gameOver } = parseResult.data;
@@ -286,7 +295,7 @@ export async function POST(request: NextRequest) {
     const fallbackNarrative = generateFallbackSummary(gameStats);
     return NextResponse.json({ narrative: fallbackNarrative, source: 'offline' });
   } catch (error) {
-    console.error('❌ Summary API error:', error);
+    console.error('[SECURITY] Summary API error:', error instanceof Error ? error.message : 'Unknown error');
 
     // Emergency fallback - always return something
     const emergencyNarrative = [

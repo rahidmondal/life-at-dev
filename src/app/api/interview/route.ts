@@ -327,7 +327,8 @@ export async function POST(request: NextRequest) {
   try {
     const parseResult = BodySchema.safeParse(await request.json());
     if (!parseResult.success) {
-      return NextResponse.json({ error: 'Invalid job data', issues: parseResult.error.issues }, { status: 400 });
+      console.error('[SECURITY] Validation failed:', JSON.stringify(parseResult.error.issues));
+      return NextResponse.json({ error: 'Invalid job data' }, { status: 400 });
     }
 
     const { job, stats } = parseResult.data;
@@ -356,18 +357,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ questions: aiQuestions, source: 'gemini' });
     }
 
-    // TIER 3 : Offline Fallback (fallbackEngine Questions)
+    // TIER 3: Offline Fallback (fallbackEngine Questions)
     const offlineQuestions = generateFallbackQuestions(job);
     return NextResponse.json({ questions: offlineQuestions, source: 'offline' });
   } catch (error) {
-    console.error('❌ Fatal error in interview route:', error);
+    console.error('[SECURITY] Interview route error:', error instanceof Error ? error.message : 'Unknown error');
 
-    return NextResponse.json(
-      {
-        error: 'Service temporarily unavailable',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 500 });
   }
 }
