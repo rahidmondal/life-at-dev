@@ -177,6 +177,11 @@ export function StatsPanel() {
           <p className="font-mono text-xs text-gray-400">Total Earned: ${stats.totalEarned.toLocaleString()}</p>
         </div>
       </div>
+
+      {/* Version */}
+      <div className="mt-2 text-center">
+        <p className="font-mono text-xs text-gray-600">v1.0.0</p>
+      </div>
     </div>
   );
 }
