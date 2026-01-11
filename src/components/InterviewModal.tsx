@@ -1,6 +1,7 @@
 'use client';
 
 import { useGame } from '@/context/GameContext';
+import { getInterviewSession } from '@/data/interviews';
 import { Job } from '@/types/game';
 import { useEffect, useState } from 'react';
 
@@ -9,45 +10,6 @@ export interface InterviewQuestion {
   options: string[];
   correctIndex: number;
   explanation: string;
-}
-
-// Emergency fallback if API completely fails
-function getInterviewSession(job: Job): InterviewQuestion[] {
-  return [
-    {
-      question: `What is an important skill for a ${job.title}?`,
-      options: [
-        'Problem solving and communication',
-        'Ignoring documentation',
-        'Working in isolation always',
-        'Avoiding code reviews',
-      ],
-      correctIndex: 0,
-      explanation: 'Problem solving and communication are fundamental skills for any developer role.',
-    },
-    {
-      question: 'How should you handle a production bug?',
-      options: [
-        'Analyze, fix, test, and deploy with clear communication',
-        'Panic and blame someone else',
-        'Ignore it and hope it goes away',
-        'Make random changes without testing',
-      ],
-      correctIndex: 0,
-      explanation: 'A systematic approach with clear communication prevents further issues.',
-    },
-    {
-      question: 'What is technical debt?',
-      options: [
-        'The cost of maintaining and improving code over time',
-        'Money owed to developers',
-        'A type of database',
-        'A programming language',
-      ],
-      correctIndex: 0,
-      explanation: 'Technical debt refers to the implied cost of additional rework caused by choosing quick solutions.',
-    },
-  ];
 }
 
 interface InterviewModalProps {
@@ -116,7 +78,13 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
         const response = await fetch('/api/interview', {
           method: 'POST',
           headers,
-          body: JSON.stringify({ job: targetJob }),
+          body: JSON.stringify({
+            job: {
+              title: targetJob.title,
+              path: targetJob.path,
+              level: targetJob.level,
+            },
+          }),
           signal: controller.signal,
         });
 
@@ -141,7 +109,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
         if (isMounted) {
           const fallbackQuestions = getInterviewSession(targetJob);
           setQuestions(fallbackQuestions);
-          setQuestionSource('offline');
+          setQuestionSource('fallback');
         }
       } finally {
         clearInterval(messageInterval);
