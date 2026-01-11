@@ -16,26 +16,59 @@ const SummaryResponseSchema = z.object({
   summary: z.string().min(10),
 });
 
-const SummaryRequestSchema = z.object({
-  stats: z.object({
-    currentJob: z.object({
-      title: z
-        .string()
-        .min(1)
-        .max(100)
-        .regex(/^[a-zA-Z0-9\s\-/()'&.]+$/, 'Invalid characters in title'),
-      path: CareerPathSchema,
-      level: z.number().int().min(1).max(4),
-    }),
-    weeks: z.number().int().min(0).max(10000),
-    energy: z.number().int().min(0).max(100),
-    stress: z.number().int().min(0).max(100),
-    money: z.number().int(),
-    totalEarned: z.number().int().min(0),
+const JobSchema = z.object({
+  id: z.string(),
+  title: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-zA-Z0-9\s\-/()'&.]+$/, 'Invalid characters in title'),
+  path: CareerPathSchema,
+  level: z.number().int().min(1).max(4),
+  requirements: z.object({
+    coding: z.number(),
+    reputation: z.number(),
+    money: z.number().optional(),
   }),
+  yearlyPay: z.number(),
+  rentPerYear: z.number(),
+  isGameEnd: z.boolean(),
+  isIntermediate: z.boolean().optional(),
+});
+
+const GameStatsSchema = z.object({
+  weeks: z.number().int().min(0).max(10000),
+  stress: z.number().int().min(0).max(100),
+  energy: z.number().int().min(0).max(100),
+  money: z.number().int(),
+  coding: z.number().int().min(0),
+  reputation: z.number().int().min(0),
+  currentJob: JobSchema,
+  age: z.number().int().min(18),
+  yearsWorked: z.number().int().min(0),
+  totalEarned: z.number().int().min(0),
+  actionHistory: z.array(z.string()),
+  familySupportYearsLeft: z.number().int().optional(),
+  jobChanges: z.number().int().optional(),
+  startingJobId: z.string().optional(),
+});
+
+const SummaryRequestSchema = z.object({
+  stats: GameStatsSchema,
   gameOver: z.object({
     reason: GameOverReasonSchema,
+    message: z.string().optional(),
   }),
+  eventLog: z
+    .array(
+      z.object({
+        id: z.string(),
+        timestamp: z.number(),
+        message: z.string(),
+        type: z.enum(['info', 'success', 'warning', 'error', 'event']),
+      }),
+    )
+    .optional(),
 });
 
 /**
@@ -72,11 +105,17 @@ Write a short, witty career retrospective for a ${stats.currentJob.path} develop
 
 Game Stats:
 - Role: ${stats.currentJob.title}
+- Career Path: ${stats.currentJob.path}
+- Years in Industry: ${String(stats.yearsWorked)}
+- Age: ${String(stats.age)}
 - Weeks Survived: ${String(stats.weeks)}
+- Coding Skill: ${String(stats.coding)}
+- Reputation: ${String(stats.reputation)}
 - Final Energy: ${String(stats.energy)}%
 - Final Stress: ${String(stats.stress)}%
 - Money: $${stats.money.toLocaleString()}
 - Total Earned: $${stats.totalEarned.toLocaleString()}
+- Job Changes: ${String(stats.jobChanges ?? 0)}
 - Outcome: ${gameOver.reason}
 
 Write 5-7 lines that:
@@ -269,11 +308,8 @@ export async function POST(request: NextRequest) {
 
     const { stats, gameOver } = parseResult.data;
 
-    const gameStats = stats as unknown as GameStats;
-    const gameOverData = gameOver as unknown as GameOver;
-
-    const totalWeeks = gameStats.weeks || 0;
-    const contextHash = generateSummaryHash(gameStats.currentJob.path, gameStats.currentJob.level, totalWeeks);
+    const totalWeeks = stats.weeks || 0;
+    const contextHash = generateSummaryHash(stats.currentJob.path, stats.currentJob.level, totalWeeks);
 
     console.info(`📊 Summary Context Hash: ${contextHash}`);
 
@@ -285,14 +321,14 @@ export async function POST(request: NextRequest) {
     }
 
     // TIER 2: Try Gemini API
-    const aiSummary = await generateSummaryFromAI(gameStats, gameOverData, contextHash);
+    const aiSummary = await generateSummaryFromAI(stats as GameStats, gameOver as GameOver, contextHash);
     if (aiSummary) {
       const narrative = aiSummary.split('\n').filter(line => line.trim().length > 0);
       return NextResponse.json({ narrative, source: 'gemini' });
     }
 
     // TIER 3: Offline fallback
-    const fallbackNarrative = generateFallbackSummary(gameStats);
+    const fallbackNarrative = generateFallbackSummary(stats as GameStats);
     return NextResponse.json({ narrative: fallbackNarrative, source: 'offline' });
   } catch (error) {
     console.error('[SECURITY] Summary API error:', error instanceof Error ? error.message : 'Unknown error');
