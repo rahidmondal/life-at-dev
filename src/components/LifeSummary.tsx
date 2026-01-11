@@ -60,7 +60,24 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
       ];
     }
 
-    // Victory narratives
+    if (gameOver.isEasterEggWin) {
+      return [
+        `After ${String(yearsPlayed)} years of strategic brilliance, the universe noticed.`,
+        `You weren't just climbing the ladder - you were building your own.`,
+        gameOver.easterEggEvent ?? 'A mysterious opportunity appeared out of nowhere.',
+        coding >= 700
+          ? `Your technical skills (${String(coding)}/1000) were legendary.`
+          : `Your coding skills (${String(coding)}/1000) proved that raw talent isn't everything.`,
+        reputation >= 600
+          ? `Your reputation (${String(reputation)}/1000) preceded you everywhere.`
+          : `You achieved greatness through unconventional means.`,
+        money > 100000
+          ? `With $${money.toLocaleString()} saved, you're financially set for the next adventure.`
+          : `Money was never the goal - and that's exactly why you won.`,
+        `You found the hidden path. You hacked the system. Legendary.`,
+      ];
+    }
+
     return [
       `After ${String(yearsPlayed)} years of dedication, you made it to ${currentJob.title}!`,
       `You're now earning $${currentJob.yearlyPay.toLocaleString()} per year - you've made it.`,
@@ -76,7 +93,7 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
         : `You're sitting on $${money.toLocaleString()} - comfortable and secure.`,
       `You survived the grind. You climbed the ladder. You won.`,
     ];
-  }, [stats, gameOver.reason]);
+  }, [stats, gameOver.reason, gameOver.isEasterEggWin, gameOver.easterEggEvent]);
 
   // Fetch AI-generated narrative
   useEffect(() => {

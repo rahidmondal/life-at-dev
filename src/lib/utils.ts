@@ -13,8 +13,15 @@ export function generateContextHash(role: string, level: number, health: number,
   return `${role}-lvl${level.toString()}-hp${healthBucket.toString()}-evt${eventBucket.toString()}`;
 }
 
-export function generateSummaryHash(path: string, level: number, score: number): string {
+export function generateSummaryHash(
+  path: string,
+  level: number,
+  score: number,
+  reason?: string,
+  isEasterEggWin?: boolean,
+): string {
   const scoreBucket = Math.floor(score / 50) * 50;
+  const outcome = isEasterEggWin ? 'easter' : (reason ?? 'unknown');
 
-  return `summary-${path}-lvl${level.toString()}-score${scoreBucket.toString()}`;
+  return `summary-${path}-lvl${level.toString()}-score${scoreBucket.toString()}-${outcome}`;
 }

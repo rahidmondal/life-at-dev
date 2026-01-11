@@ -58,6 +58,8 @@ const SummaryRequestSchema = z.object({
   gameOver: z.object({
     reason: GameOverReasonSchema,
     message: z.string().optional(),
+    isEasterEggWin: z.boolean().optional(),
+    easterEggEvent: z.string().optional(),
   }),
   eventLog: z
     .array(
@@ -99,6 +101,15 @@ async function generateSummaryFromAI(
 
   const genAI = new GoogleGenerativeAI(apiKey);
 
+  const isEasterEgg = gameOver.isEasterEggWin === true;
+  const outcomeDescription = isEasterEgg
+    ? 'achieved a legendary easter egg victory through unconventional means'
+    : gameOver.reason === 'victory'
+      ? 'victorious'
+      : gameOver.reason === 'burnout'
+        ? 'burned out'
+        : 'broke';
+
   const prompt = `You are a retro game narrator for "Life at Dev", a terminal-style career simulation game.
 
 Write a short, witty career retrospective for a ${stats.currentJob.path} developer who reached level ${String(stats.currentJob.level)}.
@@ -116,15 +127,15 @@ Game Stats:
 - Money: $${stats.money.toLocaleString()}
 - Total Earned: $${stats.totalEarned.toLocaleString()}
 - Job Changes: ${String(stats.jobChanges ?? 0)}
-- Outcome: ${gameOver.reason}
+- Outcome: ${outcomeDescription}${isEasterEgg ? `\n- Easter Egg Event: ${gameOver.easterEggEvent ?? 'A hidden path revealed itself'}` : ''}
 
 Write 5-7 lines that:
 1. Reference their career path and achievements
-2. Comment on their final outcome (${gameOver.reason === 'victory' ? 'victorious' : gameOver.reason === 'burnout' ? 'burned out' : 'broke'})
+2. Comment on their final outcome (${outcomeDescription})
 3. Include one piece of wisdom
-4. End with a memorable line
+4. End with a memorable line${isEasterEgg ? '\n5. Celebrate their discovery of the hidden path!' : ''}
 
-Tone: Nostalgic, slightly melancholic, wise. Like an old sage reflecting on life choices.
+Tone: ${isEasterEgg ? 'Celebratory, mysterious, legendary. Like discovering a secret ending in a classic game.' : 'Nostalgic, slightly melancholic, wise. Like an old sage reflecting on life choices.'}
 
 You MUST respond with valid JSON matching this schema:
 {
@@ -309,7 +320,13 @@ export async function POST(request: NextRequest) {
     const { stats, gameOver } = parseResult.data;
 
     const totalWeeks = stats.weeks || 0;
-    const contextHash = generateSummaryHash(stats.currentJob.path, stats.currentJob.level, totalWeeks);
+    const contextHash = generateSummaryHash(
+      stats.currentJob.path,
+      stats.currentJob.level,
+      totalWeeks,
+      gameOver.reason,
+      gameOver.isEasterEggWin,
+    );
 
     console.info(`📊 Summary Context Hash: ${contextHash}`);
 
