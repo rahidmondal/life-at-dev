@@ -60,7 +60,7 @@ Make critical decisions, manage your resources wisely, build your skills strateg
   <p><em>🎓 Path Selection - CS Student with Family Support or Self-Taught Bootcamp</em></p>
   <br/>
 
-  <img src="demo/images/gameplya-screen.png" alt="Gameplay Screen" width="800"/>
+  <img src="demo/images/gameplay-screen.png" alt="Gameplay Screen" width="800"/>
   <p><em>💼 Gameplay - Manage your career, skills, and life balance</em></p>
 </div>
 
