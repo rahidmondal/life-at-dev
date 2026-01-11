@@ -313,11 +313,11 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
       const noInterviewJobs = ['unemployed', 'cs-student', 'script-kiddie', 'cs-student-easy', 'intern'];
       const canAutoPromote = availablePromotions.length === 1 && !isSeniorOrAbove;
       const promotionJob = availablePromotions[0];
-      const requiresInterview = promotionJob && !noInterviewJobs.includes(promotionJob.id);
+      const requiresInterview = !noInterviewJobs.includes(promotionJob.id);
 
       let pendingInterview: Job | undefined = undefined;
 
-      if (canAutoPromote && promotionJob) {
+      if (canAutoPromote) {
         if (requiresInterview) {
           // Set pending interview instead of auto-promoting
           pendingInterview = promotionJob;

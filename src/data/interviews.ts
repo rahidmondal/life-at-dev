@@ -1314,13 +1314,13 @@ export function meetsJobRequirements(
   const failureReasons: string[] = [];
 
   if (coding < job.requirements.coding) {
-    failureReasons.push(`Coding ${coding}/${job.requirements.coding}`);
+    failureReasons.push(`Coding ${String(coding)}/${String(job.requirements.coding)}`);
   }
   if (reputation < job.requirements.reputation) {
-    failureReasons.push(`Reputation ${reputation}/${job.requirements.reputation}`);
+    failureReasons.push(`Reputation ${String(reputation)}/${String(job.requirements.reputation)}`);
   }
   if (job.requirements.money && money < job.requirements.money) {
-    failureReasons.push(`Money $${money}/$${job.requirements.money}`);
+    failureReasons.push(`Money $${String(money)}/$${String(job.requirements.money)}`);
   }
 
   return {

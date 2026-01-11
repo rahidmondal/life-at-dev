@@ -21,7 +21,7 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
   const [narrative, setNarrative] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
-  const [isAiGenerated, setIsAiGenerated] = useState(false);
+  const [summarySource, setSummarySource] = useState<'cache' | 'gemini' | 'offline'>('offline');
 
   // Generate fallback narrative based on ending type and stats
   const generateNarrative = useCallback((): string[] => {
@@ -60,7 +60,24 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
       ];
     }
 
-    // Victory narratives
+    if (gameOver.isEasterEggWin) {
+      return [
+        `After ${String(yearsPlayed)} years of strategic brilliance, the universe noticed.`,
+        `You weren't just climbing the ladder - you were building your own.`,
+        gameOver.easterEggEvent ?? 'A mysterious opportunity appeared out of nowhere.',
+        coding >= 700
+          ? `Your technical skills (${String(coding)}/1000) were legendary.`
+          : `Your coding skills (${String(coding)}/1000) proved that raw talent isn't everything.`,
+        reputation >= 600
+          ? `Your reputation (${String(reputation)}/1000) preceded you everywhere.`
+          : `You achieved greatness through unconventional means.`,
+        money > 100000
+          ? `With $${money.toLocaleString()} saved, you're financially set for the next adventure.`
+          : `Money was never the goal - and that's exactly why you won.`,
+        `You found the hidden path. You hacked the system. Legendary.`,
+      ];
+    }
+
     return [
       `After ${String(yearsPlayed)} years of dedication, you made it to ${currentJob.title}!`,
       `You're now earning $${currentJob.yearlyPay.toLocaleString()} per year - you've made it.`,
@@ -76,7 +93,7 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
         : `You're sitting on $${money.toLocaleString()} - comfortable and secure.`,
       `You survived the grind. You climbed the ladder. You won.`,
     ];
-  }, [stats, gameOver.reason]);
+  }, [stats, gameOver.reason, gameOver.isEasterEggWin, gameOver.easterEggEvent]);
 
   // Fetch AI-generated narrative
   useEffect(() => {
@@ -94,7 +111,9 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000);
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, 25000);
 
         const response = await fetch('/api/summary', {
           method: 'POST',
@@ -110,14 +129,14 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          throw new Error(`API error: ${String(response.status)}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as { narrative?: unknown; source?: string };
 
         if (isMounted && data.narrative && Array.isArray(data.narrative) && data.narrative.length > 0) {
-          setNarrative(data.narrative);
-          setIsAiGenerated(true);
+          setNarrative(data.narrative as string[]);
+          setSummarySource((data.source as 'cache' | 'gemini' | 'offline' | undefined) ?? 'offline');
         } else {
           throw new Error('Invalid response format');
         }
@@ -125,7 +144,7 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
         console.warn('Failed to fetch AI narrative, using fallback:', error);
         if (isMounted) {
           setNarrative(generateNarrative());
-          setIsAiGenerated(false);
+          setSummarySource('offline');
         }
       } finally {
         clearInterval(messageInterval);
@@ -135,19 +154,33 @@ export default function LifeSummary({ stats, gameOver, eventLog = [] }: LifeSumm
       }
     };
 
-    fetchNarrative();
+    void fetchNarrative();
 
     return () => {
       isMounted = false;
     };
   }, [stats, gameOver, eventLog, generateNarrative]);
 
+  const getSourceBadge = (): { icon: string; label: string; color: string } => {
+    switch (summarySource) {
+      case 'cache':
+        return { icon: '⚡', label: 'Community Brain', color: 'text-emerald-400' };
+      case 'gemini':
+        return { icon: '✨', label: 'Live AI', color: 'text-blue-400' };
+      case 'offline':
+      default:
+        return { icon: '💾', label: 'Offline Backup', color: 'text-orange-400' };
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="border-b border-emerald-500/30 pb-2 font-mono text-lg font-bold text-emerald-500">
         // LIFE SUMMARY
-        {isAiGenerated && !isLoading && (
-          <span className="ml-2 text-xs font-normal text-cyan-400/60">⚡ AI-Generated</span>
+        {!isLoading && (
+          <span className={`ml-2 text-xs font-normal ${getSourceBadge().color}`}>
+            {getSourceBadge().icon} {getSourceBadge().label}
+          </span>
         )}
       </h3>
 

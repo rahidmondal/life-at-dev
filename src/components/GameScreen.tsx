@@ -46,7 +46,7 @@ export function GameScreen() {
           aria-label="Go to home screen"
         >
           <Image
-            src="/logo-sm.png"
+            src="/logo.png"
             alt="Life @ Dev"
             width={60}
             height={60}
