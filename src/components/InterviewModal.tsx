@@ -1,8 +1,16 @@
 'use client';
 
-import { getInterviewSession, type InterviewQuestion } from '@/data/interviews';
+import { useGame } from '@/context/GameContext';
+import { getInterviewSession } from '@/data/interviews';
 import { Job } from '@/types/game';
 import { useEffect, useState } from 'react';
+
+export interface InterviewQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
 
 interface InterviewModalProps {
   targetJob: Job;
@@ -29,10 +37,13 @@ const LOADING_MESSAGES = [
 ];
 
 export default function InterviewModal({ targetJob, onComplete, onCancel }: InterviewModalProps) {
+  const { userApiKey, setUserApiKey } = useGame();
   const [isLoading, setIsLoading] = useState(true);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
-  const [questionSource, setQuestionSource] = useState<'gemini' | 'fallback'>('fallback');
+  const [questionSource, setQuestionSource] = useState<'cache' | 'gemini' | 'offline' | 'fallback'>('fallback');
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
 
   const [currentStep, setCurrentStep] = useState<InterviewStep>(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -58,24 +69,36 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
           controller.abort();
         }, 20000);
 
+        // Build headers with optional user API key
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (userApiKey) {
+          headers['x-user-gemini-key'] = userApiKey;
+        }
+
         const response = await fetch('/api/interview', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ job: targetJob }),
+          headers,
+          body: JSON.stringify({
+            job: {
+              title: targetJob.title,
+              path: targetJob.path,
+              level: targetJob.level,
+            },
+          }),
           signal: controller.signal,
         });
 
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          throw new Error(`API error: ${String(response.status)}`);
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as { questions?: unknown; source?: string };
 
         if (isMounted && data.questions && Array.isArray(data.questions) && data.questions.length === 3) {
-          setQuestions(data.questions);
-          setQuestionSource('gemini');
+          setQuestions(data.questions as InterviewQuestion[]);
+          setQuestionSource((data.source as 'cache' | 'gemini' | 'offline' | undefined) ?? 'offline');
         } else if (!isMounted) {
           return;
         } else {
@@ -89,16 +112,14 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
           setQuestionSource('fallback');
         }
       } finally {
-        if (messageInterval) {
-          clearInterval(messageInterval);
-        }
+        clearInterval(messageInterval);
         if (isMounted) {
           setIsLoading(false);
         }
       }
     };
 
-    fetchQuestions();
+    void fetchQuestions();
 
     return () => {
       isMounted = false;
@@ -106,7 +127,37 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
         clearInterval(messageInterval);
       }
     };
-  }, [targetJob]);
+  }, [targetJob, userApiKey]);
+
+  // Get source badge styling
+  const getSourceBadge = () => {
+    switch (questionSource) {
+      case 'cache':
+        return { icon: '⚡', label: 'Community Brain', color: 'text-emerald-400 border-emerald-500/50' };
+      case 'gemini':
+        return { icon: '✨', label: 'Live AI', color: 'text-blue-400 border-blue-500/50' };
+      case 'offline':
+        return { icon: '💾', label: 'Offline Backup', color: 'text-orange-400 border-orange-500/50' };
+      default:
+        return { icon: '💾', label: 'Fallback', color: 'text-gray-400 border-gray-500/50' };
+    }
+  };
+
+  const handleSaveApiKey = () => {
+    const trimmedKey = apiKeyInput.trim();
+    if (trimmedKey) {
+      setUserApiKey(trimmedKey);
+      setShowApiKeyInput(false);
+      setApiKeyInput('');
+      setIsLoading(true);
+      setQuestions([]);
+    }
+  };
+
+  const handleClearApiKey = () => {
+    setUserApiKey(null);
+    setApiKeyInput('');
+  };
 
   const currentQuestion = typeof currentStep === 'number' && questions.length > 0 ? questions[currentStep] : null;
   const score = answers.filter(a => a.correct).length;
@@ -156,7 +207,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
     if (isCorrect) {
       return 'border-emerald-500 bg-emerald-500/20 text-emerald-400';
     }
-    if (wasSelected && !isCorrect) {
+    if (wasSelected) {
       return 'border-red-500 bg-red-500/20 text-red-400';
     }
     return 'border-gray-700 text-gray-600 opacity-50';
@@ -192,14 +243,99 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
             Position: <span className="text-white">{targetJob.title}</span>
           </p>
           {!isLoading && (
-            <p className="mt-1 font-mono text-xs text-emerald-500/50">
-              {currentStep === 'results'
-                ? 'Interview Complete'
-                : `Question ${typeof currentStep === 'number' ? currentStep + 1 : 0} of 3 • Pass: ${PASSING_SCORE}/${questions.length} correct`}
-              {questionSource === 'gemini' && <span className="ml-2 text-cyan-400/60">⚡ AI-Generated</span>}
-            </p>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="font-mono text-xs text-emerald-500/50">
+                {currentStep === 'results'
+                  ? 'Interview Complete'
+                  : `Question ${typeof currentStep === 'number' ? String(currentStep + 1) : '0'} of 3 • Pass: ${String(PASSING_SCORE)}/${String(questions.length)} correct`}
+              </p>
+              {/* Source Badge */}
+              <div
+                className={`flex items-center gap-1 rounded border px-2 py-0.5 font-mono text-xs ${getSourceBadge().color}`}
+              >
+                <span>{getSourceBadge().icon}</span>
+                <span>{getSourceBadge().label}</span>
+              </div>
+            </div>
           )}
         </div>
+
+        {/* BYOK UI - Show when offline source or via settings button */}
+        {!isLoading && (questionSource === 'offline' || showApiKeyInput) && (
+          <div className="mb-4 rounded border-2 border-cyan-500/50 bg-cyan-500/5 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="font-mono text-xs font-bold text-cyan-400">🔑 Bring Your Own Key (BYOK)</p>
+              {userApiKey && (
+                <button onClick={handleClearApiKey} className="font-mono text-xs text-red-400 hover:text-red-300">
+                  Clear Key
+                </button>
+              )}
+            </div>
+            {!userApiKey ? (
+              <>
+                <p className="mb-2 font-mono text-xs text-gray-400">
+                  Enter your Gemini API Key to enable live AI generation.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={apiKeyInput}
+                    onChange={e => {
+                      setApiKeyInput(e.target.value);
+                    }}
+                    placeholder="AIza..."
+                    className="flex-1 rounded border border-cyan-500/50 bg-black px-2 py-1 font-mono text-xs text-white placeholder-gray-600 focus:border-cyan-500 focus:outline-none"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleSaveApiKey();
+                    }}
+                  />
+                  <button
+                    onClick={handleSaveApiKey}
+                    disabled={!apiKeyInput.trim()}
+                    className="rounded border border-cyan-500 bg-cyan-500/10 px-3 py-1 font-mono text-xs text-cyan-400 hover:bg-cyan-500 hover:text-black disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                </div>
+                <p className="mt-1 font-mono text-xs text-gray-500">
+                  Get your key at{' '}
+                  <a
+                    href="https://aistudio.google.com/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cyan-400 underline"
+                  >
+                    Google AI Studio
+                  </a>
+                </p>
+              </>
+            ) : (
+              <p className="font-mono text-xs text-emerald-400">✓ Using your API key for live AI generation</p>
+            )}
+            {showApiKeyInput && (
+              <button
+                onClick={() => {
+                  setShowApiKeyInput(false);
+                }}
+                className="mt-2 font-mono text-xs text-gray-500 hover:text-gray-400"
+              >
+                Close
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Settings button to show BYOK input */}
+        {!isLoading && !showApiKeyInput && questionSource !== 'offline' && (
+          <button
+            onClick={() => {
+              setShowApiKeyInput(true);
+            }}
+            className="mb-4 flex items-center gap-2 rounded border border-gray-700 bg-gray-900/50 px-3 py-1.5 font-mono text-xs text-gray-400 hover:border-gray-600 hover:text-gray-300"
+          >
+            ⚙️ <span>Use Your Own API Key</span>
+          </button>
+        )}
 
         {/* Loading State */}
         {isLoading && (

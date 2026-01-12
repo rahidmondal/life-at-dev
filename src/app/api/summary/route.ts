@@ -1,185 +1,363 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
-import { parse, stringify } from 'smol-toml';
+import { z } from 'zod';
 
-import { GameOver, GameStats, LogEntry } from '@/types/game';
+import { Query } from 'node-appwrite';
 
-// Initialize Gemini client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+import { createAdminClient } from '@/lib/server/appwrite';
+import { generateSummaryHash } from '@/lib/utils';
+import { generateOfflineSummary } from '@/logic/fallbackEngine';
+import { GameOver, GameStats } from '@/types/game';
 
-interface SummaryRequestBody {
-  stats: GameStats;
-  gameOver: GameOver;
-  eventLog: LogEntry[];
+const CareerPathSchema = z.enum(['corporate', 'ic', 'management', 'hustler', 'business', 'specialist']);
+const GameOverReasonSchema = z.enum(['burnout', 'bankruptcy', 'victory']);
+
+const SummaryResponseSchema = z.object({
+  summary: z.string().min(10),
+});
+
+const JobSchema = z.object({
+  id: z.string(),
+  title: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-zA-Z0-9\s\-/()'&.]+$/, 'Invalid characters in title'),
+  path: CareerPathSchema,
+  level: z.number().int().min(1).max(4),
+  requirements: z.object({
+    coding: z.number(),
+    reputation: z.number(),
+    money: z.number().optional(),
+  }),
+  yearlyPay: z.number(),
+  rentPerYear: z.number(),
+  isGameEnd: z.boolean(),
+  isIntermediate: z.boolean().optional(),
+});
+
+const GameStatsSchema = z.object({
+  weeks: z.number().int().min(0).max(10000),
+  stress: z.number().int().min(0).max(100),
+  energy: z.number().int().min(0).max(100),
+  money: z.number().int(),
+  coding: z.number().int().min(0),
+  reputation: z.number().int().min(0),
+  currentJob: JobSchema,
+  age: z.number().int().min(18),
+  yearsWorked: z.number().int().min(0),
+  totalEarned: z.number().int().min(0),
+  actionHistory: z.array(z.string()),
+  familySupportYearsLeft: z.number().int().optional(),
+  jobChanges: z.number().int().optional(),
+  startingJobId: z.string().optional(),
+});
+
+const SummaryRequestSchema = z.object({
+  stats: GameStatsSchema,
+  gameOver: z.object({
+    reason: GameOverReasonSchema,
+    message: z.string().optional(),
+    isEasterEggWin: z.boolean().optional(),
+    easterEggEvent: z.string().optional(),
+  }),
+  eventLog: z
+    .array(
+      z.object({
+        id: z.string(),
+        timestamp: z.number(),
+        message: z.string(),
+        type: z.enum(['info', 'success', 'warning', 'error', 'event']),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * TIER 3: Offline Fallback (Mad-Libs Summary)
+ * Used when both cache and API fail
+ */
+function generateFallbackSummary(stats: GameStats): string[] {
+  console.info('🔧 [TIER 3] Using offline Mad-Libs summary');
+  const totalWeeks = stats.weeks || 0;
+  return generateOfflineSummary(stats.currentJob.path, stats.currentJob.level, totalWeeks);
 }
 
-// Convert game data to TOML format for the prompt
-function gameDataToToml(stats: GameStats, gameOver: GameOver, eventLog: LogEntry[]): string {
-  const playerData = {
-    player: {
-      role: stats.currentJob.title,
-      career_path: stats.currentJob.path,
-      level: stats.currentJob.level,
-      age: stats.age,
-      years_worked: stats.yearsWorked,
-      money: stats.money,
-      total_earned: stats.totalEarned,
-      coding_skill: stats.coding,
-      reputation: stats.reputation,
-      final_stress: stats.stress,
-      final_energy: stats.energy,
-      outcome: gameOver.reason,
-      is_easter_egg: gameOver.isEasterEggWin || false,
-      ending_message: gameOver.message,
-    },
-  };
+/**
+ * TIER 2: Gemini API Call with Zod Validation
+ * Used when cache miss occurs
+ */
+async function generateSummaryFromAI(
+  stats: GameStats,
+  gameOver: GameOver,
+  contextHash: string,
+): Promise<string | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
 
-  // Build history array from event log
-  const historyEntries = eventLog.map((entry, index) => ({
-    id: index + 1,
-    type: entry.type,
-    event: entry.message,
-  }));
-
-  // Manually build TOML string since smol-toml stringify doesn't handle arrays of tables well
-  let tomlString = stringify(playerData);
-
-  // Add history entries manually
-  if (historyEntries.length > 0) {
-    tomlString += '\n';
-    for (const entry of historyEntries) {
-      tomlString += `\n[[history]]\n`;
-      tomlString += `id = ${entry.id}\n`;
-      tomlString += `type = "${entry.type}"\n`;
-      tomlString += `event = "${entry.event.replace(/"/g, '\\\"').replace(/\n/g, ' ')}"\n`;
-    }
+  if (!apiKey) {
+    console.error('No API key available (GEMINI_API_KEY not configured)');
+    return null;
   }
 
-  return tomlString;
-}
+  const genAI = new GoogleGenerativeAI(apiKey);
 
-// Extract summary array from TOML response
-function parseSummaryFromToml(tomlText: string): string[] {
+  const isEasterEgg = gameOver.isEasterEggWin === true;
+  const outcomeDescription = isEasterEgg
+    ? 'achieved a legendary easter egg victory through unconventional means'
+    : gameOver.reason === 'victory'
+      ? 'victorious'
+      : gameOver.reason === 'burnout'
+        ? 'burned out'
+        : 'broke';
+
+  const prompt = `You are a retro game narrator for "Life at Dev", a terminal-style career simulation game.
+
+Write a short, witty career retrospective for a ${stats.currentJob.path} developer who reached level ${String(stats.currentJob.level)}.
+
+Game Stats:
+- Role: ${stats.currentJob.title}
+- Career Path: ${stats.currentJob.path}
+- Years in Industry: ${String(stats.yearsWorked)}
+- Age: ${String(stats.age)}
+- Weeks Survived: ${String(stats.weeks)}
+- Coding Skill: ${String(stats.coding)}
+- Reputation: ${String(stats.reputation)}
+- Final Energy: ${String(stats.energy)}%
+- Final Stress: ${String(stats.stress)}%
+- Money: $${stats.money.toLocaleString()}
+- Total Earned: $${stats.totalEarned.toLocaleString()}
+- Job Changes: ${String(stats.jobChanges ?? 0)}
+- Outcome: ${outcomeDescription}${isEasterEgg ? `\n- Easter Egg Event: ${gameOver.easterEggEvent ?? 'A hidden path revealed itself'}` : ''}
+
+Write 5-7 lines that:
+1. Reference their career path and achievements
+2. Comment on their final outcome (${outcomeDescription})
+3. Include one piece of wisdom
+4. End with a memorable line${isEasterEgg ? '\n5. Celebrate their discovery of the hidden path!' : ''}
+
+Tone: ${isEasterEgg ? 'Celebratory, mysterious, legendary. Like discovering a secret ending in a classic game.' : 'Nostalgic, slightly melancholic, wise. Like an old sage reflecting on life choices.'}
+
+You MUST respond with valid JSON matching this schema:
+{
+  "summary": "Multi-line summary text here.\\nUse \\\\n for line breaks.\\nKeep it 5-7 lines."
+}`;
+
   try {
-    // Clean up potential markdown code blocks
-    let cleanedText = tomlText.trim();
-    if (cleanedText.startsWith('```toml')) {
-      cleanedText = cleanedText.slice(7);
-    } else if (cleanedText.startsWith('```')) {
-      cleanedText = cleanedText.slice(3);
-    }
-    if (cleanedText.endsWith('```')) {
-      cleanedText = cleanedText.slice(0, -3);
-    }
-    cleanedText = cleanedText.trim();
+    console.info('🤖 [TIER 2] Calling Gemini API for summary...');
 
-    const parsed = parse(cleanedText) as { summary?: string[] };
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash-lite',
+      generationConfig: {
+        responseMimeType: 'application/json',
+      },
+    });
 
-    if (parsed.summary && Array.isArray(parsed.summary)) {
-      return parsed.summary;
-    }
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('API Timeout'));
+        }, 15000);
+      }),
+    ]);
 
-    throw new Error('No summary array found in TOML');
+    const response = result.response;
+    const text = response.text();
+
+    const parsed = JSON.parse(text) as unknown;
+    const validated = SummaryResponseSchema.parse(parsed);
+
+    console.info('✅ [TIER 2] Gemini API success');
+
+    console.info('💾 [TIER 2] Caching summary...');
+    cacheSummaryToAppwrite(contextHash, validated.summary).catch((err: unknown) => {
+      console.error('⚠️ Failed to cache summary:', err);
+    });
+
+    const narrative = validated.summary.split('\n').filter(line => line.trim().length > 0);
+
+    return narrative.join('\n');
   } catch (error) {
-    console.error('Failed to parse TOML response:', error);
-    throw error;
+    if (error instanceof z.ZodError) {
+      console.error('[SECURITY] [TIER 2] AI response validation failed');
+    } else {
+      console.error('[SECURITY] [TIER 2] Gemini API error:', error instanceof Error ? error.message : 'Unknown error');
+    }
+    return null;
   }
 }
 
+/**
+ * Async cache write to Appwrite
+ */
+async function cacheSummaryToAppwrite(contextHash: string, summaryText: string): Promise<void> {
+  const databaseId = process.env.APPWRITE_DATABASE_ID;
+  if (!databaseId) {
+    console.error('APPWRITE_DATABASE_ID not configured');
+    return;
+  }
+
+  try {
+    const { tablesDB } = createAdminClient();
+
+    const existing = await tablesDB.listRows({
+      databaseId,
+      tableId: 'ai_cache_summaries',
+      queries: [Query.equal('context_hash', contextHash)],
+    });
+
+    if (existing.total > 0 && existing.rows.length > 0) {
+      await tablesDB.updateRow({
+        databaseId,
+        tableId: 'ai_cache_summaries',
+        rowId: existing.rows[0].$id,
+        data: {
+          usage_count: (existing.rows[0].usage_count as number) + 1,
+        },
+      });
+      console.info('[CACHE] Updated existing summary');
+    } else {
+      await tablesDB.createRow({
+        databaseId,
+        tableId: 'ai_cache_summaries',
+        rowId: 'unique()',
+        data: {
+          context_hash: contextHash,
+          summary_text: summaryText,
+          usage_count: 1,
+        },
+        permissions: [],
+      });
+      console.info('[CACHE] Created new summary entry');
+    }
+  } catch (error) {
+    console.error('⚠️ [CACHE] Failed to store summary:', error);
+  }
+}
+
+/**
+ * Async increment usage count
+ */
+async function incrementSummaryUsageCount(rowId: string): Promise<void> {
+  const databaseId = process.env.APPWRITE_DATABASE_ID;
+  if (!databaseId) return;
+
+  try {
+    const { tablesDB } = createAdminClient();
+    const row = await tablesDB.getRow({
+      databaseId,
+      tableId: 'ai_cache_summaries',
+      rowId,
+    });
+
+    const currentCount = typeof row.usage_count === 'number' ? row.usage_count : 1;
+    await tablesDB.updateRow({
+      databaseId,
+      tableId: 'ai_cache_summaries',
+      rowId,
+      data: {
+        usage_count: currentCount + 1,
+      },
+    });
+  } catch (error) {
+    console.error('⚠️ Failed to increment summary usage count:', error);
+  }
+}
+
+/**
+ * TIER 1: Cache Check in Appwrite
+ */
+async function checkSummaryCache(contextHash: string): Promise<string | null> {
+  const databaseId = process.env.APPWRITE_DATABASE_ID;
+  if (!databaseId) {
+    console.info('⚠️ [TIER 1] APPWRITE_DATABASE_ID not configured, skipping cache');
+    return null;
+  }
+
+  try {
+    console.info(`🔍 [TIER 1] Checking Appwrite summary cache for context_hash: ${contextHash}`);
+    const { tablesDB } = createAdminClient();
+
+    const response = await tablesDB.listRows({
+      databaseId,
+      tableId: 'ai_cache_summaries',
+      queries: [Query.equal('context_hash', contextHash)],
+    });
+
+    if (response.total === 0 || response.rows.length === 0) {
+      console.info(`❌ [TIER 1] Cache MISS - no rows found for context_hash: ${contextHash}`);
+      return null;
+    }
+
+    const row = response.rows[0];
+    console.info(`✅ [TIER 1] Cache HIT! Found document ID: ${row.$id}`);
+    const summaryText = row.summary_text as string;
+
+    incrementSummaryUsageCount(row.$id).catch(() => {
+      console.error('⚠️ Failed to increment summary usage count');
+    });
+
+    return summaryText;
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.info(`❌ [TIER 1] Cache MISS - Error: ${errorMsg}`);
+    return null;
+  }
+}
+
+/**
+ * Main POST handler - Tiered Defense Architecture
+ * Security: Strict Zod input validation to prevent prompt injection
+ */
 export async function POST(request: NextRequest) {
   try {
-    // Check for API key
-    if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
+    const parseResult = SummaryRequestSchema.safeParse(await request.json());
+    if (!parseResult.success) {
+      console.error('[SECURITY] Validation failed:', JSON.stringify(parseResult.error.issues));
+      return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
     }
 
-    // Parse request body
-    const body: SummaryRequestBody = await request.json();
-    const { stats, gameOver, eventLog } = body;
+    const { stats, gameOver } = parseResult.data;
 
-    if (!stats || !gameOver) {
-      return NextResponse.json({ error: 'Missing required data' }, { status: 400 });
-    }
-
-    // Limit event log to last 25 significant events to avoid token limits
-    const significantEvents = eventLog
-      .filter(e => e.type === 'success' || e.type === 'warning' || e.type === 'event' || e.type === 'error')
-      .slice(-25);
-
-    // Convert game data to TOML
-    const gameDataToml = gameDataToToml(stats, gameOver, significantEvents);
-
-    // Construct the prompt
-    const prompt = `You are a retro game narrator for "Life at Dev", a terminal-style hacker simulation game about a developer's career journey. Your tone should be nostalgic, slightly melancholic, and wise - like an old sage reflecting on someone's life choices.
-
-Here is the player's complete game data in TOML format:
-
-\`\`\`toml
-${gameDataToml}
-\`\`\`
-
-Based on this data, generate a personalized 5-7 line life summary narrative that:
-1. References specific events from their history when relevant
-2. Comments on their career path (${stats.currentJob.path}) and final role (${stats.currentJob.title})
-3. Reflects on their ${gameOver.reason === 'victory' ? 'success' : gameOver.reason === 'burnout' ? 'burnout' : 'financial struggles'}
-4. Includes at least one piece of wisdom or reflection
-5. Ends with a memorable final line
-
-Your response MUST be valid TOML containing ONLY a summary array. No other text, no explanations.
-
-Format your response EXACTLY like this:
-\`\`\`toml
-summary = [
-  "First line of the narrative...",
-  "Second line about their journey...",
-  "Third line reflecting on choices...",
-  "Fourth line about what they achieved...",
-  "Fifth line with wisdom...",
-  "Final memorable line..."
-]
-\`\`\`
-
-Remember: Output ONLY the TOML, nothing else.`;
-
-    // Call Gemini API with timeout
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
-
-    let timeoutId: NodeJS.Timeout | null = null;
-
-    try {
-      const result = await Promise.race([
-        model.generateContent(prompt),
-        new Promise<never>((_, reject) => {
-          timeoutId = setTimeout(() => reject(new Error('Timeout')), 20000);
-        }),
-      ]);
-
-      const response = await result.response;
-      const text = response.text();
-
-      // Parse the TOML response
-      const narrative = parseSummaryFromToml(text);
-
-      // Validate we got a reasonable response
-      if (narrative.length < 3 || narrative.length > 10) {
-        throw new Error('Invalid narrative length');
-      }
-
-      return NextResponse.json({ narrative, source: 'gemini' });
-    } finally {
-      // Clean up timeout to prevent memory leak
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    }
-  } catch (error) {
-    console.error('Summary API error:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to generate summary',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 },
+    const totalWeeks = stats.weeks || 0;
+    const contextHash = generateSummaryHash(
+      stats.currentJob.path,
+      stats.currentJob.level,
+      totalWeeks,
+      gameOver.reason,
+      gameOver.isEasterEggWin,
     );
+
+    console.info(`📊 Summary Context Hash: ${contextHash}`);
+
+    // TIER 1: Check cache
+    const cachedSummary = await checkSummaryCache(contextHash);
+    if (cachedSummary) {
+      const narrative = cachedSummary.split('\n').filter(line => line.trim().length > 0);
+      return NextResponse.json({ narrative, source: 'cache' });
+    }
+
+    // TIER 2: Try Gemini API
+    const aiSummary = await generateSummaryFromAI(stats as GameStats, gameOver as GameOver, contextHash);
+    if (aiSummary) {
+      const narrative = aiSummary.split('\n').filter(line => line.trim().length > 0);
+      return NextResponse.json({ narrative, source: 'gemini' });
+    }
+
+    // TIER 3: Offline fallback
+    const fallbackNarrative = generateFallbackSummary(stats as GameStats);
+    return NextResponse.json({ narrative: fallbackNarrative, source: 'offline' });
+  } catch (error) {
+    console.error('[SECURITY] Summary API error:', error instanceof Error ? error.message : 'Unknown error');
+
+    // Emergency fallback - always return something
+    const emergencyNarrative = [
+      'The game has ended.',
+      'Your journey as a developer was... interesting.',
+      'Sometimes the best code is the code that ships.',
+      'GG.',
+    ];
+
+    return NextResponse.json({ narrative: emergencyNarrative, source: 'offline' });
   }
 }

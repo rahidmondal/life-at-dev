@@ -2,7 +2,6 @@
 
 import { useGame } from '@/context/GameContext';
 import { getActionsByCategory, getUnavailabilityReason, isActionAvailable } from '@/data/actions';
-import { meetsJobRequirements, requiresInterview } from '@/data/interviews';
 import { getAvailablePromotions, shouldShowGraduationCeremony } from '@/data/jobs';
 import { executeAction } from '@/logic/actions';
 import { generateRandomEvent } from '@/logic/events';
@@ -14,6 +13,38 @@ const GraduationModal = dynamic(() => import('./GraduationModal'), { ssr: false 
 const InterviewModal = dynamic(() => import('./InterviewModal'), { ssr: false });
 
 type Tab = 'work' | 'shop' | 'invest';
+
+// Helper: Check if job requires interview (intermediate jobs skip interviews)
+function requiresInterview(job: Job): boolean {
+  return !job.isIntermediate;
+}
+
+// Helper: Check if candidate meets job requirements
+function meetsJobRequirements(
+  job: Job,
+  coding: number,
+  reputation: number,
+  money: number,
+): { meets: boolean; failureReasons: string[] } {
+  const reasons: string[] = [];
+
+  if (coding < job.requirements.coding) {
+    reasons.push(`Need ${String(job.requirements.coding)} coding skill (you have ${String(coding)})`);
+  }
+
+  if (reputation < job.requirements.reputation) {
+    reasons.push(`Need ${String(job.requirements.reputation)} reputation (you have ${String(reputation)})`);
+  }
+
+  if (job.requirements.money && money < job.requirements.money) {
+    reasons.push(`Need $${job.requirements.money.toLocaleString()} (you have $${money.toLocaleString()})`);
+  }
+
+  return {
+    meets: reasons.length === 0,
+    failureReasons: reasons,
+  };
+}
 
 export function ActionsPanel() {
   const { state, dispatch } = useGame();

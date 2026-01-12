@@ -27,7 +27,7 @@ export function calculateScore({ finalStats, reason, isEasterEggWin = false }: C
 
   // Job Level Bonus (levels 1-4, significant weight)
   // Level 1 = 50, Level 2 = 150, Level 3 = 300, Level 4 = 500
-  const jobLevel = (finalStats.currentJob?.level ?? 1) as CareerLevel;
+  const jobLevel = finalStats.currentJob.level;
   const jobLevelBonusMap: Record<CareerLevel, number> = {
     1: 50,
     2: 150,
@@ -38,15 +38,15 @@ export function calculateScore({ finalStats, reason, isEasterEggWin = false }: C
 
   // Wealth Bonus (scaled logarithmically to prevent it from dominating)
   // Uses log scale: money of $100k = ~166 points, $1M = ~200 points
-  const money = Math.max(0, finalStats.money ?? 0);
+  const money = Math.max(0, finalStats.money);
   const wealthBonus = money > 0 ? Math.floor(Math.log10(money + 1) * 40) : 0;
 
   // Skill Mastery Bonuses
-  const codingBonus = Math.floor((finalStats.coding ?? 0) * 1.5);
-  const reputationBonus = Math.floor((finalStats.reputation ?? 0) * 2);
+  const codingBonus = Math.floor(finalStats.coding * 1.5);
+  const reputationBonus = Math.floor(finalStats.reputation * 2);
 
   // Efficiency Bonus (based on age and outcome)
-  const yearsPlayed = (finalStats.age ?? 18) - 18;
+  const yearsPlayed = finalStats.age - 18;
   let efficiencyBonus = 0;
 
   if (reason === 'victory') {
@@ -107,13 +107,13 @@ export function calculateScore({ finalStats, reason, isEasterEggWin = false }: C
  */
 export function getScoreBreakdownText(breakdown: ScoreBreakdown): string {
   const parts = [
-    `Base: ${breakdown.basePoints}`,
-    `Job Level: +${breakdown.jobLevelBonus}`,
-    `Wealth: +${breakdown.wealthBonus}`,
-    `Coding: +${breakdown.codingBonus}`,
-    `Reputation: +${breakdown.reputationBonus}`,
-    `Efficiency: +${breakdown.efficiencyBonus}`,
-    `× ${breakdown.outcomeMultiplier} (outcome)`,
+    `Base: ${String(breakdown.basePoints)}`,
+    `Job Level: +${String(breakdown.jobLevelBonus)}`,
+    `Wealth: +${String(breakdown.wealthBonus)}`,
+    `Coding: +${String(breakdown.codingBonus)}`,
+    `Reputation: +${String(breakdown.reputationBonus)}`,
+    `Efficiency: +${String(breakdown.efficiencyBonus)}`,
+    `× ${String(breakdown.outcomeMultiplier)} (outcome)`,
   ];
   return parts.join(' | ');
 }

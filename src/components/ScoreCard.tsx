@@ -26,7 +26,7 @@ export function ScoreCard({ finalStats, reason, isEasterEggWin, themeBorder, the
     [finalStats, reason, isEasterEggWin],
   );
 
-  const breakdownText = useMemo(() => getScoreBreakdownText(scoreBreakdown), [scoreBreakdown]);
+  const _breakdownText = useMemo(() => getScoreBreakdownText(scoreBreakdown), [scoreBreakdown]);
 
   return (
     <div className="mx-auto max-w-3xl">

@@ -1,6 +1,61 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 export function LoadingScreen() {
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    const checkOnline = () => {
+      setIsOffline(!navigator.onLine);
+    };
+
+    checkOnline();
+    window.addEventListener('online', checkOnline);
+    window.addEventListener('offline', checkOnline);
+
+    return () => {
+      window.removeEventListener('online', checkOnline);
+      window.removeEventListener('offline', checkOnline);
+    };
+  }, []);
+
+  if (isOffline) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black px-4">
+        <div className="max-w-md space-y-6 text-center">
+          {/* Offline Icon */}
+          <div className="relative mx-auto">
+            <div className="mx-auto h-32 w-32 rounded-lg border-2 border-red-500/50 bg-red-500/10" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="font-mono text-6xl">📡</span>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          <div className="space-y-3">
+            <h1 className="font-mono text-2xl font-bold text-red-400">No Internet Connection</h1>
+            <p className="font-mono text-sm leading-relaxed text-gray-300">
+              Life @ Dev requires an active internet connection to generate AI-powered interview questions and career
+              summaries.
+            </p>
+            <p className="font-mono text-xs text-gray-500">Please check your connection and refresh the page.</p>
+          </div>
+
+          {/* Retry Button */}
+          <button
+            onClick={() => {
+              window.location.reload();
+            }}
+            className="rounded-lg border-2 border-emerald-500 bg-emerald-500/10 px-6 py-3 font-mono text-sm font-bold text-emerald-400 transition-all hover:bg-emerald-500 hover:text-black"
+          >
+            🔄 Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-black">
       <div className="flex flex-col items-center gap-6">
