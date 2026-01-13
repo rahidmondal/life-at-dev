@@ -312,12 +312,13 @@ export function gameReducer(state: GameState, action: GameActionType): GameState
       // Jobs that don't require interviews can still auto-promote
       const noInterviewJobs = ['unemployed', 'cs-student', 'script-kiddie', 'cs-student-easy', 'intern'];
       const canAutoPromote = availablePromotions.length === 1 && !isSeniorOrAbove;
-      const promotionJob = availablePromotions[0];
-      const requiresInterview = !noInterviewJobs.includes(promotionJob.id);
 
       let pendingInterview: Job | undefined = undefined;
 
       if (canAutoPromote) {
+        const promotionJob = availablePromotions[0];
+        const requiresInterview = !noInterviewJobs.includes(promotionJob.id);
+
         if (requiresInterview) {
           // Set pending interview instead of auto-promoting
           pendingInterview = promotionJob;
