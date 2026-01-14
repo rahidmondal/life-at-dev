@@ -6,14 +6,23 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { ActionsPanel } from './ActionsPanel';
 import { EventLog } from './EventLog';
-import { ProTipsPanel } from './ProTipsPanel';
+import { MobileBottomNav } from './MobileBottomNav';
+import { MobileHeader } from './MobileHeader';
+import { MobileMenuSheet } from './MobileMenuSheet';
+import { MobileStatsDrawer } from './MobileStatsDrawer';
 import { StatsPanel } from './StatsPanel';
 
+type MobileTab = 'home' | 'work' | 'shop' | 'invest' | 'menu';
+type DesktopActionTab = 'work' | 'shop' | 'invest';
+
 export function GameScreen() {
-  const [mobileTab, setMobileTab] = useState<'stats' | 'events' | 'tips'>('stats');
+  const [mobileTab, setMobileTab] = useState<MobileTab>('home');
+  const [desktopActionTab, setDesktopActionTab] = useState<DesktopActionTab>('work');
   const { saveGameManually, isStorageReady, goToHomeScreen } = useGame();
   const [isSaving, setIsSaving] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showStatsDrawer, setShowStatsDrawer] = useState(false);
+  const [showMenuSheet, setShowMenuSheet] = useState(false);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -36,13 +45,27 @@ export function GameScreen() {
     setShowLeaveModal(false);
   };
 
-  return (
-    <div className="flex h-screen flex-col bg-black">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-gray-800 bg-black px-3 py-3 sm:px-4 sm:py-4 lg:px-6">
+  const handleMobileTabChange = (tab: MobileTab) => {
+    if (tab === 'menu') {
+      setShowMenuSheet(true);
+    } else {
+      setMobileTab(tab);
+    }
+  };
+
+  // Callback for when an action is performed on mobile - navigate back to home (Event Log)
+  const handleMobileActionPerformed = () => {
+    setMobileTab('home');
+  };
+
+  // Desktop Layout (≥1024px) - 3 Column Command Center
+  const DesktopLayout = () => (
+    <div className="hidden h-screen flex-col bg-black lg:flex">
+      {/* Desktop Header */}
+      <header className="flex shrink-0 items-center justify-between border-b border-gray-800 bg-gray-950/50 px-6 py-4 backdrop-blur-sm">
         <button
           onClick={handleLogoClick}
-          className="flex items-center gap-2 transition-opacity hover:opacity-80 active:opacity-60 sm:gap-4"
+          className="flex items-center gap-4 transition-opacity hover:opacity-80 active:opacity-60"
           aria-label="Go to home screen"
         >
           <Image
@@ -50,102 +73,89 @@ export function GameScreen() {
             alt="Life @ Dev"
             width={60}
             height={60}
-            className="h-12 w-12 rounded-lg sm:h-16 sm:w-16 lg:h-20 lg:w-20"
+            className="h-14 w-14 rounded-lg"
           />
           <div>
-            <h1 className="font-mono text-lg font-bold text-emerald-400 sm:text-xl lg:text-2xl">Life@Dev</h1>
-            <p className="hidden font-mono text-xs text-gray-400 sm:block">Survive the grind. Climb the ladder.</p>
+            <h1 className="font-mono text-xl font-bold text-emerald-400">Life@Dev</h1>
+            <p className="font-mono text-xs text-gray-500">Survive the grind. Climb the ladder.</p>
           </div>
         </button>
+
+        {/* Desktop Save Button */}
+        {isStorageReady && (
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`rounded-lg border-2 px-6 py-2 font-mono text-sm font-bold transition-all ${
+              isSaving
+                ? 'animate-pulse border-emerald-400 bg-emerald-500 text-black'
+                : 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-black'
+            }`}
+          >
+            {isSaving ? '💾 Saving...' : '💾 Save Game'}
+          </button>
+        )}
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="hidden w-80 shrink-0 lg:block">
-          <StatsPanel />
+      {/* 3-Column Dashboard Layout */}
+      <div className="flex flex-1 gap-4 overflow-hidden p-4">
+        {/* Left Panel - Profile & Vitals (Glass Card) */}
+        <div className="w-80 shrink-0">
+          <StatsPanel mode="desktop" />
         </div>
 
+        {/* Center Panel - Event Log (The Terminal/Main Monitor) */}
         <div className="flex flex-1 flex-col">
-          <div className="flex-1 overflow-hidden">
-            <ActionsPanel />
-          </div>
-
-          <div className="hidden h-48 shrink-0 md:block">
-            <EventLog />
-          </div>
+          <EventLog mode="desktop" />
         </div>
 
-        <div className="hidden w-80 shrink-0 lg:block">
-          <ProTipsPanel />
+        {/* Right Panel - Actions (The Control Deck) */}
+        <div className="w-96 shrink-0">
+          <ActionsPanel mode="desktop" activeTab={desktopActionTab} onTabChange={setDesktopActionTab} />
         </div>
       </div>
+    </div>
+  );
 
-      <div className="lg:hidden">
-        {/* Tab Navigation */}
-        <div className="flex border-t border-gray-800 bg-gray-950">
-          <button
-            onClick={() => {
-              setMobileTab('stats');
-            }}
-            className={`flex-1 border-r border-gray-800 py-3 font-mono text-xs font-bold transition-colors sm:text-sm ${
-              mobileTab === 'stats'
-                ? 'bg-emerald-950 text-emerald-400'
-                : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
-            }`}
-          >
-            📊 Stats
-          </button>
-          <button
-            onClick={() => {
-              setMobileTab('events');
-            }}
-            className={`flex-1 border-r border-gray-800 py-3 font-mono text-xs font-bold transition-colors sm:text-sm ${
-              mobileTab === 'events'
-                ? 'bg-emerald-950 text-emerald-400'
-                : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
-            }`}
-          >
-            ⚡ Events
-          </button>
-          <button
-            onClick={() => {
-              setMobileTab('tips');
-            }}
-            className={`flex-1 py-3 font-mono text-xs font-bold transition-colors sm:text-sm ${
-              mobileTab === 'tips'
-                ? 'bg-emerald-950 text-emerald-400'
-                : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
-            }`}
-          >
-            💡 Tips
-          </button>
-        </div>
+  // Mobile Layout (<1024px) - App-like with Bottom Nav
+  const MobileLayout = () => (
+    <div className="flex h-screen flex-col bg-black lg:hidden">
+      {/* Mobile HUD Header */}
+      <MobileHeader onProfileClick={() => { setShowStatsDrawer(true); }} />
 
-        {/* Tab Content */}
-        <div className="h-64 overflow-hidden border-t border-gray-800">
-          {mobileTab === 'stats' && <StatsPanel />}
-          {mobileTab === 'events' && <EventLog />}
-          {mobileTab === 'tips' && <ProTipsPanel />}
-        </div>
-      </div>
+      {/* Main Content Area - Changes based on Bottom Nav */}
+      <main className="flex-1 overflow-hidden pb-16">
+        {mobileTab === 'home' && <EventLog mode="mobile" />}
+        {mobileTab === 'work' && <ActionsPanel mode="mobile" defaultTab="work" onActionPerformed={handleMobileActionPerformed} />}
+        {mobileTab === 'shop' && <ActionsPanel mode="mobile" defaultTab="shop" onActionPerformed={handleMobileActionPerformed} />}
+        {mobileTab === 'invest' && <ActionsPanel mode="mobile" defaultTab="invest" onActionPerformed={handleMobileActionPerformed} />}
+      </main>
 
-      {/* Floating Save Button - Mobile & Tablet Only */}
-      {isStorageReady && (
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className={`fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full border-2 font-mono text-2xl shadow-lg backdrop-blur-sm transition-all lg:hidden ${
-            isSaving
-              ? 'animate-pulse border-emerald-400 bg-emerald-500 text-black'
-              : 'border-emerald-500 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-black active:scale-95'
-          }`}
-          aria-label="Save Game"
-        >
-          💾
-        </button>
-      )}
+      {/* Bottom Navigation */}
+      <MobileBottomNav activeTab={mobileTab} onTabChange={handleMobileTabChange} />
+
+      {/* Stats Drawer */}
+      <MobileStatsDrawer isOpen={showStatsDrawer} onClose={() => { setShowStatsDrawer(false); }} />
+
+      {/* Menu Sheet */}
+      <MobileMenuSheet
+        isOpen={showMenuSheet}
+        onClose={() => { setShowMenuSheet(false); }}
+        onSave={handleSave}
+        onGoHome={handleGoHome}
+        isSaving={isSaving}
+        isStorageReady={isStorageReady}
+      />
+    </div>
+  );
+
+  return (
+    <>
+      <DesktopLayout />
+      <MobileLayout />
 
       {/* Leave Game Modal */}
       {showLeaveModal && <LeaveGameModal onGoHome={handleGoHome} onCancel={handleCancelLeave} />}
-    </div>
+    </>
   );
 }

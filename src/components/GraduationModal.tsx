@@ -16,6 +16,7 @@ export default function GraduationModal({
   onCancel,
   isGraduation = true,
 }: GraduationModalProps) {
+  console.log('[DEBUG] GraduationModal rendering', { availableJobs: availableJobs.map(j => j.id), isGraduation });
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   const jobsByPath: Record<string, Job[]> = {};

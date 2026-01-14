@@ -37,6 +37,7 @@ const LOADING_MESSAGES = [
 ];
 
 export default function InterviewModal({ targetJob, onComplete, onCancel }: InterviewModalProps) {
+  console.log('[DEBUG] InterviewModal rendering', { targetJobId: targetJob.id });
   const { userApiKey, setUserApiKey } = useGame();
   const [isLoading, setIsLoading] = useState(true);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
