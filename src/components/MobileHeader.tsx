@@ -50,7 +50,9 @@ export function MobileHeader({ onProfileClick }: MobileHeaderProps) {
         {/* Money */}
         <div className="flex items-center gap-1">
           <span className="text-gray-500">💰 Money:</span>
-          <span className={`font-bold ${stats.money < 0 ? 'text-red-400' : stats.money < 500 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+          <span
+            className={`font-bold ${stats.money < 0 ? 'text-red-400' : stats.money < 500 ? 'text-yellow-400' : 'text-emerald-400'}`}
+          >
             ${stats.money >= 1000 ? `${(stats.money / 1000).toFixed(1)}k` : stats.money}
           </span>
         </div>

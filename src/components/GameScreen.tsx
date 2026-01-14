@@ -68,13 +68,7 @@ export function GameScreen() {
           className="flex items-center gap-4 transition-opacity hover:opacity-80 active:opacity-60"
           aria-label="Go to home screen"
         >
-          <Image
-            src="/logo.png"
-            alt="Life @ Dev"
-            width={60}
-            height={60}
-            className="h-14 w-14 rounded-lg"
-          />
+          <Image src="/logo.png" alt="Life @ Dev" width={60} height={60} className="h-14 w-14 rounded-lg" />
           <div>
             <h1 className="font-mono text-xl font-bold text-emerald-400">Life@Dev</h1>
             <p className="font-mono text-xs text-gray-500">Survive the grind. Climb the ladder.</p>
@@ -121,26 +115,43 @@ export function GameScreen() {
   const MobileLayout = () => (
     <div className="flex h-screen flex-col bg-black lg:hidden">
       {/* Mobile HUD Header */}
-      <MobileHeader onProfileClick={() => { setShowStatsDrawer(true); }} />
+      <MobileHeader
+        onProfileClick={() => {
+          setShowStatsDrawer(true);
+        }}
+      />
 
       {/* Main Content Area - Changes based on Bottom Nav */}
       <main className="flex-1 overflow-hidden pb-16">
         {mobileTab === 'home' && <EventLog mode="mobile" />}
-        {mobileTab === 'work' && <ActionsPanel mode="mobile" defaultTab="work" onActionPerformed={handleMobileActionPerformed} />}
-        {mobileTab === 'shop' && <ActionsPanel mode="mobile" defaultTab="shop" onActionPerformed={handleMobileActionPerformed} />}
-        {mobileTab === 'invest' && <ActionsPanel mode="mobile" defaultTab="invest" onActionPerformed={handleMobileActionPerformed} />}
+        {mobileTab === 'work' && (
+          <ActionsPanel mode="mobile" defaultTab="work" onActionPerformed={handleMobileActionPerformed} />
+        )}
+        {mobileTab === 'shop' && (
+          <ActionsPanel mode="mobile" defaultTab="shop" onActionPerformed={handleMobileActionPerformed} />
+        )}
+        {mobileTab === 'invest' && (
+          <ActionsPanel mode="mobile" defaultTab="invest" onActionPerformed={handleMobileActionPerformed} />
+        )}
       </main>
 
       {/* Bottom Navigation */}
       <MobileBottomNav activeTab={mobileTab} onTabChange={handleMobileTabChange} />
 
       {/* Stats Drawer */}
-      <MobileStatsDrawer isOpen={showStatsDrawer} onClose={() => { setShowStatsDrawer(false); }} />
+      <MobileStatsDrawer
+        isOpen={showStatsDrawer}
+        onClose={() => {
+          setShowStatsDrawer(false);
+        }}
+      />
 
       {/* Menu Sheet */}
       <MobileMenuSheet
         isOpen={showMenuSheet}
-        onClose={() => { setShowMenuSheet(false); }}
+        onClose={() => {
+          setShowMenuSheet(false);
+        }}
         onSave={handleSave}
         onGoHome={handleGoHome}
         isSaving={isSaving}

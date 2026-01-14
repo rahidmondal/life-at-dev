@@ -73,9 +73,7 @@ export function EventLog({ mode = 'desktop' }: EventLogProps) {
             <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
             <div className="h-3 w-3 rounded-full bg-green-500/80" />
           </div>
-          <h3 className="font-mono text-xs font-bold text-emerald-400">
-            TERMINAL — EVENT LOG [{eventLog.length}]
-          </h3>
+          <h3 className="font-mono text-xs font-bold text-emerald-400">TERMINAL — EVENT LOG [{eventLog.length}]</h3>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
@@ -87,7 +85,7 @@ export function EventLog({ mode = 'desktop' }: EventLogProps) {
       <div className="relative flex-1 overflow-y-auto">
         {/* CRT Scanline overlay */}
         <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-transparent via-emerald-500/2 to-transparent bg-size-[100%_4px]" />
-        
+
         {/* Log Content */}
         <div className="space-y-1 p-3 font-mono text-xs">
           {eventLog.length === 0 ? (
@@ -104,9 +102,7 @@ export function EventLog({ mode = 'desktop' }: EventLogProps) {
                   className={`rounded border-l-2 px-3 py-1.5 ${getLogBgColor(log.type)} transition-all`}
                 >
                   <div className="flex items-start gap-2">
-                    <span className={`shrink-0 font-bold ${getLogColor(log.type)}`}>
-                      {getLogIcon(log.type)}
-                    </span>
+                    <span className={`shrink-0 font-bold ${getLogColor(log.type)}`}>{getLogIcon(log.type)}</span>
                     <span className={`flex-1 wrap-break-word leading-relaxed ${getLogColor(log.type)}`}>
                       {log.message}
                     </span>
@@ -114,7 +110,7 @@ export function EventLog({ mode = 'desktop' }: EventLogProps) {
                 </div>
               ))}
               <div ref={logEndRef} />
-              
+
               {/* Blinking cursor */}
               <div className="flex items-center gap-1 px-3 py-1 text-emerald-500">
                 <span>$</span>

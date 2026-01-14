@@ -54,50 +54,56 @@ function meetsJobRequirements(
 
 // Action icon mapping
 const ACTION_ICONS: Record<string, string> = {
-  'work': '💼',
-  'study': '📚',
-  'leetcode': '🧩',
-  'freelance': '💻',
+  work: '💼',
+  study: '📚',
+  leetcode: '🧩',
+  freelance: '💻',
   'side-project': '🚀',
   'job-hunt': '🔍',
-  'network': '🤝',
-  'coffee': '☕',
-  'sleep': '😴',
-  'vacation': '🏖️',
-  'gym': '💪',
-  'therapy': '🧘',
+  network: '🤝',
+  coffee: '☕',
+  sleep: '😴',
+  vacation: '🏖️',
+  gym: '💪',
+  therapy: '🧘',
   'energy-drink': '⚡',
-  'bootcamp': '🎓',
-  'conference': '🎤',
-  'course': '📖',
-  'mentor': '👨‍🏫',
-  'stocks': '📈',
-  'crypto': '₿',
-  'startup': '🦄',
+  bootcamp: '🎓',
+  conference: '🎤',
+  course: '📖',
+  mentor: '👨‍🏫',
+  stocks: '📈',
+  crypto: '₿',
+  startup: '🦄',
   'real-estate': '🏠',
-  'default': '▶️',
+  default: '▶️',
 };
 
 function getActionIcon(actionId: string): string {
   // Try exact match first
   if (ACTION_ICONS[actionId]) return ACTION_ICONS[actionId];
-  
+
   // Try partial match
   for (const [key, icon] of Object.entries(ACTION_ICONS)) {
     if (actionId.includes(key)) return icon;
   }
-  
+
   return ACTION_ICONS.default;
 }
 
-export function ActionsPanel({ mode = 'desktop', defaultTab = 'work', activeTab: controlledActiveTab, onTabChange, onActionPerformed }: ActionsPanelProps) {
+export function ActionsPanel({
+  mode = 'desktop',
+  defaultTab = 'work',
+  activeTab: controlledActiveTab,
+  onTabChange,
+  onActionPerformed,
+}: ActionsPanelProps) {
   const { state, dispatch } = useGame();
   const { stats, pendingYearEndInterview, pendingJobSelection } = state;
-  
+
   // Use controlled tab if provided (from parent), otherwise use internal state
   const [internalActiveTab, setInternalActiveTab] = useState<Tab>(defaultTab);
   const activeTab = controlledActiveTab ?? internalActiveTab;
-  
+
   const setActiveTab = (tab: Tab) => {
     if (onTabChange) {
       onTabChange(tab);
@@ -105,7 +111,7 @@ export function ActionsPanel({ mode = 'desktop', defaultTab = 'work', activeTab:
       setInternalActiveTab(tab);
     }
   };
-  
+
   const [showJobSelectionModal, setShowJobSelectionModal] = useState(false);
   const [availableJobsList, setAvailableJobsList] = useState<Job[]>([]);
   const [isGraduation, setIsGraduation] = useState(false);
@@ -144,9 +150,16 @@ export function ActionsPanel({ mode = 'desktop', defaultTab = 'work', activeTab:
     }
 
     if (actionId === 'job-hunt') {
-      console.log('[DEBUG] Job Hunt clicked', { currentJob: stats.currentJob.id, coding: stats.coding, reputation: stats.reputation });
+      console.log('[DEBUG] Job Hunt clicked', {
+        currentJob: stats.currentJob.id,
+        coding: stats.coding,
+        reputation: stats.reputation,
+      });
       const availableJobs = getAvailablePromotions(stats.currentJob, stats.coding, stats.reputation, stats.money);
-      console.log('[DEBUG] Available jobs:', availableJobs.map(j => j.id));
+      console.log(
+        '[DEBUG] Available jobs:',
+        availableJobs.map(j => j.id),
+      );
 
       if (availableJobs.length === 0) {
         executeAction(action, stats, dispatch);
@@ -349,196 +362,218 @@ export function ActionsPanel({ mode = 'desktop', defaultTab = 'work', activeTab:
   return (
     <>
       <div className="flex h-full flex-col overflow-hidden rounded-xl border border-emerald-500/20 bg-gray-900/50 backdrop-blur-md">
-      {/* Desktop: Tabs inside panel / Mobile: No tabs (controlled by bottom nav) */}
-      {mode === 'desktop' && (
-        <div className="flex shrink-0 border-b border-gray-800 bg-gray-950/50">
-          <button
-            onClick={() => { setActiveTab('work'); }}
-            className={`flex-1 px-4 py-3 font-mono text-xs font-bold transition-colors ${
-              activeTab === 'work'
-                ? 'border-b-2 border-emerald-400 bg-emerald-950/50 text-emerald-400'
-                : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
-            }`}
-          >
-            💼 Work
-          </button>
-          <button
-            onClick={() => { setActiveTab('shop'); }}
-            className={`flex-1 px-4 py-3 font-mono text-xs font-bold transition-colors ${
-              activeTab === 'shop'
-                ? 'border-b-2 border-emerald-400 bg-emerald-950/50 text-emerald-400'
-                : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
-            }`}
-          >
-            🛒 Shop
-          </button>
-          <button
-            onClick={() => { setActiveTab('invest'); }}
-            className={`flex-1 px-4 py-3 font-mono text-xs font-bold transition-colors ${
-              activeTab === 'invest'
-                ? 'border-b-2 border-emerald-400 bg-emerald-950/50 text-emerald-400'
-                : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
-            }`}
-          >
-            📈 Invest
-          </button>
+        {/* Desktop: Tabs inside panel / Mobile: No tabs (controlled by bottom nav) */}
+        {mode === 'desktop' && (
+          <div className="flex shrink-0 border-b border-gray-800 bg-gray-950/50">
+            <button
+              onClick={() => {
+                setActiveTab('work');
+              }}
+              className={`flex-1 px-4 py-3 font-mono text-xs font-bold transition-colors ${
+                activeTab === 'work'
+                  ? 'border-b-2 border-emerald-400 bg-emerald-950/50 text-emerald-400'
+                  : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
+              }`}
+            >
+              💼 Work
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('shop');
+              }}
+              className={`flex-1 px-4 py-3 font-mono text-xs font-bold transition-colors ${
+                activeTab === 'shop'
+                  ? 'border-b-2 border-emerald-400 bg-emerald-950/50 text-emerald-400'
+                  : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
+              }`}
+            >
+              🛒 Shop
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('invest');
+              }}
+              className={`flex-1 px-4 py-3 font-mono text-xs font-bold transition-colors ${
+                activeTab === 'invest'
+                  ? 'border-b-2 border-emerald-400 bg-emerald-950/50 text-emerald-400'
+                  : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
+              }`}
+            >
+              📈 Invest
+            </button>
+          </div>
+        )}
+
+        {/* Tab Header */}
+        <div className="shrink-0 border-b border-gray-800/50 bg-gray-950/30 px-4 py-2">
+          <h3 className="font-mono text-xs font-bold text-emerald-400">
+            ⚡ {activeTab === 'work' ? 'DAILY GRIND' : activeTab === 'shop' ? 'RECOVERY & GEAR' : 'CAREER ADVANCEMENT'}
+          </h3>
         </div>
-      )}
 
-      {/* Tab Header */}
-      <div className="shrink-0 border-b border-gray-800/50 bg-gray-950/30 px-4 py-2">
-        <h3 className="font-mono text-xs font-bold text-emerald-400">
-          ⚡ {activeTab === 'work' ? 'DAILY GRIND' : activeTab === 'shop' ? 'RECOVERY & GEAR' : 'CAREER ADVANCEMENT'}
-        </h3>
-      </div>
+        {/* Actions Grid - Squared Buttons */}
+        <div className="flex-1 overflow-y-auto p-3">
+          <div className={`grid gap-2 ${mode === 'desktop' ? 'grid-cols-2' : 'grid-cols-2'}`}>
+            {actions.map(action => {
+              const available = isActionAvailable(action, stats.energy, stats.money, stats.reputation);
+              const reason = getUnavailabilityReason(action, stats.energy, stats.money, stats.reputation);
+              const icon = getActionIcon(action.id);
 
-      {/* Actions Grid - Squared Buttons */}
-      <div className="flex-1 overflow-y-auto p-3">
-        <div className={`grid gap-2 ${mode === 'desktop' ? 'grid-cols-2' : 'grid-cols-2'}`}>
-          {actions.map(action => {
-            const available = isActionAvailable(action, stats.energy, stats.money, stats.reputation);
-            const reason = getUnavailabilityReason(action, stats.energy, stats.money, stats.reputation);
-            const icon = getActionIcon(action.id);
-
-            return (
-              <button
-                key={action.id}
-                onClick={() => { handleAction(action.id); }}
-                disabled={!available}
-                className={`group relative flex flex-col items-start gap-1 overflow-hidden rounded-xl border-2 p-3 text-left transition-all ${
-                  available
-                    ? action.id === 'side-project'
-                      ? 'border-pink-500/50 bg-pink-950/30 hover:border-pink-400 hover:bg-pink-900/50 hover:shadow-lg hover:shadow-pink-500/20 active:scale-[0.98]'
-                      : 'border-gray-700/50 bg-gray-900/50 hover:border-emerald-500/50 hover:bg-gray-800/50 hover:shadow-lg hover:shadow-emerald-500/10 active:scale-[0.98]'
-                    : 'cursor-not-allowed border-gray-800/30 bg-gray-950/30 opacity-40'
-                }`}
-              >
-                {/* Header Row: Icon + Title + Week Badge */}
-                <div className="flex w-full items-center gap-2">
-                  <span className={`text-xl transition-transform ${available ? 'group-hover:scale-110' : ''}`}>
-                    {icon}
-                  </span>
-                  <span
-                    className={`flex-1 font-mono text-xs font-bold leading-tight ${
-                      available
-                        ? action.id === 'side-project'
-                          ? 'text-pink-400'
-                          : 'text-emerald-400'
-                        : 'text-gray-600'
-                    }`}
-                  >
-                    {action.name}
-                  </span>
-                  <div
-                    className={`shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[8px] font-bold ${
-                      available ? 'bg-cyan-500/20 text-cyan-400' : 'bg-gray-800 text-gray-600'
-                    }`}
-                  >
-                    {action.cost.weeks}w
-                  </div>
-                </div>
-
-                {/* Description - Always visible, truncated */}
-                <p className={`line-clamp-2 font-mono text-[10px] leading-tight ${
-                  available ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  {action.description}
-                </p>
-
-                {/* Cost/Reward Badges Row */}
-                <div className="mt-auto flex flex-wrap gap-1 pt-1">
-                  {action.cost.energy > 0 && (
-                    <span className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                      available ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-600'
-                    }`}>
-                      -{action.cost.energy}⚡
+              return (
+                <button
+                  key={action.id}
+                  onClick={() => {
+                    handleAction(action.id);
+                  }}
+                  disabled={!available}
+                  className={`group relative flex flex-col items-start gap-1 overflow-hidden rounded-xl border-2 p-3 text-left transition-all ${
+                    available
+                      ? action.id === 'side-project'
+                        ? 'border-pink-500/50 bg-pink-950/30 hover:border-pink-400 hover:bg-pink-900/50 hover:shadow-lg hover:shadow-pink-500/20 active:scale-[0.98]'
+                        : 'border-gray-700/50 bg-gray-900/50 hover:border-emerald-500/50 hover:bg-gray-800/50 hover:shadow-lg hover:shadow-emerald-500/10 active:scale-[0.98]'
+                      : 'cursor-not-allowed border-gray-800/30 bg-gray-950/30 opacity-40'
+                  }`}
+                >
+                  {/* Header Row: Icon + Title + Week Badge */}
+                  <div className="flex w-full items-center gap-2">
+                    <span className={`text-xl transition-transform ${available ? 'group-hover:scale-110' : ''}`}>
+                      {icon}
                     </span>
-                  )}
-                  {action.cost.stress > 0 && (
-                    <span className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                      available ? 'bg-orange-500/20 text-orange-400' : 'bg-gray-800 text-gray-600'
-                    }`}>
-                      +{action.cost.stress}😰
+                    <span
+                      className={`flex-1 font-mono text-xs font-bold leading-tight ${
+                        available
+                          ? action.id === 'side-project'
+                            ? 'text-pink-400'
+                            : 'text-emerald-400'
+                          : 'text-gray-600'
+                      }`}
+                    >
+                      {action.name}
                     </span>
-                  )}
-                  {action.cost.money > 0 && (
-                    <span className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                      available ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-600'
-                    }`}>
-                      -${action.cost.money}
-                    </span>
-                  )}
-                  {action.reward.coding > 0 && (
-                    <span className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                      available ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-600'
-                    }`}>
-                      +{action.reward.coding}💻
-                    </span>
-                  )}
-                  {action.reward.reputation > 0 && (
-                    <span className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                      available ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-800 text-gray-600'
-                    }`}>
-                      +{action.reward.reputation}⭐
-                    </span>
-                  )}
-                  {action.reward.money > 0 && (
-                    <span className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                      available ? 'bg-green-500/20 text-green-400' : 'bg-gray-800 text-gray-600'
-                    }`}>
-                      +${action.reward.money}
-                    </span>
-                  )}
-                </div>
-
-                {/* Unavailable overlay with tooltip */}
-                {!available && reason && (
-                  <div className="group/locked absolute inset-0 flex flex-col items-center justify-center bg-black/70">
-                    <span className="text-2xl">🔒</span>
-                    <div className="absolute inset-x-0 bottom-0 hidden max-h-0 overflow-hidden bg-black/90 px-2 py-1 text-center opacity-0 transition-all group-hover/locked:block group-hover/locked:max-h-20 group-hover/locked:opacity-100">
-                      <p className="font-mono text-[9px] leading-tight text-red-400">{reason}</p>
+                    <div
+                      className={`shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[8px] font-bold ${
+                        available ? 'bg-cyan-500/20 text-cyan-400' : 'bg-gray-800 text-gray-600'
+                      }`}
+                    >
+                      {action.cost.weeks}w
                     </div>
                   </div>
-                )}
 
-                {/* Shimmer effect */}
-                {available && (
-                  <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/5 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-                )}
-              </button>
-            );
-          })}
+                  {/* Description - Always visible, truncated */}
+                  <p
+                    className={`line-clamp-2 font-mono text-[10px] leading-tight ${
+                      available ? 'text-gray-400' : 'text-gray-600'
+                    }`}
+                  >
+                    {action.description}
+                  </p>
+
+                  {/* Cost/Reward Badges Row */}
+                  <div className="mt-auto flex flex-wrap gap-1 pt-1">
+                    {action.cost.energy > 0 && (
+                      <span
+                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
+                          available ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-600'
+                        }`}
+                      >
+                        -{action.cost.energy}⚡
+                      </span>
+                    )}
+                    {action.cost.stress > 0 && (
+                      <span
+                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
+                          available ? 'bg-orange-500/20 text-orange-400' : 'bg-gray-800 text-gray-600'
+                        }`}
+                      >
+                        +{action.cost.stress}😰
+                      </span>
+                    )}
+                    {action.cost.money > 0 && (
+                      <span
+                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
+                          available ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-600'
+                        }`}
+                      >
+                        -${action.cost.money}
+                      </span>
+                    )}
+                    {action.reward.coding > 0 && (
+                      <span
+                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
+                          available ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-600'
+                        }`}
+                      >
+                        +{action.reward.coding}💻
+                      </span>
+                    )}
+                    {action.reward.reputation > 0 && (
+                      <span
+                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
+                          available ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-800 text-gray-600'
+                        }`}
+                      >
+                        +{action.reward.reputation}⭐
+                      </span>
+                    )}
+                    {action.reward.money > 0 && (
+                      <span
+                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
+                          available ? 'bg-green-500/20 text-green-400' : 'bg-gray-800 text-gray-600'
+                        }`}
+                      >
+                        +${action.reward.money}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Unavailable overlay with tooltip */}
+                  {!available && reason && (
+                    <div className="group/locked absolute inset-0 flex flex-col items-center justify-center bg-black/70">
+                      <span className="text-2xl">🔒</span>
+                      <div className="absolute inset-x-0 bottom-0 hidden max-h-0 overflow-hidden bg-black/90 px-2 py-1 text-center opacity-0 transition-all group-hover/locked:block group-hover/locked:max-h-20 group-hover/locked:opacity-100">
+                        <p className="font-mono text-[9px] leading-tight text-red-400">{reason}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Shimmer effect */}
+                  {available && (
+                    <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/5 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Next Year Button */}
+        <div className="shrink-0 border-t border-gray-800/50 bg-gray-950/50 p-3">
+          <button
+            onClick={handleNextYear}
+            disabled={stats.weeks > 0}
+            className={`group relative w-full overflow-hidden rounded-xl py-3 font-mono text-sm font-bold transition-all ${
+              stats.weeks <= 0
+                ? 'bg-linear-to-r from-emerald-600 to-emerald-500 text-black shadow-lg shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-400'
+                : 'cursor-not-allowed bg-gray-800/50 text-gray-600'
+            }`}
+          >
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              ⏭️ Next Year
+              {stats.weeks > 0 && <span className="text-xs opacity-70">({stats.weeks}w left)</span>}
+            </span>
+            {stats.weeks <= 0 && (
+              <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+            )}
+          </button>
         </div>
       </div>
-
-      {/* Next Year Button */}
-      <div className="shrink-0 border-t border-gray-800/50 bg-gray-950/50 p-3">
-        <button
-          onClick={handleNextYear}
-          disabled={stats.weeks > 0}
-          className={`group relative w-full overflow-hidden rounded-xl py-3 font-mono text-sm font-bold transition-all ${
-            stats.weeks <= 0
-              ? 'bg-linear-to-r from-emerald-600 to-emerald-500 text-black shadow-lg shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-400'
-              : 'cursor-not-allowed bg-gray-800/50 text-gray-600'
-          }`}
-        >
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            ⏭️ Next Year
-            {stats.weeks > 0 && <span className="text-xs opacity-70">({stats.weeks}w left)</span>}
-          </span>
-          {stats.weeks <= 0 && (
-            <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-          )}
-        </button>
-      </div>
-    </div>
 
       {/* Job Selection Modal (Graduation or Regular Promotion) */}
       {(() => {
-        console.log('[DEBUG] Job Selection Modal Render Check:', { 
-          showJobSelectionModal, 
+        console.log('[DEBUG] Job Selection Modal Render Check:', {
+          showJobSelectionModal,
           availableJobsCount: availableJobsList.length,
-          jobs: availableJobsList.map(j => j.id)
+          jobs: availableJobsList.map(j => j.id),
         });
         return null;
       })()}
@@ -553,9 +588,9 @@ export function ActionsPanel({ mode = 'desktop', defaultTab = 'work', activeTab:
 
       {/* Interview Modal */}
       {(() => {
-        console.log('[DEBUG] Interview Modal Render Check:', { 
-          showInterviewModal, 
-          interviewTargetJob: interviewTargetJob?.id 
+        console.log('[DEBUG] Interview Modal Render Check:', {
+          showInterviewModal,
+          interviewTargetJob: interviewTargetJob?.id,
         });
         return null;
       })()}

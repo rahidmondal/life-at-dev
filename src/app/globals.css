@@ -86,7 +86,7 @@ body {
 
 /* Terminal glow effect */
 .terminal-glow {
-  box-shadow: 
+  box-shadow:
     0 0 20px rgba(16, 185, 129, 0.1),
     inset 0 0 60px rgba(16, 185, 129, 0.03);
 }
@@ -106,7 +106,8 @@ body {
 
 /* Animation for pulse glow */
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
   }
   50% {

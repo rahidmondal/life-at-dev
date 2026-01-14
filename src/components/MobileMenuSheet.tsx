@@ -9,14 +9,7 @@ interface MobileMenuSheetProps {
   isStorageReady: boolean;
 }
 
-export function MobileMenuSheet({
-  isOpen,
-  onClose,
-  onSave,
-  onGoHome,
-  isSaving,
-  isStorageReady,
-}: MobileMenuSheetProps) {
+export function MobileMenuSheet({ isOpen, onClose, onSave, onGoHome, isSaving, isStorageReady }: MobileMenuSheetProps) {
   if (!isOpen) return null;
 
   return (

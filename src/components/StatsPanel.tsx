@@ -32,9 +32,7 @@ export function StatsPanel({ mode = 'desktop' }: StatsPanelProps) {
         className={`h-full rounded-lg transition-all duration-500 ${colorClass}`}
         style={{ width: `${String((value / max) * 100)}%` }}
       />
-      {showWarning && value >= warningThreshold && (
-        <div className="absolute inset-0 animate-pulse bg-red-500/20" />
-      )}
+      {showWarning && value >= warningThreshold && <div className="absolute inset-0 animate-pulse bg-red-500/20" />}
     </div>
   );
 
@@ -82,11 +80,7 @@ export function StatsPanel({ mode = 'desktop' }: StatsPanelProps) {
           <p className="font-mono text-xs font-bold text-cyan-400">📅 YEAR PROGRESS</p>
           <p className="font-mono text-xs text-gray-400">Week {52 - stats.weeks}/52</p>
         </div>
-        <ChunkyProgressBar
-          value={52 - stats.weeks}
-          max={52}
-          colorClass="bg-gradient-to-r from-cyan-600 to-cyan-400"
-        />
+        <ChunkyProgressBar value={52 - stats.weeks} max={52} colorClass="bg-gradient-to-r from-cyan-600 to-cyan-400" />
         <div className="flex items-center justify-center gap-2">
           <span className="font-mono text-2xl font-bold text-cyan-400">{stats.weeks}</span>
           <span className="font-mono text-xs text-gray-500">weeks left</span>
@@ -103,18 +97,18 @@ export function StatsPanel({ mode = 'desktop' }: StatsPanelProps) {
             <span className="text-gray-400">⚡ Energy</span>
             <span className={stats.energy <= 20 ? 'text-red-400' : 'text-cyan-400'}>{stats.energy}/100</span>
           </div>
-          <ChunkyProgressBar
-            value={stats.energy}
-            max={100}
-            colorClass="bg-gradient-to-r from-cyan-600 to-cyan-400"
-          />
+          <ChunkyProgressBar value={stats.energy} max={100} colorClass="bg-gradient-to-r from-cyan-600 to-cyan-400" />
         </div>
 
         {/* Stress */}
         <div className="space-y-1">
           <div className="flex items-center justify-between font-mono text-xs">
             <span className="text-gray-400">😰 Stress</span>
-            <span className={stats.stress >= 80 ? 'text-red-400' : stats.stress >= 50 ? 'text-orange-400' : 'text-yellow-400'}>
+            <span
+              className={
+                stats.stress >= 80 ? 'text-red-400' : stats.stress >= 50 ? 'text-orange-400' : 'text-yellow-400'
+              }
+            >
               {stats.stress}/100
             </span>
           </div>
@@ -186,9 +180,7 @@ export function StatsPanel({ mode = 'desktop' }: StatsPanelProps) {
             <p className="font-mono text-[10px] text-gray-400">
               Need: {nextJob.requirements.coding} coding • {nextJob.requirements.reputation} rep
             </p>
-            <p className="font-mono text-xs font-bold text-green-400">
-              ${nextJob.yearlyPay.toLocaleString()}/yr
-            </p>
+            <p className="font-mono text-xs font-bold text-green-400">${nextJob.yearlyPay.toLocaleString()}/yr</p>
           </div>
         ) : (
           <p className="font-mono text-xs text-gray-500">Max level! 🎉</p>

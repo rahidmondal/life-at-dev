@@ -34,9 +34,7 @@ export function MobileStatsDrawer({ isOpen, onClose }: MobileStatsDrawerProps) {
         className={`h-full rounded-lg transition-all duration-500 ${colorClass}`}
         style={{ width: `${String((value / max) * 100)}%` }}
       />
-      {showWarning && value >= warningThreshold && (
-        <div className="absolute inset-0 animate-pulse bg-red-500/20" />
-      )}
+      {showWarning && value >= warningThreshold && <div className="absolute inset-0 animate-pulse bg-red-500/20" />}
     </div>
   );
 
@@ -139,7 +137,11 @@ export function MobileStatsDrawer({ isOpen, onClose }: MobileStatsDrawerProps) {
             <div className="space-y-1">
               <div className="flex items-center justify-between font-mono text-xs">
                 <span className="text-gray-400">😰 Stress</span>
-                <span className={stats.stress >= 80 ? 'text-red-400' : stats.stress >= 50 ? 'text-orange-400' : 'text-yellow-400'}>
+                <span
+                  className={
+                    stats.stress >= 80 ? 'text-red-400' : stats.stress >= 50 ? 'text-orange-400' : 'text-yellow-400'
+                  }
+                >
                   {stats.stress}/100
                 </span>
               </div>
@@ -211,9 +213,7 @@ export function MobileStatsDrawer({ isOpen, onClose }: MobileStatsDrawerProps) {
                 <p className="font-mono text-[10px] text-gray-400">
                   Need: {nextJob.requirements.coding} coding • {nextJob.requirements.reputation} rep
                 </p>
-                <p className="font-mono text-xs font-bold text-green-400">
-                  ${nextJob.yearlyPay.toLocaleString()}/yr
-                </p>
+                <p className="font-mono text-xs font-bold text-green-400">${nextJob.yearlyPay.toLocaleString()}/yr</p>
               </div>
             ) : (
               <p className="font-mono text-xs text-gray-500">Max level! 🎉</p>

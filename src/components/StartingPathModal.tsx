@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 
 interface StartingPathModalProps {
   onSelect: (path: 'student' | 'student-easy' | 'self-taught') => void;
@@ -154,7 +154,7 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
         <div className="flex items-center gap-2">
           <span className="font-mono text-[10px] text-gray-400">Difficulty:</span>
           <div className="flex gap-1">
-            {[1, 2, 3].map((level) => (
+            {[1, 2, 3].map(level => (
               <div
                 key={level}
                 className={`h-2 w-6 rounded-full ${level <= path.difficulty ? path.difficultyColor : 'bg-gray-700'}`}
@@ -165,7 +165,9 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
       </div>
 
       {/* Shimmer effect */}
-      <div className={`absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/5 to-transparent transition-transform duration-700 group-hover:translate-x-full`} />
+      <div
+        className={`absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/5 to-transparent transition-transform duration-700 group-hover:translate-x-full`}
+      />
     </button>
   );
 
@@ -181,7 +183,7 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
 
         {/* Desktop Grid */}
         <div className="grid gap-4 p-6 md:grid-cols-3">
-          {PATH_OPTIONS.map((path) => (
+          {PATH_OPTIONS.map(path => (
             <PathCard key={path.id} path={path} />
           ))}
         </div>
@@ -189,7 +191,8 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
         {/* Footer */}
         <div className="sticky bottom-0 border-t-2 border-emerald-500/30 bg-zinc-900/80 px-6 py-3 backdrop-blur-sm">
           <p className="text-center font-mono text-xs text-gray-400">
-            💡 <span className="text-emerald-400">Pro Tip:</span> Family-Supported (Easy) → CS Student Self-Funded (Medium) → Bootcamp (Hard)
+            💡 <span className="text-emerald-400">Pro Tip:</span> Family-Supported (Easy) → CS Student Self-Funded
+            (Medium) → Bootcamp (Hard)
           </p>
         </div>
       </div>
@@ -210,7 +213,7 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-[7.5vw] scrollbar-none"
             style={{ scrollSnapType: 'x mandatory' }}
           >
-            {MOBILE_PATH_ORDER.map((path) => (
+            {MOBILE_PATH_ORDER.map(path => (
               <PathCard key={path.id} path={path} isMobile />
             ))}
           </div>
@@ -223,9 +226,7 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
               key={path.id}
               onClick={() => scrollToIndex(index)}
               className={`h-2.5 rounded-full transition-all ${
-                activeIndex === index 
-                  ? `w-8 ${path.difficultyColor}` 
-                  : 'w-2.5 bg-gray-600 hover:bg-gray-500'
+                activeIndex === index ? `w-8 ${path.difficultyColor}` : 'w-2.5 bg-gray-600 hover:bg-gray-500'
               }`}
               aria-label={`Go to ${path.title}`}
             />
