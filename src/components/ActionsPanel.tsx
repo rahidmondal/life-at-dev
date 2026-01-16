@@ -313,7 +313,7 @@ export function ActionsPanel({
               }}
               className={`flex-1 px-4 py-3 font-mono text-xs font-bold transition-colors ${
                 activeTab === 'work'
-                  ? 'border-b-2 border-emerald-400 bg-emerald-950/50 text-emerald-400'
+                  ? 'border-b-2 border-[#00ff88] bg-[#00ff88]/10 text-[#00ff88]'
                   : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
               }`}
             >
@@ -325,7 +325,7 @@ export function ActionsPanel({
               }}
               className={`flex-1 px-4 py-3 font-mono text-xs font-bold transition-colors ${
                 activeTab === 'shop'
-                  ? 'border-b-2 border-emerald-400 bg-emerald-950/50 text-emerald-400'
+                  ? 'border-b-2 border-[#00ff88] bg-[#00ff88]/10 text-[#00ff88]'
                   : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
               }`}
             >
@@ -337,7 +337,7 @@ export function ActionsPanel({
               }}
               className={`flex-1 px-4 py-3 font-mono text-xs font-bold transition-colors ${
                 activeTab === 'invest'
-                  ? 'border-b-2 border-emerald-400 bg-emerald-950/50 text-emerald-400'
+                  ? 'border-b-2 border-[#00ff88] bg-[#00ff88]/10 text-[#00ff88]'
                   : 'text-gray-500 hover:bg-gray-900 hover:text-gray-300'
               }`}
             >
@@ -348,19 +348,155 @@ export function ActionsPanel({
 
         {/* Tab Header */}
         <div className="shrink-0 border-b border-gray-800/50 bg-gray-950/30 px-4 py-2">
-          <h3 className="font-mono text-xs font-bold text-emerald-400">
+          <h3 className="font-mono text-xs font-bold text-[#00ff88]">
             ⚡ {activeTab === 'work' ? 'DAILY GRIND' : activeTab === 'shop' ? 'RECOVERY & GEAR' : 'CAREER ADVANCEMENT'}
           </h3>
         </div>
 
-        {/* Actions Grid - Squared Buttons */}
+        {/* Actions Grid - Cyberpunk Square Cards */}
         <div className="flex-1 overflow-y-auto p-3">
-          <div className={`grid gap-2 ${mode === 'desktop' ? 'grid-cols-2' : 'grid-cols-2'}`}>
+          <div className="grid grid-cols-2 gap-3">
             {actions.map(action => {
               const available = isActionAvailable(action, stats.energy, stats.money, stats.reputation);
               const reason = getUnavailabilityReason(action, stats.energy, stats.money, stats.reputation);
               const icon = getActionIcon(action.id);
 
+              // Desktop: Square aspect ratio cards with hover tooltip
+              if (mode === 'desktop') {
+                return (
+                  <button
+                    key={action.id}
+                    onClick={() => {
+                      handleAction(action.id);
+                    }}
+                    disabled={!available}
+                    className={`group relative flex aspect-square flex-col items-center justify-between overflow-hidden rounded-xl border-2 p-4 text-center transition-all duration-300 ${
+                      available
+                        ? 'border-[#00ff88]/50 bg-linear-to-br from-[#00ff88]/10 to-cyan-500/10 hover:scale-105 hover:border-[#00ff88] hover:shadow-[0_0_20px_rgba(0,255,136,0.3)] active:scale-95'
+                        : 'cursor-not-allowed border-gray-700 bg-gray-900/30 opacity-50'
+                    }`}
+                  >
+                    {/* Main Content */}
+                    <div className="flex flex-1 flex-col items-center justify-center gap-2">
+                      {/* Large Icon */}
+                      <span
+                        className={`text-4xl transition-transform duration-300 ${available ? 'group-hover:scale-110' : ''}`}
+                      >
+                        {icon}
+                      </span>
+
+                      {/* Action Name */}
+                      <span className="font-mono text-sm font-bold leading-tight text-white">{action.name}</span>
+                    </div>
+
+                    {/* Quick Stats Row - Bottom */}
+                    <div className="flex w-full items-center justify-center gap-3 border-t border-gray-700/50 pt-2">
+                      {/* Weeks */}
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs">⏱️</span>
+                        <span className="font-mono text-[10px] text-cyan-400">{action.cost.weeks}w</span>
+                      </div>
+                      {/* Energy - only show if non-zero */}
+                      {(action.cost.energy > 0 || action.reward.energy > 0) && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs">⚡</span>
+                          <span
+                            className={`font-mono text-[10px] ${action.cost.energy > 0 ? 'text-red-400' : 'text-green-400'}`}
+                          >
+                            {action.cost.energy > 0
+                              ? `-${String(action.cost.energy)}`
+                              : `+${String(action.reward.energy)}`}
+                          </span>
+                        </div>
+                      )}
+                      {/* Stress - only show if non-zero */}
+                      {(action.cost.stress > 0 || action.reward.stress < 0) && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs">🧠</span>
+                          <span
+                            className={`font-mono text-[10px] ${action.cost.stress > 0 ? 'text-orange-400' : 'text-green-400'}`}
+                          >
+                            {action.cost.stress > 0 ? `+${String(action.cost.stress)}` : String(action.reward.stress)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Hover Tooltip Overlay - Desktop Only */}
+                    {available && (
+                      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-gray-900/95 p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <p className="mb-2 text-center font-mono text-xs leading-relaxed text-gray-300">
+                          {action.description}
+                        </p>
+                        <div className="w-full space-y-1 border-t border-gray-700 pt-2">
+                          <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#00ff88]">
+                            Costs & Rewards
+                          </p>
+                          <div className="flex flex-wrap justify-center gap-1">
+                            {action.cost.weeks > 0 && (
+                              <span className="rounded bg-cyan-500/20 px-1.5 py-0.5 font-mono text-[9px] text-cyan-400">
+                                -{action.cost.weeks} weeks
+                              </span>
+                            )}
+                            {action.cost.energy > 0 && (
+                              <span className="rounded bg-red-500/20 px-1.5 py-0.5 font-mono text-[9px] text-red-400">
+                                -{action.cost.energy} energy
+                              </span>
+                            )}
+                            {action.cost.stress > 0 && (
+                              <span className="rounded bg-orange-500/20 px-1.5 py-0.5 font-mono text-[9px] text-orange-400">
+                                +{action.cost.stress} stress
+                              </span>
+                            )}
+                            {action.cost.money > 0 && (
+                              <span className="rounded bg-red-500/20 px-1.5 py-0.5 font-mono text-[9px] text-red-400">
+                                -${action.cost.money}
+                              </span>
+                            )}
+                            {action.reward.coding > 0 && (
+                              <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 font-mono text-[9px] text-emerald-400">
+                                +{action.reward.coding} coding
+                              </span>
+                            )}
+                            {action.reward.reputation > 0 && (
+                              <span className="rounded bg-yellow-500/20 px-1.5 py-0.5 font-mono text-[9px] text-yellow-400">
+                                +{action.reward.reputation} rep
+                              </span>
+                            )}
+                            {action.reward.money > 0 && (
+                              <span className="rounded bg-green-500/20 px-1.5 py-0.5 font-mono text-[9px] text-green-400">
+                                +${action.reward.money}
+                              </span>
+                            )}
+                            {action.reward.energy > 0 && (
+                              <span className="rounded bg-cyan-500/20 px-1.5 py-0.5 font-mono text-[9px] text-cyan-400">
+                                +{action.reward.energy} energy
+                              </span>
+                            )}
+                            {action.reward.stress < 0 && (
+                              <span className="rounded bg-green-500/20 px-1.5 py-0.5 font-mono text-[9px] text-green-400">
+                                {action.reward.stress} stress
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Locked Overlay - Desktop */}
+                    {!available && (
+                      <div className="group/locked absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                        <span className="text-3xl">🔒</span>
+                        <div className="absolute inset-x-2 bottom-2 max-h-0 overflow-hidden rounded bg-black/90 px-2 py-0 opacity-0 transition-all duration-300 group-hover/locked:max-h-20 group-hover/locked:py-2 group-hover/locked:opacity-100">
+                          <p className="text-center font-mono text-[9px] leading-tight text-red-400">{reason}</p>
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                );
+              }
+
+              // Mobile: Touch-friendly cards with visible info
               return (
                 <button
                   key={action.id}
@@ -368,119 +504,41 @@ export function ActionsPanel({
                     handleAction(action.id);
                   }}
                   disabled={!available}
-                  className={`group relative flex flex-col items-start gap-1 overflow-hidden rounded-xl border-2 p-3 text-left transition-all ${
+                  className={`group relative flex min-h-20 flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border-2 p-3 text-center transition-all duration-200 ${
                     available
-                      ? action.id === 'side-project'
-                        ? 'border-pink-500/50 bg-pink-950/30 hover:border-pink-400 hover:bg-pink-900/50 hover:shadow-lg hover:shadow-pink-500/20 active:scale-[0.98]'
-                        : 'border-gray-700/50 bg-gray-900/50 hover:border-emerald-500/50 hover:bg-gray-800/50 hover:shadow-lg hover:shadow-emerald-500/10 active:scale-[0.98]'
-                      : 'cursor-not-allowed border-gray-800/30 bg-gray-950/30 opacity-40'
+                      ? 'border-[#00ff88]/50 bg-linear-to-br from-[#00ff88]/10 to-cyan-500/10 active:scale-95 active:border-[#00ff88]'
+                      : 'cursor-not-allowed border-gray-700 bg-gray-900/30 opacity-50'
                   }`}
                 >
-                  {/* Header Row: Icon + Title + Week Badge */}
-                  <div className="flex w-full items-center gap-2">
-                    <span className={`text-xl transition-transform ${available ? 'group-hover:scale-110' : ''}`}>
-                      {icon}
-                    </span>
-                    <span
-                      className={`flex-1 font-mono text-xs font-bold leading-tight ${
-                        available
-                          ? action.id === 'side-project'
-                            ? 'text-pink-400'
-                            : 'text-emerald-400'
-                          : 'text-gray-600'
-                      }`}
-                    >
-                      {action.name}
-                    </span>
-                    <div
-                      className={`shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[8px] font-bold ${
-                        available ? 'bg-cyan-500/20 text-cyan-400' : 'bg-gray-800 text-gray-600'
-                      }`}
-                    >
-                      {action.cost.weeks}w
-                    </div>
+                  {/* Icon + Name */}
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-2xl">{icon}</span>
+                    <span className="font-mono text-xs font-bold leading-tight text-white">{action.name}</span>
                   </div>
 
-                  {/* Description - Always visible, truncated */}
-                  <p
-                    className={`line-clamp-2 font-mono text-[10px] leading-tight ${
-                      available ? 'text-gray-400' : 'text-gray-600'
-                    }`}
-                  >
-                    {action.description}
-                  </p>
-
-                  {/* Cost/Reward Badges Row */}
-                  <div className="mt-auto flex flex-wrap gap-1 pt-1">
+                  {/* Quick Stats - Always visible on mobile */}
+                  <div className="flex items-center gap-2">
+                    <span className="rounded bg-cyan-500/20 px-1.5 py-0.5 font-mono text-[8px] text-cyan-400">
+                      {action.cost.weeks}w
+                    </span>
                     {action.cost.energy > 0 && (
-                      <span
-                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                          available ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-600'
-                        }`}
-                      >
+                      <span className="rounded bg-red-500/20 px-1.5 py-0.5 font-mono text-[8px] text-red-400">
                         -{action.cost.energy}⚡
                       </span>
                     )}
                     {action.cost.stress > 0 && (
-                      <span
-                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                          available ? 'bg-orange-500/20 text-orange-400' : 'bg-gray-800 text-gray-600'
-                        }`}
-                      >
+                      <span className="rounded bg-orange-500/20 px-1.5 py-0.5 font-mono text-[8px] text-orange-400">
                         +{action.cost.stress}😰
-                      </span>
-                    )}
-                    {action.cost.money > 0 && (
-                      <span
-                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                          available ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-600'
-                        }`}
-                      >
-                        -${action.cost.money}
-                      </span>
-                    )}
-                    {action.reward.coding > 0 && (
-                      <span
-                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                          available ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-600'
-                        }`}
-                      >
-                        +{action.reward.coding}💻
-                      </span>
-                    )}
-                    {action.reward.reputation > 0 && (
-                      <span
-                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                          available ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-800 text-gray-600'
-                        }`}
-                      >
-                        +{action.reward.reputation}⭐
-                      </span>
-                    )}
-                    {action.reward.money > 0 && (
-                      <span
-                        className={`rounded px-1 py-0.5 font-mono text-[8px] font-bold ${
-                          available ? 'bg-green-500/20 text-green-400' : 'bg-gray-800 text-gray-600'
-                        }`}
-                      >
-                        +${action.reward.money}
                       </span>
                     )}
                   </div>
 
-                  {/* Unavailable overlay with tooltip */}
-                  {!available && reason && (
-                    <div className="group/locked absolute inset-0 flex flex-col items-center justify-center bg-black/70">
+                  {/* Locked Overlay - Mobile */}
+                  {!available && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80">
                       <span className="text-2xl">🔒</span>
-                      <div className="absolute inset-x-0 bottom-0 hidden max-h-0 overflow-hidden bg-black/90 px-2 py-1 text-center opacity-0 transition-all group-hover/locked:block group-hover/locked:max-h-20 group-hover/locked:opacity-100">
-                        <p className="font-mono text-[9px] leading-tight text-red-400">{reason}</p>
-                      </div>
+                      <p className="mt-1 px-2 text-center font-mono text-[8px] leading-tight text-red-400">{reason}</p>
                     </div>
-                  )}
-
-                  {/* Shimmer effect */}
-                  {available && (
-                    <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/5 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
                   )}
                 </button>
               );
@@ -495,7 +553,7 @@ export function ActionsPanel({
             disabled={stats.weeks > 0}
             className={`group relative w-full overflow-hidden rounded-xl py-3 font-mono text-sm font-bold transition-all ${
               stats.weeks <= 0
-                ? 'bg-linear-to-r from-emerald-600 to-emerald-500 text-black shadow-lg shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-400'
+                ? 'bg-linear-to-r from-[#00ff88] to-cyan-500 text-black shadow-lg shadow-[#00ff88]/30 hover:shadow-[#00ff88]/50'
                 : 'cursor-not-allowed bg-gray-800/50 text-gray-600'
             }`}
           >
