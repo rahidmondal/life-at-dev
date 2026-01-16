@@ -47,10 +47,10 @@ const PATH_OPTIONS: PathOption[] = [
     difficultyColor: 'bg-green-500',
   },
   {
-    id: 'student',
-    icon: '🎓',
-    title: 'CS Student',
-    subtitle: 'Self-Funded',
+    id: 'self-taught',
+    icon: '💪',
+    title: 'Self-Taught',
+    subtitle: 'Bootcamp / Hustle',
     borderColor: 'border-yellow-500',
     bgColor: 'bg-yellow-950/20',
     textColor: 'text-yellow-400',
@@ -58,21 +58,21 @@ const PATH_OPTIONS: PathOption[] = [
     hoverBorder: 'hover:border-yellow-400',
     shadowColor: 'hover:shadow-yellow-500/30',
     stats: [
-      { label: '💰 Money', value: '$0', color: 'text-red-400' },
-      { label: '💻 Coding', value: '+100', color: 'text-emerald-400' },
-      { label: '⭐ Rep', value: '+20', color: 'text-emerald-400' },
-      { label: '🏠 Rent', value: '$4k/yr', color: 'text-yellow-400' },
-      { label: '💸 Income', value: '-$10k/yr', color: 'text-red-400' },
+      { label: '💰 Money', value: '$1,000', color: 'text-emerald-400' },
+      { label: '💻 Coding', value: '50', color: 'text-gray-400' },
+      { label: '⭐ Rep', value: '0', color: 'text-gray-400' },
+      { label: '🏠 Rent', value: '$6k/yr', color: 'text-yellow-400' },
+      { label: '💸 Income', value: '$0/yr', color: 'text-gray-400' },
     ],
-    description: 'Slower start, but structured growth. Negative income from tuition is brutal.',
+    description: 'No degree. No safety net. Maximum freedom. Freelance and grind hard.',
     difficulty: 2,
     difficultyColor: 'bg-yellow-500',
   },
   {
-    id: 'self-taught',
-    icon: '💪',
-    title: 'Self-Taught',
-    subtitle: 'Bootcamp / Hustle',
+    id: 'student',
+    icon: '🎓',
+    title: 'CS Student',
+    subtitle: 'Self-Funded',
     borderColor: 'border-red-500',
     bgColor: 'bg-red-950/20',
     textColor: 'text-red-400',
@@ -80,13 +80,13 @@ const PATH_OPTIONS: PathOption[] = [
     hoverBorder: 'hover:border-red-400',
     shadowColor: 'hover:shadow-red-500/30',
     stats: [
-      { label: '💰 Money', value: '$1,000', color: 'text-emerald-400' },
-      { label: '💻 Coding', value: '50', color: 'text-gray-400' },
-      { label: '⭐ Rep', value: '0', color: 'text-gray-400' },
-      { label: '🏠 Rent', value: '$6k/yr', color: 'text-red-400' },
-      { label: '💸 Income', value: '$0/yr', color: 'text-gray-400' },
+      { label: '💰 Money', value: '$0', color: 'text-red-400' },
+      { label: '💻 Coding', value: '+100', color: 'text-emerald-400' },
+      { label: '⭐ Rep', value: '+20', color: 'text-emerald-400' },
+      { label: '🏠 Rent', value: '$4k/yr', color: 'text-red-400' },
+      { label: '💸 Income', value: '-$10k/yr', color: 'text-red-400' },
     ],
-    description: 'No degree. No safety net. Maximum freedom. Freelance and grind hard.',
+    description: 'Slower start, but structured growth. Negative income from tuition is brutal.',
     difficulty: 3,
     difficultyColor: 'bg-red-500',
   },
@@ -95,8 +95,8 @@ const PATH_OPTIONS: PathOption[] = [
 // Mobile order: Easy (left), Medium (center), Hard (right)
 const MOBILE_PATH_ORDER: PathOption[] = [
   PATH_OPTIONS[0], // Easy - student-easy (Family Supported)
-  PATH_OPTIONS[1], // Medium - student (CS Student Self-Funded)
-  PATH_OPTIONS[2], // Hard - self-taught (Bootcamp)
+  PATH_OPTIONS[1], // Medium - self-taught (Bootcamp / Hustle)
+  PATH_OPTIONS[2], // Hard - student (CS Student Self-Funded)
 ];
 
 export default function StartingPathModal({ onSelect }: StartingPathModalProps) {
@@ -193,8 +193,8 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
         {/* Footer */}
         <div className="sticky bottom-0 border-t-2 border-emerald-500/30 bg-zinc-900/80 px-6 py-3 backdrop-blur-sm">
           <p className="text-center font-mono text-xs text-gray-400">
-            💡 <span className="text-emerald-400">Pro Tip:</span> Family-Supported (Easy) → CS Student Self-Funded
-            (Medium) → Bootcamp (Hard)
+            💡 <span className="text-emerald-400">Pro Tip:</span> Family-Supported (Easy) → Bootcamp (Medium) → CS
+            Student Self-Funded (Hard)
           </p>
         </div>
       </div>
