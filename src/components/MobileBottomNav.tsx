@@ -22,7 +22,9 @@ export function MobileBottomNav({ activeTab, onTabChange }: MobileBottomNavProps
         {tabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => onTabChange(tab.id)}
+            onClick={() => {
+              onTabChange(tab.id);
+            }}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2 transition-all ${
               activeTab === tab.id
                 ? 'bg-emerald-950/50 text-emerald-400'

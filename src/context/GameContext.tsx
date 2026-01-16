@@ -1,8 +1,21 @@
 'use client';
 
 import { clearSave, isStorageAvailable, loadGame, saveGame } from '@/storage/gameStorage';
+import { Job } from '@/types/game';
 import React, { createContext, ReactNode, useContext, useEffect, useReducer, useRef, useState } from 'react';
 import { createInitialState, GameActionType, gameReducer, GameState } from './gameReducer';
+
+// Modal state interface for job hunt flow
+export interface JobHuntModalState {
+  showJobSelectionModal: boolean;
+  availableJobsList: Job[];
+  isGraduation: boolean;
+  showInterviewModal: boolean;
+  interviewTargetJob: Job | null;
+  isYearEndInterview: boolean;
+  showRejectionPopup: boolean;
+  rejectionReasons: string[];
+}
 
 interface GameContextType {
   state: GameState;
@@ -16,9 +29,25 @@ interface GameContextType {
   addToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   userApiKey: string | null;
   setUserApiKey: (key: string | null) => void;
+  // Job Hunt Modal State
+  jobHuntModal: JobHuntModalState;
+  setJobHuntModal: React.Dispatch<React.SetStateAction<JobHuntModalState>>;
+  resetJobHuntModal: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
+
+// Initial state for job hunt modals
+const initialJobHuntModalState: JobHuntModalState = {
+  showJobSelectionModal: false,
+  availableJobsList: [],
+  isGraduation: false,
+  showInterviewModal: false,
+  interviewTargetJob: null,
+  isYearEndInterview: false,
+  showRejectionPopup: false,
+  rejectionReasons: [],
+};
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, createInitialState());
@@ -32,9 +61,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
     return null;
   });
+  // Job Hunt Modal State - persists across component re-mounts
+  const [jobHuntModal, setJobHuntModal] = useState<JobHuntModalState>(initialJobHuntModalState);
   const lastActionRef = useRef<string | null>(null);
   const isSavingRef = useRef(false);
   const lastSavedPhaseRef = useRef<string | null>(null);
+
+  const resetJobHuntModal = () => {
+    setJobHuntModal(initialJobHuntModalState);
+  };
 
   useEffect(() => {
     const checkSave = async () => {
@@ -231,6 +266,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         addToast,
         userApiKey,
         setUserApiKey,
+        jobHuntModal,
+        setJobHuntModal,
+        resetJobHuntModal,
       }}
     >
       {children}

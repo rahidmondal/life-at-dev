@@ -2,10 +2,13 @@
 
 import { LeaveGameModal } from '@/components/LeaveGameModal';
 import { useGame } from '@/context/GameContext';
+import { Job } from '@/types/game';
 import Image from 'next/image';
 import { useState } from 'react';
-import { ActionsPanel } from './ActionsPanel';
+import { ActionsPanel, meetsJobRequirements, requiresInterview } from './ActionsPanel';
 import { EventLog } from './EventLog';
+import GraduationModal from './GraduationModal';
+import InterviewModal from './InterviewModal';
 import { MobileBottomNav } from './MobileBottomNav';
 import { MobileHeader } from './MobileHeader';
 import { MobileMenuSheet } from './MobileMenuSheet';
@@ -18,11 +21,163 @@ type DesktopActionTab = 'work' | 'shop' | 'invest';
 export function GameScreen() {
   const [mobileTab, setMobileTab] = useState<MobileTab>('home');
   const [desktopActionTab, setDesktopActionTab] = useState<DesktopActionTab>('work');
-  const { saveGameManually, isStorageReady, goToHomeScreen } = useGame();
+  const { saveGameManually, isStorageReady, goToHomeScreen, state, dispatch, jobHuntModal, setJobHuntModal } =
+    useGame();
+  const { stats, pendingJobSelection } = state;
   const [isSaving, setIsSaving] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showStatsDrawer, setShowStatsDrawer] = useState(false);
   const [showMenuSheet, setShowMenuSheet] = useState(false);
+
+  // Destructure modal state for cleaner access
+  const {
+    showJobSelectionModal,
+    availableJobsList,
+    isGraduation,
+    showInterviewModal,
+    interviewTargetJob,
+    isYearEndInterview,
+    showRejectionPopup,
+    rejectionReasons,
+  } = jobHuntModal;
+
+  // Handler: Job selected from GraduationModal
+  const handleJobSelect = (job: Job) => {
+    console.info('[DEBUG] Job selected from modal:', job.id);
+
+    // Clear pending job selection if it exists
+    if (pendingJobSelection) {
+      dispatch({ type: 'CLEAR_PENDING_JOB_SELECTION' });
+    }
+
+    // Close the job selection modal
+    setJobHuntModal(prev => ({
+      ...prev,
+      showJobSelectionModal: false,
+    }));
+
+    // Step 4: The Gatekeeper - Check requirements
+    const requirementCheck = meetsJobRequirements(job, stats.coding, stats.reputation, stats.money);
+    console.info('[DEBUG] Requirement check for selected job:', requirementCheck);
+
+    if (!requirementCheck.meets) {
+      console.info('[DEBUG] Requirements not met, showing rejection');
+      setJobHuntModal(prev => ({
+        ...prev,
+        rejectionReasons: requirementCheck.failureReasons,
+        showRejectionPopup: true,
+      }));
+      return;
+    }
+
+    // Step 5: Interview Type Check
+    if (!requiresInterview(job)) {
+      console.info('[DEBUG] Job does not require interview, auto-promoting');
+      dispatch({
+        type: 'ANSWER_INTERVIEW',
+        payload: {
+          correct: true,
+          newJob: job,
+        },
+      });
+      return;
+    }
+
+    // Major role - requires interview
+    console.info('[DEBUG] Job requires interview, showing interview modal');
+    setJobHuntModal(prev => ({
+      ...prev,
+      interviewTargetJob: job,
+      isYearEndInterview: false,
+      showInterviewModal: true,
+    }));
+  };
+
+  // Handler: Interview completed
+  const handleInterviewComplete = (passed: boolean) => {
+    console.info('[DEBUG] Interview completed, passed:', passed);
+
+    if (isYearEndInterview && interviewTargetJob) {
+      dispatch({
+        type: 'YEAR_END_INTERVIEW_RESULT',
+        payload: {
+          passed,
+          job: interviewTargetJob,
+        },
+      });
+    } else if (passed && interviewTargetJob) {
+      dispatch({
+        type: 'ANSWER_INTERVIEW',
+        payload: {
+          correct: true,
+          newJob: interviewTargetJob,
+        },
+      });
+    } else {
+      dispatch({
+        type: 'ANSWER_INTERVIEW',
+        payload: {
+          correct: false,
+        },
+      });
+    }
+
+    // Reset modal state
+    setJobHuntModal(prev => ({
+      ...prev,
+      showInterviewModal: false,
+      interviewTargetJob: null,
+      isYearEndInterview: false,
+    }));
+  };
+
+  // Handler: Interview cancelled
+  const handleInterviewCancel = () => {
+    console.info('[DEBUG] Interview cancelled');
+
+    if (isYearEndInterview) {
+      dispatch({ type: 'CLEAR_PENDING_INTERVIEW' });
+      dispatch({
+        type: 'APPLY_EVENT',
+        payload: {
+          effects: { stress: 5 },
+          message: 'Declined performance review interview. (+5 stress)',
+        },
+      });
+    }
+
+    // Reset modal state
+    setJobHuntModal(prev => ({
+      ...prev,
+      showInterviewModal: false,
+      interviewTargetJob: null,
+      isYearEndInterview: false,
+    }));
+  };
+
+  // Handler: Job selection cancelled
+  const handleJobSelectionCancel = () => {
+    console.info('[DEBUG] Job selection cancelled');
+
+    if (pendingJobSelection) {
+      dispatch({ type: 'CLEAR_PENDING_JOB_SELECTION' });
+    }
+
+    setJobHuntModal(prev => ({
+      ...prev,
+      showJobSelectionModal: false,
+      availableJobsList: [],
+    }));
+  };
+
+  // Handler: Rejection popup closed
+  const handleRejectionClose = () => {
+    setJobHuntModal(prev => ({
+      ...prev,
+      showRejectionPopup: false,
+      rejectionReasons: [],
+    }));
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -167,6 +322,59 @@ export function GameScreen() {
 
       {/* Leave Game Modal */}
       {showLeaveModal && <LeaveGameModal onGoHome={handleGoHome} onCancel={handleCancelLeave} />}
+
+      {/* ===== Job Hunt Modals (Root Level for z-index persistence) ===== */}
+
+      {/* Job Selection Modal (Graduation or Regular Promotion) */}
+      {showJobSelectionModal && availableJobsList.length > 0 && (
+        <GraduationModal
+          availableJobs={availableJobsList}
+          onSelectJob={handleJobSelect}
+          onCancel={handleJobSelectionCancel}
+          isGraduation={isGraduation}
+        />
+      )}
+
+      {/* Interview Modal */}
+      {showInterviewModal && interviewTargetJob && (
+        <InterviewModal
+          targetJob={interviewTargetJob}
+          onComplete={handleInterviewComplete}
+          onCancel={handleInterviewCancel}
+        />
+      )}
+
+      {/* Rejection Popup */}
+      {showRejectionPopup && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md rounded border-2 border-red-500 bg-black p-6 shadow-xl shadow-red-500/20">
+            <div className="mb-4 text-center">
+              <div className="mb-3 text-5xl">📋❌</div>
+              <h3 className="font-mono text-xl font-bold text-red-500">RESUME REJECTED</h3>
+            </div>
+
+            <div className="mb-6 rounded border border-red-500/30 bg-red-500/5 p-4">
+              <p className="mb-3 font-mono text-sm text-gray-300">
+                Your application was rejected. Skillset does not match job requirements:
+              </p>
+              <ul className="space-y-1">
+                {rejectionReasons.map((reason, index) => (
+                  <li key={index} className="font-mono text-sm text-red-400">
+                    • {reason}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <button
+              onClick={handleRejectionClose}
+              className="w-full rounded border-2 border-gray-500 bg-gray-500/10 px-4 py-2 font-mono text-sm font-bold text-gray-400 transition-all hover:bg-gray-500 hover:text-black"
+            >
+              &gt;&gt; CLOSE
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

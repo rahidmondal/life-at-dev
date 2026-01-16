@@ -113,7 +113,7 @@ export function StartScreen() {
             )}
 
             <button
-              onClick={() => setShowHowToPlay(true)}
+              onClick={() => { setShowHowToPlay(true); }}
               className="min-h-14 rounded-xl border-2 border-cyan-400/50 bg-cyan-400/10 px-8 py-4 font-mono text-lg font-bold text-cyan-400 transition-all hover:border-cyan-400 hover:bg-cyan-400 hover:text-black"
             >
               ? How to Play
@@ -183,7 +183,7 @@ export function StartScreen() {
                   🔄 Restart
                 </button>
                 <button
-                  onClick={() => setShowHowToPlay(true)}
+                  onClick={() => { setShowHowToPlay(true); }}
                   className="flex-1 rounded-xl border-2 border-cyan-400/50 bg-cyan-400/10 py-3 font-mono text-base font-bold text-cyan-400 transition-all active:scale-[0.98]"
                 >
                   ? How to Play
@@ -201,7 +201,7 @@ export function StartScreen() {
               </button>
 
               <button
-                onClick={() => setShowHowToPlay(true)}
+                onClick={() => { setShowHowToPlay(true); }}
                 className="w-full rounded-xl border-2 border-cyan-400/50 bg-cyan-400/10 py-3 font-mono text-base font-bold text-cyan-400 transition-all active:scale-[0.98]"
               >
                 ? How to Play
@@ -212,7 +212,7 @@ export function StartScreen() {
       </div>
 
       {/* Modals */}
-      {showHowToPlay && <HowToPlayModal onClose={() => setShowHowToPlay(false)} />}
+      {showHowToPlay && <HowToPlayModal onClose={() => { setShowHowToPlay(false); }} />}
       {showPathSelection && <StartingPathModal onSelect={handlePathSelect} />}
       {showRestartConfirm && <RestartConfirmModal onConfirm={handleRestartConfirm} onCancel={handleRestartCancel} />}
     </>

@@ -6,7 +6,7 @@ interface StartingPathModalProps {
   onSelect: (path: 'student' | 'student-easy' | 'self-taught') => void;
 }
 
-type PathOption = {
+interface PathOption {
   id: 'student-easy' | 'student' | 'self-taught';
   icon: string;
   title: string;
@@ -21,7 +21,7 @@ type PathOption = {
   description: string;
   difficulty: number;
   difficultyColor: string;
-};
+}
 
 const PATH_OPTIONS: PathOption[] = [
   {
@@ -122,7 +122,9 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
   // Card Component
   const PathCard = ({ path, isMobile = false }: { path: PathOption; isMobile?: boolean }) => (
     <button
-      onClick={() => onSelect(path.id)}
+      onClick={() => {
+        onSelect(path.id);
+      }}
       className={`group relative overflow-hidden rounded-xl border-2 ${path.borderColor} ${path.bgColor} p-4 text-left transition-all ${path.hoverBg} ${path.hoverBorder} hover:shadow-lg ${path.shadowColor} ${
         isMobile ? 'w-[85vw] shrink-0 snap-center' : 'hover:scale-[1.02]'
       }`}
@@ -224,7 +226,9 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
           {MOBILE_PATH_ORDER.map((path, index) => (
             <button
               key={path.id}
-              onClick={() => scrollToIndex(index)}
+              onClick={() => {
+                scrollToIndex(index);
+              }}
               className={`h-2.5 rounded-full transition-all ${
                 activeIndex === index ? `w-8 ${path.difficultyColor}` : 'w-2.5 bg-gray-600 hover:bg-gray-500'
               }`}

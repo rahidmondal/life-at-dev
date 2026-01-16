@@ -215,7 +215,7 @@ export default function InterviewModal({ targetJob, onComplete, onCancel }: Inte
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-3 sm:p-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded border-2 border-emerald-500 bg-black p-3 shadow-xl shadow-emerald-500/20 sm:p-4 lg:p-6">
         {/* Header */}
         <div className="mb-4 border-b-2 border-emerald-500/30 pb-3 sm:mb-6 sm:pb-4">
