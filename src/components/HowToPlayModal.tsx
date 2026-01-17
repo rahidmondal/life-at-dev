@@ -9,7 +9,9 @@ export default function HowToPlayModal({ onClose }: HowToPlayModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4" onClick={onClose}>
       <div
         className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded border-2 border-cyan-400 bg-black shadow-xl shadow-cyan-400/20"
-        onClick={e => e.stopPropagation()}
+        onClick={e => {
+          e.stopPropagation();
+        }}
       >
         {/* Header */}
         <div className="flex items-start justify-between border-b-2 border-cyan-400/30 bg-cyan-400/5 p-3 sm:p-4">

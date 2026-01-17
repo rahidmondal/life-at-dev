@@ -19,10 +19,10 @@ function MatrixRain({ isMobile = false }: MatrixRainProps) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return undefined;
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return undefined;
 
     // Katakana + Latin characters
     const katakana =
@@ -92,7 +92,7 @@ function MatrixRain({ isMobile = false }: MatrixRainProps) {
 
     window.addEventListener('resize', handleResize);
 
-    return function cleanup() {
+    return () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', handleResize);
     };
