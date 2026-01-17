@@ -346,32 +346,69 @@ export function GameScreen() {
 
       {/* Rejection Popup */}
       {showRejectionPopup && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md rounded border-2 border-red-500 bg-black p-6 shadow-xl shadow-red-500/20">
-            <div className="mb-4 text-center">
-              <div className="mb-3 text-5xl">📋❌</div>
-              <h3 className="font-mono text-xl font-bold text-red-500">RESUME REJECTED</h3>
+        <div
+          className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4"
+          onClick={handleRejectionClose}
+        >
+          <div
+            className="w-full max-w-md overflow-hidden rounded border-2 border-red-500 bg-black shadow-xl shadow-red-500/20"
+            onClick={e => {
+              e.stopPropagation();
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between border-b-2 border-red-500/30 bg-red-500/5 p-4">
+              <div>
+                <h3 className="font-mono text-xl font-bold text-red-500">// APPLICATION ERROR</h3>
+                <p className="mt-1 font-mono text-xs text-red-500/70">Requirements not met</p>
+              </div>
+              <button
+                onClick={handleRejectionClose}
+                className="flex h-8 w-8 items-center justify-center rounded border border-red-500/50 text-red-500 transition-all hover:border-red-500 hover:bg-red-500 hover:text-black"
+                aria-label="Close modal"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
-            <div className="mb-6 rounded border border-red-500/30 bg-red-500/5 p-4">
-              <p className="mb-3 font-mono text-sm text-gray-300">
-                Your application was rejected. Skillset does not match job requirements:
-              </p>
-              <ul className="space-y-1">
-                {rejectionReasons.map((reason, index) => (
-                  <li key={index} className="font-mono text-sm text-red-400">
-                    • {reason}
-                  </li>
-                ))}
-              </ul>
+            {/* Content */}
+            <div className="p-4">
+              <div className="mb-4 text-center">
+                <div className="mb-3 text-5xl">📋❌</div>
+              </div>
+
+              <div className="mb-6 rounded border border-red-500/30 bg-red-500/5 p-4">
+                <p className="mb-3 font-mono text-sm text-gray-300">
+                  Your application was rejected. Skillset does not match job requirements:
+                </p>
+                <ul className="space-y-1">
+                  {rejectionReasons.map((reason, index) => (
+                    <li key={index} className="font-mono text-sm text-red-400">
+                      • {reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
-            <button
-              onClick={handleRejectionClose}
-              className="w-full rounded border-2 border-gray-500 bg-gray-500/10 px-4 py-2 font-mono text-sm font-bold text-gray-400 transition-all hover:bg-gray-500 hover:text-black"
-            >
-              &gt;&gt; CLOSE
-            </button>
+            {/* Footer */}
+            <div className="border-t-2 border-red-500/30 bg-red-500/5 p-4">
+              <button
+                onClick={handleRejectionClose}
+                className="w-full rounded border-2 border-red-500 bg-red-500/10 px-4 py-2 font-mono text-sm font-bold text-red-500 transition-all hover:bg-red-500 hover:text-black"
+              >
+                &gt;&gt; CLOSE
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -11,10 +11,12 @@ interface EventLogProps {
 export function EventLog({ mode = 'desktop' }: EventLogProps) {
   const { state } = useGame();
   const { eventLog } = state;
-  const logEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
   }, [eventLog]);
 
   const getLogColor = (type: LogEntry['type']): string => {
@@ -82,7 +84,7 @@ export function EventLog({ mode = 'desktop' }: EventLogProps) {
       </div>
 
       {/* Terminal Content - Scanline effect */}
-      <div className="relative flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="relative flex-1 overflow-y-auto">
         {/* CRT Scanline overlay */}
         <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-transparent via-emerald-500/2 to-transparent bg-size-[100%_4px]" />
 
@@ -109,7 +111,6 @@ export function EventLog({ mode = 'desktop' }: EventLogProps) {
                   </div>
                 </div>
               ))}
-              <div ref={logEndRef} />
 
               {/* Blinking cursor */}
               <div className="flex items-center gap-1 px-3 py-1 text-emerald-500">

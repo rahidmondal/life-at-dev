@@ -165,7 +165,15 @@ export function ActionsPanel({
       if (availableJobs.length === 0) {
         // Deduct resources (time spent searching with no results)
         executeAction(action, stats, dispatch);
-        window.alert('No jobs found matching your current skills. Keep building your coding and reputation!');
+        // Show rejection popup instead of browser alert
+        setJobHuntModal(prev => ({
+          ...prev,
+          rejectionReasons: [
+            'No positions match your current qualifications.',
+            'Keep building your coding skills and reputation!',
+          ],
+          showRejectionPopup: true,
+        }));
         return;
       }
 
