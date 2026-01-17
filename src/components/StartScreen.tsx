@@ -26,7 +26,7 @@ function MatrixRain({ isMobile = false }: MatrixRainProps) {
 
     // Katakana + Latin characters
     const katakana =
-      'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
+      '가나다라마바사아자차카타파하한글天地玄黄宇宙洪荒日月盈昃辰宿列张กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดअआइईउऊऋएऐओऔकखगघङÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕ';
     const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
     const chars = katakana + latin;
 
