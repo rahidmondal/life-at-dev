@@ -52,7 +52,7 @@ export const ACTIONS: GameAction[] = [
   {
     id: 'freelance-gig',
     name: 'Freelance Gig',
-    description: 'Full client project. Takes a month. Income scales with Coding & Reputation.',
+    description: 'Full client project. Income scales with Coding & Reputation.',
     category: 'work',
     cost: {
       weeks: 4,

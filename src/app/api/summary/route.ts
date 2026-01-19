@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { Query } from 'node-appwrite';
+import { ID, Query } from 'node-appwrite';
 
 import { createAdminClient } from '@/lib/server/appwrite';
 import { generateSummaryHash } from '@/lib/utils';
@@ -46,7 +46,7 @@ const GameStatsSchema = z.object({
   currentJob: JobSchema,
   age: z.number().int().min(18),
   yearsWorked: z.number().int().min(0),
-  totalEarned: z.number().int().min(0),
+  totalEarned: z.number().int(),
   actionHistory: z.array(z.string()),
   familySupportYearsLeft: z.number().int().optional(),
   jobChanges: z.number().int().optional(),
@@ -130,7 +130,7 @@ Game Stats:
 - Outcome: ${outcomeDescription}${isEasterEgg ? `\n- Easter Egg Event: ${gameOver.easterEggEvent ?? 'A hidden path revealed itself'}` : ''}
 
 Write 5-7 lines that:
-1. Reference their career path and achievements
+1. Reference their career path and achievements without mentioning specific stats
 2. Comment on their final outcome (${outcomeDescription})
 3. Include one piece of wisdom
 4. End with a memorable line${isEasterEgg ? '\n5. Celebrate their discovery of the hidden path!' : ''}
@@ -220,7 +220,7 @@ async function cacheSummaryToAppwrite(contextHash: string, summaryText: string):
       await tablesDB.createRow({
         databaseId,
         tableId: 'ai_cache_summaries',
-        rowId: 'unique()',
+        rowId: ID.unique(),
         data: {
           context_hash: contextHash,
           summary_text: summaryText,
