@@ -1,10 +1,43 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 interface StartingPathModalProps {
   onSelect: (path: 'student' | 'student-easy' | 'self-taught') => void;
 }
+
+// Arrow Icons
+const ChevronLeftIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m15 18-6-6 6-6" />
+  </svg>
+);
+
+const ChevronRightIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m9 18 6-6-6-6" />
+  </svg>
+);
 
 interface PathOption {
   id: 'student-easy' | 'student' | 'self-taught';
@@ -101,22 +134,13 @@ const MOBILE_PATH_ORDER: PathOption[] = [
 
 export default function StartingPathModal({ onSelect }: StartingPathModalProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const carouselRef = useRef<HTMLDivElement>(null);
 
-  const handleScroll = () => {
-    if (carouselRef.current) {
-      const scrollLeft = carouselRef.current.scrollLeft;
-      const cardWidth = carouselRef.current.offsetWidth * 0.85;
-      const newIndex = Math.round(scrollLeft / cardWidth);
-      setActiveIndex(Math.min(Math.max(newIndex, 0), MOBILE_PATH_ORDER.length - 1));
-    }
+  const goToPrevious = () => {
+    setActiveIndex(prev => (prev > 0 ? prev - 1 : prev));
   };
 
-  const scrollToIndex = (index: number) => {
-    if (carouselRef.current) {
-      const cardWidth = carouselRef.current.offsetWidth * 0.85;
-      carouselRef.current.scrollTo({ left: cardWidth * index, behavior: 'smooth' });
-    }
+  const goToNext = () => {
+    setActiveIndex(prev => (prev < MOBILE_PATH_ORDER.length - 1 ? prev + 1 : prev));
   };
 
   // Card Component
@@ -126,7 +150,7 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
         onSelect(path.id);
       }}
       className={`group relative overflow-hidden rounded-xl border-2 ${path.borderColor} ${path.bgColor} p-4 text-left transition-all ${path.hoverBg} ${path.hoverBorder} hover:shadow-lg ${path.shadowColor} ${
-        isMobile ? 'w-[85vw] shrink-0 snap-center' : 'hover:scale-[1.02]'
+        isMobile ? 'w-full' : 'hover:scale-[1.02]'
       }`}
     >
       <div className="space-y-3">
@@ -149,8 +173,8 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
           ))}
         </div>
 
-        {/* Description */}
-        <p className={`font-mono text-xs italic ${path.textColor}/80`}>"{path.description}"</p>
+        {/* Description - Fixed height to prevent layout shifts */}
+        <p className={`h-10 font-mono text-xs italic leading-tight ${path.textColor}/80`}>"{path.description}"</p>
 
         {/* Difficulty */}
         <div className="flex items-center gap-2">
@@ -199,26 +223,48 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
         </div>
       </div>
 
-      {/* Mobile Layout - Horizontal Carousel */}
+      {/* Mobile Layout - Arrow Navigation */}
       <div className="flex h-full w-full flex-col lg:hidden">
         {/* Header */}
         <div className="shrink-0 border-b border-emerald-500/30 bg-gray-950/80 px-4 py-4 backdrop-blur-sm">
           <h2 className="text-center font-mono text-lg font-bold text-emerald-400">Choose Your Path</h2>
-          <p className="text-center font-mono text-xs text-gray-400">Swipe to explore • Tap to select</p>
+          <p className="text-center font-mono text-xs text-gray-400">Use arrows to navigate • Tap card to select</p>
         </div>
 
-        {/* Carousel */}
-        <div className="flex flex-1 items-center overflow-hidden py-4">
-          <div
-            ref={carouselRef}
-            onScroll={handleScroll}
-            className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-[7.5vw] scrollbar-none"
-            style={{ scrollSnapType: 'x mandatory' }}
+        {/* Card Container with Arrow Navigation */}
+        <div className="flex flex-1 items-center justify-center px-2">
+          {/* Left Arrow */}
+          <button
+            onClick={goToPrevious}
+            disabled={activeIndex === 0}
+            className={`z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+              activeIndex === 0
+                ? 'cursor-not-allowed border-gray-700 bg-gray-900/50 text-gray-600'
+                : 'border-emerald-500 bg-emerald-950/50 text-emerald-400 hover:bg-emerald-900/50 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95'
+            }`}
+            aria-label="Previous path"
           >
-            {MOBILE_PATH_ORDER.map(path => (
-              <PathCard key={path.id} path={path} isMobile />
-            ))}
+            <ChevronLeftIcon />
+          </button>
+
+          {/* Card Display Area - Auto height based on content */}
+          <div className="mx-2 w-full max-w-70">
+            <PathCard path={MOBILE_PATH_ORDER[activeIndex]} isMobile />
           </div>
+
+          {/* Right Arrow */}
+          <button
+            onClick={goToNext}
+            disabled={activeIndex === MOBILE_PATH_ORDER.length - 1}
+            className={`z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+              activeIndex === MOBILE_PATH_ORDER.length - 1
+                ? 'cursor-not-allowed border-gray-700 bg-gray-900/50 text-gray-600'
+                : 'border-emerald-500 bg-emerald-950/50 text-emerald-400 hover:bg-emerald-900/50 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95'
+            }`}
+            aria-label="Next path"
+          >
+            <ChevronRightIcon />
+          </button>
         </div>
 
         {/* Pagination Dots */}
@@ -227,7 +273,7 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
             <button
               key={path.id}
               onClick={() => {
-                scrollToIndex(index);
+                setActiveIndex(index);
               }}
               className={`h-2.5 rounded-full transition-all ${
                 activeIndex === index ? `w-8 ${path.difficultyColor}` : 'w-2.5 bg-gray-600 hover:bg-gray-500'
