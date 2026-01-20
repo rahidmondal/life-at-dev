@@ -150,10 +150,10 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
         onSelect(path.id);
       }}
       className={`group relative overflow-hidden rounded-xl border-2 ${path.borderColor} ${path.bgColor} p-4 text-left transition-all ${path.hoverBg} ${path.hoverBorder} hover:shadow-lg ${path.shadowColor} ${
-        isMobile ? 'w-full' : 'hover:scale-[1.02]'
+        isMobile ? 'h-72 w-full' : 'hover:scale-[1.02]'
       }`}
     >
-      <div className="space-y-3">
+      <div className="flex h-full flex-col justify-between">
         {/* Header */}
         <div className="flex items-center gap-3">
           <span className="text-3xl">{path.icon}</span>
@@ -174,7 +174,9 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
         </div>
 
         {/* Description - Fixed height to prevent layout shifts */}
-        <p className={`h-10 font-mono text-xs italic leading-tight ${path.textColor}/80`}>"{path.description}"</p>
+        <p className={`line-clamp-2 font-mono text-xs italic leading-tight ${path.textColor}/80`}>
+          "{path.description}"
+        </p>
 
         {/* Difficulty */}
         <div className="flex items-center gap-2">
@@ -285,7 +287,7 @@ export default function StartingPathModal({ onSelect }: StartingPathModalProps) 
 
         {/* Footer Tip */}
         <div className="shrink-0 border-t border-gray-800 bg-gray-950/80 p-3 pb-safe backdrop-blur-sm">
-          <p className="text-center font-mono text-[10px] text-gray-500">
+          <p className="flex h-14 items-center justify-center text-center font-mono text-[10px] text-gray-500 px-4">
             {MOBILE_PATH_ORDER[activeIndex] && (
               <>
                 {MOBILE_PATH_ORDER[activeIndex].difficulty === 1 && '🟢 EASY: '}
