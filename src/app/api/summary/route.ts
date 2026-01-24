@@ -145,8 +145,12 @@ You MUST respond with valid JSON matching this schema:
   try {
     console.info('🤖 [TIER 2] Calling Gemini API for summary...');
 
+    const modelId = process.env.GEMINI_MODEL_ID;
+    if (!modelId) {
+      throw new Error('GEMINI_MODEL_ID is not configured');
+    }
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash-lite',
+      model: modelId,
       generationConfig: {
         responseMimeType: 'application/json',
       },
