@@ -1,7 +1,7 @@
 {
   "name": "Life @ Dev",
   "short_name": "life-at-dev",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "start_url": "/",
   "scope": "/",
   "icons": [
