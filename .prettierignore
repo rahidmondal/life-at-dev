@@ -7,3 +7,5 @@ pnpm-lock.yaml
 package.json
 .next
 out
+src/legacy_v1
+coverage

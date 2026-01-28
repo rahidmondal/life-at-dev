@@ -17,6 +17,8 @@ const eslintConfig = [
       '*.config.js',
       '*.config.mjs',
       'public/sw.js',
+      '**/*legacy*/**',
+      'coverage',
     ],
   },
 
