@@ -27,4 +27,7 @@ export interface Flags {
 
   /** Consecutive weeks of same action category. Triggers Flow State at 3+. */
   streak: number;
+
+  /** Action cooldowns. Maps action ID to tick when cooldown expires. */
+  cooldowns: Record<string, number>;
 }

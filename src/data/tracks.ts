@@ -77,6 +77,14 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
   // Currency: Freelance XP + Reputation
   // ═══════════════════════════════════════════════════════════════════════════
 
+  unemployed: {
+    id: 'unemployed',
+    title: 'Unemployed',
+    tier: 0,
+    track: 'Hustler',
+    salary: 0,
+    requirements: {},
+  },
   hustle_script_kiddie: {
     id: 'hustle_script_kiddie',
     title: 'Script Kiddie',
