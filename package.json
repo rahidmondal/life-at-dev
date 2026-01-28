@@ -9,7 +9,9 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "format": "prettier --write .",
-    "check-format": "prettier --check ."
+    "check-format": "prettier --check .",
+    "test": "vitest",
+    "test:watch":"vitest --watch"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
