@@ -4,6 +4,6 @@ interface GameStore {
   version: string;
 }
 
-export const useGameStore = create<GameStore>(set => ({
+export const useGameStore = create<GameStore>(_set => ({
   version: '2.0.0',
 }));
