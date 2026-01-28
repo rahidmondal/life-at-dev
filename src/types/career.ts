@@ -24,7 +24,7 @@ export interface JobNode {
   /** Which career track this job belongs to. */
   track: TrackType;
 
-  /** Weekly income in dollars. */
+  /** Yearly income in dollars. */
   salary: number;
 
   /**
