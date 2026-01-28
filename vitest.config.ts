@@ -7,6 +7,15 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/cypress/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
+      '**/legacy_v1/**',
+      '**/src/legacy_v1/**',
+    ],
   },
   resolve: {
     alias: {
