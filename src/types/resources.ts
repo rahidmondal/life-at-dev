@@ -22,9 +22,6 @@ export interface Flags {
   /** Has the player hit 100 Stress? Permanently lowers Stress Resistance. */
   isBurnedOut: boolean;
 
-  /** Unlock condition for Startup/Founder track. */
-  hasMetCoFounder: boolean;
-
   /** Consecutive weeks of same action category. Triggers Flow State at 3+. */
   streak: number;
 

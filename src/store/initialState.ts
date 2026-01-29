@@ -37,7 +37,6 @@ export const INITIAL_GAME_STATE: GameState = {
 
   flags: {
     isBurnedOut: false,
-    hasMetCoFounder: false,
     streak: 0,
     cooldowns: {},
   },

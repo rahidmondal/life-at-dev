@@ -29,6 +29,20 @@ export interface ActionRequirements {
 }
 
 /**
+ * PassiveBuff: Permanent modifier from INVEST actions.
+ */
+export interface PassiveBuff {
+  /** Which stat is modified. */
+  stat: 'stress' | 'skill' | 'xp' | 'energy' | 'recovery';
+  /** Modifier type: 'multiplier' (e.g., 0.9 = -10%) or 'flat' (e.g., +5). */
+  type: 'multiplier' | 'flat';
+  /** The modifier value. */
+  value: number;
+  /** Human-readable description. */
+  description: string;
+}
+
+/**
  * GameAction: Static definition for a player action ("Button").
  */
 export interface GameAction {
@@ -55,4 +69,13 @@ export interface GameAction {
 
   /** Duration in weeks. 0 = instant, 1+ = multi-week commitment. */
   duration?: number;
+
+  /** Energy restored (for RECOVER actions). Mutually exclusive with energyCost > 0. */
+  energyGain?: number;
+
+  /** Passive buff granted permanently (for INVEST actions). */
+  passiveBuff?: PassiveBuff;
+
+  /** Whether this is a recurring cost (e.g., hire_cleaner at $250/week). */
+  isRecurring?: boolean;
 }

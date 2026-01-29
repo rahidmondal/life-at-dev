@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { JOB_REGISTRY, UNEMPLOYED_JOB_ID } from '../data/tracks';
-import { INITIAL_GAME_STATE } from '../store/initialState';
-import type { TrackType } from './career';
-import type { GameState } from './gamestate';
+import { JOB_REGISTRY, L1_TRACKS, L2_TRACKS, L2_UNLOCK_JOBS, UNEMPLOYED_JOB_ID } from '../../data/tracks';
+import { INITIAL_GAME_STATE } from '../../store/initialState';
+import type { TrackType } from '../career';
+import type { GameState } from '../gamestate';
 
 /**
  * Phase 5: Verification Test Suite
@@ -10,7 +10,14 @@ import type { GameState } from './gamestate';
  */
 
 const MAX_SKILL_CAP = 10_000;
-const VALID_TRACKS: TrackType[] = ['IC', 'Management', 'Hustler'];
+const VALID_TRACKS: TrackType[] = [
+  'Corporate_L1',
+  'Hustler_L1',
+  'Corp_Management',
+  'Corp_IC',
+  'Hustler_Business',
+  'Hustler_Specialist',
+];
 
 describe('JOB_REGISTRY Integrity', () => {
   const jobEntries = Object.entries(JOB_REGISTRY);
@@ -112,23 +119,23 @@ describe('Gameplay Logic & Reachability', () => {
   });
 
   describe('Career Progression Logic', () => {
-    it('should have higher tier jobs require more skill', () => {
-      const managementJobs = Object.values(JOB_REGISTRY)
-        .filter(job => job.track === 'Management')
+    it('should have higher tier L1 corporate jobs require more skill', () => {
+      const corporateL1Jobs = Object.values(JOB_REGISTRY)
+        .filter(job => job.track === 'Corporate_L1')
         .sort((a, b) => a.tier - b.tier);
 
-      for (let i = 1; i < managementJobs.length; i++) {
-        const prev = managementJobs[i - 1];
-        const curr = managementJobs[i];
+      for (let i = 1; i < corporateL1Jobs.length; i++) {
+        const prev = corporateL1Jobs[i - 1];
+        const curr = corporateL1Jobs[i];
         const prevSkill = prev.requirements.coding ?? 0;
         const currSkill = curr.requirements.coding ?? 0;
         expect(currSkill).toBeGreaterThanOrEqual(prevSkill);
       }
     });
 
-    it('should have higher tier corporate jobs require more corporate XP', () => {
+    it('should have higher tier management jobs require more corporate XP', () => {
       const managementJobs = Object.values(JOB_REGISTRY)
-        .filter(job => job.track === 'Management' && job.tier > 0)
+        .filter(job => job.track === 'Corp_Management' && job.tier > 0)
         .sort((a, b) => a.tier - b.tier);
 
       for (let i = 1; i < managementJobs.length; i++) {
@@ -137,6 +144,63 @@ describe('Gameplay Logic & Reachability', () => {
         const prevXp = prev.requirements.corporate ?? 0;
         const currXp = curr.requirements.corporate ?? 0;
         expect(currXp).toBeGreaterThanOrEqual(prevXp);
+      }
+    });
+
+    it('should have L2 unlock jobs at tier 2 or 3 (Senior Dev / Digital Nomad)', () => {
+      // L2_UNLOCK_JOBS are L1 jobs that unlock access to L2 tracks
+      for (const jobId of Object.values(L2_UNLOCK_JOBS)) {
+        const job = JOB_REGISTRY[jobId];
+        expect(job.tier).toBeGreaterThanOrEqual(2);
+        expect(job.tier).toBeLessThanOrEqual(3);
+      }
+    });
+
+    it('should have all L2 track entry jobs at tier 3 or higher', () => {
+      const l2TrackSet = new Set<TrackType>(L2_TRACKS);
+      const l2Jobs = Object.values(JOB_REGISTRY).filter(job => l2TrackSet.has(job.track));
+
+      for (const job of l2Jobs) {
+        expect(job.tier).toBeGreaterThanOrEqual(3);
+      }
+    });
+  });
+
+  describe('L1/L2 Track Structure', () => {
+    it('should have exactly 2 L1 tracks', () => {
+      expect(L1_TRACKS.length).toBe(2);
+      expect(L1_TRACKS).toContain('Corporate_L1');
+      expect(L1_TRACKS).toContain('Hustler_L1');
+    });
+
+    it('should have exactly 4 L2 tracks', () => {
+      expect(L2_TRACKS.length).toBe(4);
+      expect(L2_TRACKS).toContain('Corp_Management');
+      expect(L2_TRACKS).toContain('Corp_IC');
+      expect(L2_TRACKS).toContain('Hustler_Business');
+      expect(L2_TRACKS).toContain('Hustler_Specialist');
+    });
+
+    it('should have xpCap defined for non-terminal L2 jobs', () => {
+      const l2TrackSet = new Set<TrackType>(L2_TRACKS);
+      const TERMINAL_JOB_IDS = ['corp_cto', 'ic_fellow', 'hustle_mogul', 'hustle_architect'];
+      const l2Jobs = Object.values(JOB_REGISTRY).filter(
+        job => l2TrackSet.has(job.track) && !TERMINAL_JOB_IDS.includes(job.id),
+      );
+
+      for (const job of l2Jobs) {
+        expect(job.xpCap).toBeDefined();
+        expect(job.xpCap).toBeGreaterThan(0);
+      }
+    });
+
+    it('should have terminal L2 jobs with undefined xpCap', () => {
+      const TERMINAL_JOB_IDS = ['corp_cto', 'ic_fellow', 'hustle_mogul', 'hustle_architect'];
+
+      for (const jobId of TERMINAL_JOB_IDS) {
+        const job = JOB_REGISTRY[jobId];
+        expect(job).toBeDefined();
+        expect(job.xpCap).toBeUndefined();
       }
     });
   });
@@ -211,10 +275,6 @@ describe('INITIAL_GAME_STATE Validity', () => {
   describe('Flags Baseline', () => {
     it('should not be burned out', () => {
       expect(state.flags.isBurnedOut).toBe(false);
-    });
-
-    it('should not have met co-founder', () => {
-      expect(state.flags.hasMetCoFounder).toBe(false);
     });
 
     it('should have streak at 0', () => {
