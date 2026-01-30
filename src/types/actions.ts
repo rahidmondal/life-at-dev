@@ -12,6 +12,8 @@ export type ActionCategory = 'SKILL' | 'WORK' | 'NETWORK' | 'RECOVER' | 'INVEST'
 export interface ActionRewards {
   skill?: number;
   xp?: number;
+  corporate?: number;
+  freelance?: number;
   stress?: number;
   reputation?: number;
   fulfillment?: number;

@@ -46,7 +46,7 @@ Define your origin story. Do you take the **Scholarship** (Debt-free but no expe
 ### 2. The Grind: Survival
 
 _Age 22-30_
-The reality of rent hits to hit hard. The goal is survival. You catch-22 is painful: you need to study to get hired, but you need to work menial gigs to pay rent. Every dollar counts.
+The reality of rent hits hard. The goal is survival. You catch-22 is painful: you need to study to get hired, but you need to work menial gigs to pay rent. Every dollar counts.
 
 ### 3. The Plateau: Strategy & Politics
 

@@ -71,7 +71,7 @@ export function processTurn(state: GameState, actionId: string): GameState {
   let reputation = state.stats.xp.reputation;
 
   if (weeks > 0) {
-    const roleDisplacement = ROLE_DISPLACEMENT[currentJob.tier] ?? 0.5;
+    const roleDisplacement = currentJob.roleDisplacement ?? ROLE_DISPLACEMENT[currentJob.tier];
 
     coding = Math.max(0, coding - calculateDecay(coding, roleDisplacement) * weeks);
     politics = Math.max(0, politics - calculateDecay(politics, roleDisplacement) * weeks);
@@ -101,8 +101,12 @@ export function processTurn(state: GameState, actionId: string): GameState {
     politics += calculateDiminishingGrowth(politics, action.rewards.politics);
   }
 
-  if (action.rewards.xp) {
-    corporate += action.rewards.xp;
+  if (action.rewards.corporate) {
+    corporate += action.rewards.corporate;
+  }
+
+  if (action.rewards.freelance) {
+    freelance += action.rewards.freelance;
   }
 
   if (action.rewards.reputation) {
