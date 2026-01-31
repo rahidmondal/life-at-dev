@@ -32,6 +32,7 @@ export const INITIAL_GAME_STATE: GameState = {
 
   career: {
     currentJobId: UNEMPLOYED_JOB_ID,
+    jobStartTick: 0,
     jobHistory: [],
   },
 

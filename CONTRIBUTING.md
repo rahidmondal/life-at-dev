@@ -1,105 +1,100 @@
 # Contributing to Life@Dev
 
-Thank you for your interest in contributing to Life@Dev! We welcome contributions from the community.
+First off, thanks for taking the time to contribute! 🎉
 
-## How to Contribute
+The following is a set of guidelines for contributing to Life@Dev. These are guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
-### 1. Fork the Repository
+## 🚀 Getting Started
 
-Fork the repository to your own GitHub account and clone it locally.
+### 1. Fork & Clone
+
+Fork the repository to your GitHub account, then clone it locally:
 
 ```bash
 git clone https://github.com/your-username/life-at-dev.git
 cd life-at-dev
 ```
 
-### 2. Set Up the Development Environment
+### 2. Install Dependencies
 
-Install dependencies using pnpm:
+We use `pnpm` for package management.
 
 ```bash
 pnpm install
 ```
 
-Run the development server:
+### 3. Run Locally
+
+Start the development server:
 
 ```bash
 pnpm dev
 ```
 
-### 3. Create a Branch
+## 🛠️ Development Flow
 
-Create a new branch for your feature or bug fix:
+### 1. Create a Branch
 
-```bash
-git checkout -b feature/your-feature-name
-```
-
-### 4. Make Your Changes
-
-- Follow the existing code style and conventions
-- Ensure your code is properly formatted using Prettier
-- Run linting checks: `pnpm lint`
-- Format your code: `pnpm format`
-
-### 5. Test Your Changes
-
-Test your changes thoroughly to ensure they work as expected and don't break existing functionality.
-
-### 6. Commit Your Changes
-
-Write clear and descriptive commit messages:
+Always work on a new branch for your changes:
 
 ```bash
-git commit -m "feat(scope): description"
+# For new features
+git checkout -b feat/your-feature-name
+
+# For bug fixes
+git checkout -b fix/your-bug-fix
 ```
 
-Or use other commit types:
+### 2. Coding Standards
+
+- **TypeScript**: We use strict mode. No `any` unless absolutely necessary.
+- **Formatting**: We use Prettier.
+- **Linting**: We use ESLint.
+
+Before committing, ensure your code is clean:
 
 ```bash
-git commit -m "fix(scope): description"
-git commit -m "docs(scope): description"
-git commit -m "style(scope): description"
-git commit -m "refactor(scope): description"
-git commit -m "test(scope): description"
-git commit -m "chore(scope): description"
+pnpm lint
+pnpm format
 ```
 
-### 7. Push and Create a Pull Request
+### 3. Commit Messages
 
-Push your changes to your fork and create a pull request:
+We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
 
 ```bash
-git push origin feature/your-feature-name
+git commit -m "feat: add career pivot logic"
+git commit -m "fix: resolve entropy calculation bug"
+git commit -m "docs: update readme with new vision"
 ```
 
-Then open a pull request on GitHub with a clear description of your changes.
+Common types:
 
-## Code Style Guidelines
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code (white-space, formatting, etc)
+- `refactor`: A code change that neither fixes a bug nor adds a feature
 
-- Use TypeScript for type safety
-- Follow React best practices and hooks conventions
-- Use Tailwind CSS for styling
-- Keep components modular and reusable
-- Add comments for complex logic
+### 4. Push & Pull Request
 
-## Reporting Issues
+Push your changes to your fork:
 
-If you find a bug or have a feature request:
-
-1. Check if the issue already exists in the issue tracker
-2. If not, create a new issue with a clear title and description
-3. Include steps to reproduce the issue (for bugs)
-4. Add screenshots if applicable
-
-## Questions?
-
-Feel free to open an issue for any questions or discussions about the project.
-
-## License
-
-By contributing to Life@Dev, you agree that your contributions will be licensed under the MIT License.
-
+```bash
+git push origin feat/your-feature-name
 ```
 
-```
+Go to the original repository and open a **Pull Request**. Please provide a clear description of your changes and screenshots if applicable.
+
+## 🐛 Reporting Bugs
+
+If you find a bug, please create an issue including:
+
+- Steps to reproduce
+- Expected behavior
+- Actual behavior
+- Screenshots (if applicable)
+
+## 📄 License
+
+By contributing, you agree that your contributions will be licensed under its MIT License.

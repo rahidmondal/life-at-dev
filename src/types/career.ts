@@ -19,6 +19,17 @@ export type TrackType =
 export type IncomeType = 'salary' | 'volatile';
 
 /**
+ * Weekly skill/XP gains from a job.
+ */
+export interface WeeklyGains {
+  coding?: number;
+  politics?: number;
+  corporate?: number;
+  freelance?: number;
+  reputation?: number;
+}
+
+/**
  * JobNode: Static data for a role in the career graph.
  */
 export interface JobNode {
@@ -37,6 +48,9 @@ export interface JobNode {
   /** Yearly income in dollars. 0 for volatile income jobs. */
   salary: number;
 
+  /** Base salary (alternative naming). */
+  baseSalary?: number;
+
   /** Income stability. 'salary' = fixed, 'volatile' = variable gig income. */
   incomeType: IncomeType;
 
@@ -48,6 +62,15 @@ export interface JobNode {
    * Maps to skill requirements (coding, politics) and XP requirements (corporate, freelance, reputation).
    */
   requirements: Partial<SkillMap & XPCurrency>;
+
+  /** Energy cost per week to work this job. */
+  energyCost?: number;
+
+  /** Skills/XP gained per week while working this job. */
+  weeklyGains?: WeeklyGains;
+
+  /** Role displacement risk (0-1). Higher = more vulnerable to automation/outsourcing. */
+  roleDisplacement?: number;
 
   /** Notes about the job for UI/debug. */
   notes?: string;
@@ -68,6 +91,9 @@ export interface JobHistoryEntry {
 export interface CareerState {
   /** Current job node ID. */
   currentJobId: string;
+
+  /** Tick when current job started (used for tenure tracking). */
+  jobStartTick: number;
 
   /** Employment history. Used for the Obituary/Eulogy at game end. */
   jobHistory: JobHistoryEntry[];
