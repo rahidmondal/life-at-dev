@@ -170,6 +170,7 @@ describe('getEligibleJobs', () => {
       streak: 0,
       cooldowns: {},
     },
+    eventLog: [],
   });
 
   it('should exclude current job from eligible jobs', () => {
@@ -343,6 +344,7 @@ describe('promotePlayer', () => {
       streak: 0,
       cooldowns: {},
     },
+    eventLog: [],
   });
 
   it('should update currentJobId to new job', () => {

@@ -1,6 +1,7 @@
 import { ACTIONS_REGISTRY } from '../data/actions';
 import { JOB_REGISTRY } from '../data/tracks';
 import type { GameState } from '../types/gamestate';
+import { triggerRandomEvents } from './events';
 import { calculateBurnoutRisk, calculateDecay, calculateDiminishingGrowth } from './mechanics';
 import { advanceTime, calculateResourceDelta } from './time';
 
@@ -120,7 +121,7 @@ export function processTurn(state: GameState, actionId: string): GameState {
   const meta = advanceTime(state.meta, weeks);
   const isBurnedOut = calculateBurnoutRisk(stress, energy);
 
-  return {
+  const newState = {
     ...state,
     meta,
     resources: {
@@ -145,4 +146,6 @@ export function processTurn(state: GameState, actionId: string): GameState {
       isBurnedOut,
     },
   };
+
+  return triggerRandomEvents(newState);
 }
