@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GameState } from '../../types/gamestate';
 import { processTurn } from '../processTurn';
+
+beforeEach(() => {
+  vi.spyOn(Math, 'random').mockReturnValue(1);
+});
 
 type MockOverrides = Partial<{
   tick: number;
@@ -51,6 +55,7 @@ function createMockState(overrides: MockOverrides = {}): GameState {
       streak: 0,
       cooldowns: {},
     },
+    eventLog: [],
   };
 }
 

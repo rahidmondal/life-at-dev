@@ -1,9 +1,6 @@
 import { UNEMPLOYED_JOB_ID } from '../data/tracks';
 import type { GameState } from '../types/gamestate';
 
-/**
- * INITIAL_GAME_STATE: Default "New Game" state before player choices.
- */
 export const INITIAL_GAME_STATE: GameState = {
   meta: {
     version: '2.0.0',
@@ -41,4 +38,5 @@ export const INITIAL_GAME_STATE: GameState = {
     streak: 0,
     cooldowns: {},
   },
+  eventLog: [],
 };

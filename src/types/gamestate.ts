@@ -1,4 +1,5 @@
 import type { CareerState } from './career';
+import type { EventLogEntry } from './events';
 import type { Flags, Resources } from './resources';
 import type { SkillMap, XPCurrency } from './stats';
 
@@ -46,4 +47,7 @@ export interface GameState {
 
   /** Persistent story flags and streak tracking. */
   flags: Flags;
+
+  /** History of triggered events. */
+  eventLog: EventLogEntry[];
 }
