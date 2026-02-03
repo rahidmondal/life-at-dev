@@ -8,6 +8,7 @@ export { HowToPlayModal } from './HowToPlayModal';
 export { LandingScreen } from './LandingScreen';
 export { Ledger } from './Ledger';
 export { LoadingScreen } from './LoadingScreen';
+export { MatrixRain } from './MatrixRain';
 export { MobileActionSheet } from './MobileActionSheet';
 export { MobileHeader } from './MobileHeader';
 export { MobileNav } from './MobileNav';
