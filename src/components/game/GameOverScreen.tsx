@@ -1,5 +1,7 @@
 'use client';
 
+import html2canvas from 'html2canvas';
+import { useRef } from 'react';
 import { useGameStore } from '../../store/useGameStore';
 import { PlayIcon, SaveIcon } from '../ui/icons';
 
@@ -8,24 +10,42 @@ interface GameOverScreenProps {
   onRestart: () => void;
 }
 
-/**
- * GameOverScreen: The obituary/death certificate screen.
- * Shows player's legacy and final stats.
- */
 export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
   const { meta, resources, stats, career } = useGameStore();
+  const gameOverRef = useRef<HTMLDivElement>(null);
 
   const age = meta.startAge + Math.floor(meta.tick / 52);
   const totalXP = stats.xp.corporate + stats.xp.freelance;
   const totalSkill = stats.skills.coding + stats.skills.politics;
 
-  // Determine ending type
+  const exportAsPNG = async () => {
+    if (!gameOverRef.current) return;
+
+    try {
+      const canvas = await html2canvas(gameOverRef.current, {
+        backgroundColor: '#0D1117',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      const link = document.createElement('a');
+      link.download = `life-at-dev-${ending.title.toLowerCase().replace(/\s+/g, '-')}-${Date.now().toString()}.png`;
+      link.href = canvas.toDataURL('image/png');
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Failed to export PNG:', error);
+    }
+  };
+
   const getEndingType = () => {
     if (reason === 'bankruptcy') return { title: 'Bankruptcy', emoji: '💸', color: '#FF7B72' };
     if (reason === 'burnout') return { title: 'Institutional Burnout', emoji: '🔥', color: '#F0883E' };
     if (reason === 'aged_out') return { title: "Time's Up", emoji: '⏰', color: '#8B949E' };
 
-    // Retirement endings based on stats
     if (resources.money > 1000000 && resources.fulfillment > 5000) {
       return { title: 'The Balanced Master', emoji: '🧘', color: '#39D353' };
     }
@@ -46,7 +66,6 @@ export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
 
   const ending = getEndingType();
 
-  // Calculate legacy score
   const legacyScore = Math.round(
     totalSkill * 0.2 +
       totalXP * 0.3 +
@@ -57,7 +76,6 @@ export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
       (reason === 'burnout' ? 1500 : 0),
   );
 
-  // Generate obituary text
   const generateObituaryText = () => {
     const lines: string[] = [];
 
@@ -80,13 +98,10 @@ export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
 
   return (
     <div className="min-h-screen bg-[#0D1117] text-[#C9D1D9] font-mono flex items-center justify-center p-4">
-      {/* CRT Scanlines */}
       <div className="fixed inset-0 crt-scanlines z-50 pointer-events-none" />
 
       <div className="w-full max-w-2xl animate-fade-in">
-        {/* Death Certificate / Wiki Page Style */}
-        <div className="bg-[#161B22] border border-[#30363D] rounded-lg overflow-hidden">
-          {/* Header */}
+        <div ref={gameOverRef} className="bg-[#161B22] border border-[#30363D] rounded-lg overflow-hidden">
           <div className="p-6 text-center border-b border-[#30363D]" style={{ backgroundColor: `${ending.color}10` }}>
             <span className="text-6xl mb-4 block">{ending.emoji}</span>
             <h1 className="text-2xl font-bold" style={{ color: ending.color }}>
@@ -97,9 +112,7 @@ export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
             </p>
           </div>
 
-          {/* Obituary Content */}
           <div className="p-6 space-y-6">
-            {/* Narrative */}
             <div className="text-center border-b border-[#30363D] pb-6">
               {generateObituaryText().map((line, i) => (
                 <p key={i} className="text-[#C9D1D9] italic">
@@ -108,7 +121,6 @@ export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
               ))}
             </div>
 
-            {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard label="Age" value={String(age)} color="#8B949E" />
               <StatCard label="Weeks" value={String(meta.tick)} color="#58A6FF" />
@@ -120,7 +132,6 @@ export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
               <StatCard label="Jobs Held" value={String(career.jobHistory.length)} color="#8B949E" />
             </div>
 
-            {/* Legacy Score */}
             <div className="text-center py-6 border-t border-[#30363D]">
               <p className="text-[#8B949E] text-sm mb-2">LEGACY SCORE</p>
               <p
@@ -137,7 +148,6 @@ export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
               </p>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-4">
               <button
                 onClick={onRestart}
@@ -148,6 +158,7 @@ export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
                 New Life
               </button>
               <button
+                onClick={exportAsPNG}
                 className="px-6 py-3 bg-[#161B22] border border-[#30363D] text-[#8B949E] font-bold rounded-lg
                            hover:border-[#8B949E] transition-all flex items-center justify-center gap-2"
               >
