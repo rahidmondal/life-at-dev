@@ -17,7 +17,18 @@ export function MatrixRain({ isMobile = false }: MatrixRainProps) {
     if (!ctx) return undefined;
 
     const katakana =
-      '가나다라마바사아자차카타파하한글天地玄黄宇宙洪荒日月盈昃辰宿列张กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดअआइईउऊऋएऐओऔकखगघङÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕ';
+      '가나다라마바사아자차카타파하한글' + // Korean Hangul
+      '天地玄黄宇宙洪荒日月盈昃辰宿列张' + // Classical Chinese
+      '一二三四五六七八九十百千萬' + // Chinese numerals
+      'アイウエオカキクケコサシスセソ' + // Japanese Katakana
+      'あいうえおかきくけこさしすせそ' + // Japanese Hiragana
+      'กขฃคฅฆงจฉชซฌญฎฏฐฑฒณด' + // Thai
+      'अआइईउऊऋएऐओऔकखगघङचछजझञ' + // Devanagari (Sanskrit/Hindi)
+      'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ' + // Greek uppercase
+      'αβγδεζηθικλμνξοπρστυφχψω' + // Greek lowercase
+      'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ' + // Latin extended
+      'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'; // Cyrillic
+
     const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
     const chars = katakana + latin;
 

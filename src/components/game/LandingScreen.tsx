@@ -14,7 +14,6 @@ export function LandingScreen({ onStartGame, onContinue }: LandingScreenProps) {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile for matrix rain optimization
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -72,7 +71,7 @@ export function LandingScreen({ onStartGame, onContinue }: LandingScreenProps) {
             className="w-36 lg:w-44 h-auto mb-3 drop-shadow-[0_0_30px_rgba(57,211,83,0.3)]"
           />
 
-          <h1 className="text-xl lg:text-2xl font-bold text-[#39D353] mb-2">Code. Climb. Survive.</h1>
+          <h1 className="text-xl lg:text-2xl font-bold text-[#39D353] mb-2">Build. Climb. Thrive.</h1>
 
           <p className="text-[#8B949E] text-xs lg:text-sm mb-3 max-w-sm leading-relaxed">
             A strategic simulation from <span className="text-[#58A6FF]">age 18</span> to retirement. Balance{' '}
@@ -148,8 +147,8 @@ export function LandingScreen({ onStartGame, onContinue }: LandingScreenProps) {
                            hover:border-[#39D353] hover:text-[#39D353]
                            transition-all duration-300 flex items-center gap-2 justify-center"
               >
-                <span>?</span>
                 <span>How to Play</span>
+                <span>?</span>
               </button>
             </div>
             <div className="text-center text-[#8B949E] text-xs mt-3">v2.0.0</div>
@@ -240,8 +239,8 @@ export function LandingScreen({ onStartGame, onContinue }: LandingScreenProps) {
                 className="w-28 h-12 bg-[#161B22] border border-[#30363D] text-[#8B949E] font-medium rounded-xl text-sm
                            active:bg-[#1c2128] transition-colors flex items-center justify-center gap-1.5"
               >
-                <span>?</span>
                 <span>How to Play</span>
+                <span>?</span>
               </button>
             </div>
             <div className="text-center text-[#8B949E] text-xs mt-3">v2.0.0</div>
