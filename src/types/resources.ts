@@ -8,6 +8,9 @@ export interface Resources {
   /** The Enabler. Buys time and speed. */
   money: number;
 
+  /** The Burden. Negative value representing student loan debt. Interest accrues. */
+  debt: number;
+
   /** The Limiter. 0-50 Safe, 50-80 High Performance, 80-100 Danger Zone. */
   stress: number;
 
@@ -27,4 +30,10 @@ export interface Flags {
 
   /** Action cooldowns. Maps action ID to tick when cooldown expires. */
   cooldowns: Record<string, number>;
+
+  /** Whether this player's path accumulates debt during university years. */
+  accumulatesDebt: boolean;
+
+  /** The player's selected starting path. */
+  startingPath: 'scholar' | 'funded' | 'dropout' | null;
 }

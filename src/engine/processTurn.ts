@@ -1,6 +1,7 @@
 import { ACTIONS_REGISTRY } from '../data/actions';
 import { JOB_REGISTRY } from '../data/tracks';
 import type { GameState } from '../types/gamestate';
+import { hasMissedPayment, makeDebtPayment, processWeeklyDebt } from './debt';
 import { triggerRandomEvents } from './events';
 import { calculateBurnoutRisk, calculateDecay, calculateDiminishingGrowth } from './mechanics';
 import { advanceTime, calculateResourceDelta } from './time';
@@ -118,12 +119,30 @@ export function processTurn(state: GameState, actionId: string): GameState {
     money += action.rewards.money;
   }
 
-  const meta = advanceTime(state.meta, weeks);
-  const isBurnedOut = calculateBurnoutRisk(stress, energy);
+  const debtResult = processWeeklyDebt({
+    ...state,
+    meta: advanceTime(state.meta, weeks),
+  });
 
-  // Calculate actual deltas for action feedback
+  let finalDebt = debtResult.newDebt;
+  let debtStressPenalty = debtResult.stressPenalty;
+
+  if (debtResult.debtPayment > 0) {
+    if (hasMissedPayment(money, debtResult.debtPayment)) {
+      debtStressPenalty += 5;
+    } else {
+      money -= debtResult.debtPayment;
+      finalDebt = makeDebtPayment(finalDebt, debtResult.debtPayment);
+    }
+  }
+
+  const meta = advanceTime(state.meta, weeks);
+  const isBurnedOut = calculateBurnoutRisk(stress + debtStressPenalty, energy);
+
   const finalEnergy = Math.round(energy);
-  const finalStress = Math.round(stress);
+  const finalStress = Math.round(
+    calculateResourceDelta(stress + debtStressPenalty, 0, RESOURCE_BOUNDS.stress.min, RESOURCE_BOUNDS.stress.max),
+  );
   const finalMoney = money;
   const finalCoding = Math.floor(coding);
 
@@ -132,7 +151,6 @@ export function processTurn(state: GameState, actionId: string): GameState {
   const deltaMoney = finalMoney - state.resources.money;
   const deltaSkill = finalCoding - state.stats.skills.coding;
 
-  // Build delta summary for terminal display (matching Terminal.tsx regex patterns)
   const deltaFragments: string[] = [];
   if (deltaSkill !== 0) {
     deltaFragments.push(`${deltaSkill >= 0 ? '+' : ''}${deltaSkill.toString()} Skill`);
@@ -149,7 +167,6 @@ export function processTurn(state: GameState, actionId: string): GameState {
 
   const deltaSummary = deltaFragments.length > 0 ? deltaFragments.join(', ') : 'No changes';
 
-  // Create action log entry with eventId triggering correct Terminal.tsx color
   const eventIdSuffix = action.category === 'WORK' ? 'work' : 'success';
   const actionLogEntry = {
     tick: state.meta.tick,
@@ -164,6 +181,7 @@ export function processTurn(state: GameState, actionId: string): GameState {
       energy: finalEnergy,
       stress: finalStress,
       money: finalMoney,
+      debt: finalDebt,
       fulfillment: Math.round(fulfillment),
     },
     stats: {

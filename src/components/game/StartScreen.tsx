@@ -19,7 +19,7 @@ const PATHS = [
       skill: 'HIGH (+200)',
       debt: '$0',
       xp: '0 (Never worked)',
-      time: '4 years in university',
+      time: 'Starts at age 22',
     },
     description: 'Parents paid for everything. Graduate with knowledge but zero real-world experience.',
     pros: ['High starting skill', 'No debt', 'Good foundation'],
@@ -29,24 +29,24 @@ const PATHS = [
     id: 'funded' as const,
     title: 'The Debtor',
     subtitle: 'Self-Funded Degree',
-    difficulty: 'Medium',
+    difficulty: 'Hard',
     emoji: '💸',
-    color: '#F0883E',
+    color: '#FF7B72',
     stats: {
-      skill: 'MEDIUM (+100)',
-      debt: '-$40,000',
-      xp: '50 (Part-time jobs)',
-      time: '4 years in university',
+      skill: 'LOW (+0)',
+      debt: '-$10k/year',
+      xp: '0 (Starts fresh)',
+      time: '4 years of debt',
     },
-    description: 'Worked your way through college. You know struggle but also carry its weight.',
-    pros: ['Balanced start', 'Some work experience', 'Appreciates money'],
-    cons: ['Massive debt', 'Constant stress', 'Must pay loans'],
+    description: 'Fund your own degree. Accumulate $40k debt over 4 years while building skills.',
+    pros: ['Real struggle builds character', 'University education', 'Motivated by debt'],
+    cons: ['$40k debt by age 22', 'Weekly loan payments', 'Constant financial stress'],
   },
   {
     id: 'dropout' as const,
     title: 'The Dropout',
     subtitle: 'Skip University',
-    difficulty: 'Hard',
+    difficulty: 'Medium',
     emoji: '🚀',
     color: '#A371F7',
     stats: {
@@ -56,15 +56,11 @@ const PATHS = [
       time: '4 EXTRA years',
     },
     description: 'Skip the system. Start from zero with nothing but time and raw ambition.',
-    pros: ['No debt', '4 extra years', 'Self-made story'],
+    pros: ['No debt', '4 extra years to hustle', 'Self-made story'],
     cons: ['Zero skill', 'Zero XP', 'Harder interviews'],
   },
 ];
 
-/**
- * StartScreen: Path selection and name input screen.
- * Shows after the loading screen, before the game begins.
- */
 export function StartScreen({ onStart }: StartScreenProps) {
   const [selectedPath, setSelectedPath] = useState<'scholar' | 'funded' | 'dropout' | null>(null);
   const [playerName, setPlayerName] = useState('');
@@ -84,7 +80,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
     setMobileCardIndex(prev => (prev - 1 + PATHS.length) % PATHS.length);
   };
 
-  // Shared card component for both desktop and mobile
   const PathCard = ({
     path,
     isSelected,
@@ -104,7 +99,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
           : 'border-[#30363D] bg-[#161B22] hover:border-[#8B949E]'
       } ${compact ? 'md:scale-100' : ''}`}
     >
-      {/* Header Row */}
       <div className="flex items-start justify-between mb-1.5">
         <div className="flex items-center gap-2">
           <span className="text-xl">{path.emoji}</span>
@@ -126,10 +120,8 @@ export function StartScreen({ onStart }: StartScreenProps) {
         </span>
       </div>
 
-      {/* Description */}
       <p className="text-[#C9D1D9] text-[10px] mb-2 leading-relaxed">{path.description}</p>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9px] font-mono border-t border-[#30363D] pt-1.5">
         <div className="flex justify-between">
           <span className="text-[#8B949E]">Skill:</span>
@@ -149,7 +141,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
         </div>
       </div>
 
-      {/* Selection Indicator */}
       {isSelected && (
         <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
           <div className="w-4 h-4 rounded-full bg-[#39D353] flex items-center justify-center">
@@ -162,10 +153,8 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
   return (
     <div className="h-screen bg-[#0D1117] text-[#C9D1D9] font-mono flex flex-col items-center justify-center p-4 md:p-3 relative overflow-hidden">
-      {/* CRT Scanlines */}
       <div className="fixed inset-0 crt-scanlines z-50 pointer-events-none" />
 
-      {/* Nebula Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute w-96 h-96 rounded-full opacity-10 blur-3xl"
@@ -185,9 +174,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
         />
       </div>
 
-      {/* Selection Content */}
       <div className="w-full max-w-3xl animate-fade-in space-y-3 md:space-y-3 relative z-10">
-        {/* Logo & Title */}
         <div className="text-center">
           <img
             src="/logo.png"
@@ -195,12 +182,11 @@ export function StartScreen({ onStart }: StartScreenProps) {
             className="w-60 md:w-60 h-auto mx-auto mb-1 drop-shadow-[0_0_20px_rgba(57,211,83,0.5)]"
           />
           <h1 className="text-2xl md:text-xl font-bold text-[#39D353] mb-0.5">
-            Life@Dev <span className="text-[#8B949E] text-sm md:text-xs">v2.0</span>
+            Life@Dev <span className="text-[#8B949E] text-sm md:text-xs">v2.0.0</span>
           </h1>
           <p className="text-[#8B949E] text-sm md:text-xs">Choose your origin story</p>
         </div>
 
-        {/* Path Cards - Desktop Grid */}
         <div className="hidden md:grid md:grid-cols-3 gap-2">
           {PATHS.map(path => (
             <PathCard
@@ -214,10 +200,8 @@ export function StartScreen({ onStart }: StartScreenProps) {
           ))}
         </div>
 
-        {/* Path Cards - Mobile Carousel */}
         <div className="md:hidden">
           <div className="flex items-center gap-2">
-            {/* Left Arrow */}
             <button
               onClick={prevCard}
               className="shrink-0 w-10 h-10 rounded-full border border-[#30363D] bg-[#161B22]
@@ -227,7 +211,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
               <ChevronLeftIcon size={20} />
             </button>
 
-            {/* Card */}
             <div className="flex-1">
               <PathCard
                 path={PATHS[mobileCardIndex]}
@@ -239,7 +222,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
               />
             </div>
 
-            {/* Right Arrow */}
             <button
               onClick={nextCard}
               className="shrink-0 w-10 h-10 rounded-full border border-[#30363D] bg-[#161B22]
@@ -250,7 +232,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
             </button>
           </div>
 
-          {/* Dots Indicator */}
           <div className="flex justify-center gap-2 mt-3">
             {PATHS.map((path, index) => (
               <button
@@ -266,7 +247,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
           </div>
         </div>
 
-        {/* Name Input & Launch */}
         {selectedPath && (
           <div className="animate-fade-in bg-[#161B22] border border-[#30363D] rounded-lg p-4 md:p-3 max-w-sm mx-auto">
             <label className="block text-xs text-[#8B949E] mb-1">const username = &quot;</label>
@@ -302,11 +282,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
             </button>
           </div>
         )}
-      </div>
-
-      {/* Version Footer */}
-      <div className="absolute bottom-4 text-center text-[#484F58] text-xs">
-        Life@Dev v2.0 • &quot;Survive the Grind. Climb the Ladder.&quot;
       </div>
     </div>
   );

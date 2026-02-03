@@ -7,6 +7,45 @@ import type { Resources } from '../types/resources';
 import type { SkillMap, XPCurrency } from '../types/stats';
 import { INITIAL_GAME_STATE } from './initialState';
 
+interface PathConfig {
+  startAge: number;
+  resources: Partial<Resources>;
+  skills: Partial<SkillMap>;
+  xp: Partial<XPCurrency>;
+  accumulatesDebt: boolean;
+}
+
+const PATH_CONFIGS: Record<string, PathConfig> = {
+  scholar: {
+    startAge: 22,
+    resources: { money: 0, debt: 0 },
+    skills: { coding: 200, politics: 50 },
+    xp: { corporate: 0, freelance: 0, reputation: 0 },
+    accumulatesDebt: false,
+  },
+  funded: {
+    startAge: 18,
+    resources: { money: 0, debt: 0 },
+    skills: { coding: 0, politics: 0 },
+    xp: { corporate: 0, freelance: 0, reputation: 0 },
+    accumulatesDebt: true,
+  },
+  dropout: {
+    startAge: 18,
+    resources: { money: 0, debt: 0 },
+    skills: { coding: 0, politics: 0 },
+    xp: { corporate: 0, freelance: 0, reputation: 0 },
+    accumulatesDebt: false,
+  },
+};
+
+function getPathInitialState(path?: string): PathConfig {
+  if (path && path in PATH_CONFIGS) {
+    return PATH_CONFIGS[path];
+  }
+  return PATH_CONFIGS.dropout;
+}
+
 interface GameActions {
   tick: () => void;
   setJob: (jobId: string) => void;
@@ -17,7 +56,7 @@ interface GameActions {
   performAction: (actionId: string) => void;
   advanceWeek: () => void;
 
-  startNewGame: (path?: string) => Promise<void>;
+  startNewGame: (path?: string, playerName?: string) => Promise<void>;
   loadGame: (saveId: string) => Promise<void>;
   saveGame: () => Promise<void>;
 
@@ -69,6 +108,9 @@ export const useGameStore = create<GameStore>()(
 
               if (delta.money !== undefined) {
                 updated.money = state.resources.money + delta.money;
+              }
+              if (delta.debt !== undefined) {
+                updated.debt = Math.max(0, state.resources.debt + delta.debt);
               }
               if (delta.stress !== undefined) {
                 updated.stress = Math.max(0, Math.min(100, state.resources.stress + delta.stress));
@@ -136,9 +178,38 @@ export const useGameStore = create<GameStore>()(
             'advanceWeek',
           ),
 
-        startNewGame: async (_path?: string) => {
-          const newId = await createSave(INITIAL_GAME_STATE, true);
-          set({ ...INITIAL_GAME_STATE, currentSaveId: newId }, false, 'startNewGame');
+        startNewGame: async (path?: string, _playerName?: string) => {
+          const pathConfig = getPathInitialState(path);
+          const startingPath = path as 'scholar' | 'funded' | 'dropout';
+          const initialState: GameState = {
+            ...INITIAL_GAME_STATE,
+            meta: {
+              ...INITIAL_GAME_STATE.meta,
+              startAge: pathConfig.startAge,
+            },
+            resources: {
+              ...INITIAL_GAME_STATE.resources,
+              ...pathConfig.resources,
+            },
+            stats: {
+              skills: {
+                ...INITIAL_GAME_STATE.stats.skills,
+                ...pathConfig.skills,
+              },
+              xp: {
+                ...INITIAL_GAME_STATE.stats.xp,
+                ...pathConfig.xp,
+              },
+            },
+            flags: {
+              ...INITIAL_GAME_STATE.flags,
+              accumulatesDebt: pathConfig.accumulatesDebt,
+              startingPath,
+            },
+          };
+
+          const newId = await createSave(initialState, true);
+          set({ ...initialState, currentSaveId: newId }, false, 'startNewGame');
         },
 
         loadGame: async (saveId: string) => {

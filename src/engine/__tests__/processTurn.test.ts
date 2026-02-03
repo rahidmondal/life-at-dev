@@ -37,6 +37,7 @@ function createMockState(overrides: MockOverrides = {}): GameState {
       energy: overrides.energy ?? 100,
       stress: overrides.stress ?? 0,
       money: overrides.money ?? 10000,
+      debt: 0,
       fulfillment: overrides.fulfillment ?? 0,
     },
     stats: {
@@ -54,6 +55,8 @@ function createMockState(overrides: MockOverrides = {}): GameState {
       isBurnedOut: overrides.isBurnedOut ?? false,
       streak: 0,
       cooldowns: {},
+      accumulatesDebt: false,
+      startingPath: null,
     },
     eventLog: [],
   };

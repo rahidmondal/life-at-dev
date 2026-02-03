@@ -10,6 +10,7 @@ export const INITIAL_GAME_STATE: GameState = {
 
   resources: {
     money: 0,
+    debt: 0,
     stress: 0,
     energy: 100,
     fulfillment: 0,
@@ -37,6 +38,8 @@ export const INITIAL_GAME_STATE: GameState = {
     isBurnedOut: false,
     streak: 0,
     cooldowns: {},
+    accumulatesDebt: false,
+    startingPath: null,
   },
   eventLog: [],
 };
