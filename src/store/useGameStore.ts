@@ -15,6 +15,7 @@ interface GameActions {
   resetGame: () => void;
 
   performAction: (actionId: string) => void;
+  advanceWeek: () => void;
 
   startNewGame: (path?: string) => Promise<void>;
   loadGame: (saveId: string) => Promise<void>;
@@ -121,6 +122,19 @@ export const useGameStore = create<GameStore>()(
           set({ ...newState }, false, `performAction:${actionId}`);
           void get().saveGame();
         },
+
+        advanceWeek: () =>
+          set(
+            state => ({
+              meta: { ...state.meta, tick: state.meta.tick + 1 },
+              resources: {
+                ...state.resources,
+                energy: Math.min(100, state.resources.energy + 50),
+              },
+            }),
+            false,
+            'advanceWeek',
+          ),
 
         startNewGame: async (_path?: string) => {
           const newId = await createSave(INITIAL_GAME_STATE, true);

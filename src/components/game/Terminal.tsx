@@ -9,7 +9,7 @@ import { PlayIcon, TerminalIcon } from '../ui/icons';
  * Styled like VS Code terminal or Git log output.
  */
 export function Terminal() {
-  const { meta, eventLog } = useGameStore();
+  const { meta, eventLog, performAction } = useGameStore();
   const terminalRef = useRef<HTMLDivElement>(null);
 
   const weekInYear = meta.tick % 52;
@@ -58,6 +58,9 @@ export function Terminal() {
           <span className="text-[#8B949E] text-xs">{entries.length} entries</span>
         </div>
         <button
+          onClick={() => {
+            performAction('skip_week');
+          }}
           className="w-full py-3 px-4 bg-linear-to-r from-[#39D353]/20 to-[#39D353]/10
                      border border-[#39D353] rounded-lg text-[#39D353] font-bold
                      hover:from-[#39D353]/30 hover:to-[#39D353]/20 hover:shadow-[0_0_20px_rgba(57,211,83,0.3)]

@@ -236,6 +236,17 @@ export const ACTIONS: GameAction[] = [
     duration: 5,
   },
 
+  {
+    id: 'skip_week',
+    label: 'Skip Week',
+    category: 'RECOVER',
+    energyCost: 0,
+    moneyCost: 0,
+    energyGain: 50,
+    rewards: { stress: 0 },
+    duration: 1,
+  },
+
   // ═══════════════════════════════════════════════════════════════════════════
   // CATEGORY: INVEST (The Future)
   // Focus: Convert Money into Passive Buffs. One-time or recurring purchases.
