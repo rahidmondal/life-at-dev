@@ -44,30 +44,31 @@ interface LedgerProps {
   compact?: boolean;
 }
 
-/**
- * Ledger: The left sidebar showing all player stats and resources.
- * "The Vital Signs" - monitors GameState.resources and GameState.stats
- */
+
+const PATH_LABELS: Record<string, { label: string; color: string; emoji: string }> = {
+  scholar: { label: 'Scholar', color: '#39D353', emoji: '🎓' },
+  funded: { label: 'Debtor', color: '#FF7B72', emoji: '💸' },
+  dropout: { label: 'Dropout', color: '#A371F7', emoji: '🚀' },
+};
+
 export function Ledger({ compact = false }: LedgerProps) {
-  const { meta, resources, stats, career } = useGameStore();
+  const { meta, resources, stats, career, flags } = useGameStore();
 
   const age = meta.startAge + Math.floor(meta.tick / 52);
   const weekInYear = meta.tick % 52;
   const totalXP = stats.xp.corporate + stats.xp.freelance;
   const maxXP = 10000;
 
-  // Stress level color
   const getStressColor = (stress: number) => {
-    if (stress < 50) return '#39D353'; // Safe
-    if (stress < 80) return '#F0883E'; // High
-    return '#FF7B72'; // Danger
+    if (stress < 50) return '#39D353';
+    if (stress < 80) return '#F0883E';
+    return '#FF7B72';
   };
 
   const stressColor = getStressColor(resources.stress);
   const isDanger = resources.stress >= 80;
 
   if (compact) {
-    // Compact mobile view
     return (
       <div className="space-y-4">
         {/* Quick Stats Row */}
@@ -113,8 +114,23 @@ export function Ledger({ compact = false }: LedgerProps) {
               {age}
             </div>
           </div>
-          <h2 className="text-[#39D353] font-bold">Developer</h2>
+          <h2 className="text-[#39D353] font-bold">{meta.playerName || 'Developer'}</h2>
           <p className="text-[#8B949E] text-sm">{career.currentJobId || 'Unemployed'}</p>
+          {flags.startingPath && (
+            <div
+              className="mt-1 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"
+              style={{
+                backgroundColor: `${PATH_LABELS[flags.startingPath].color}20`,
+                color: PATH_LABELS[flags.startingPath].color,
+              }}
+            >
+              <span>{PATH_LABELS[flags.startingPath].emoji}</span>
+              <span>{PATH_LABELS[flags.startingPath].label}</span>
+              {flags.startingPath === 'funded' && resources.debt > 0 && (
+                <span className="text-[#FF7B72]"> • ${resources.debt.toLocaleString()} debt</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Salary & Rent */}
@@ -266,7 +282,6 @@ export function Ledger({ compact = false }: LedgerProps) {
   );
 }
 
-// Mini stat for compact view
 function StatMini({
   label,
   value,
@@ -295,7 +310,6 @@ function StatMini({
   );
 }
 
-// Dual progress bar component
 function DualBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
   return (
     <div>

@@ -94,7 +94,7 @@ export function GameWrapper() {
     setPlayerName(name);
     setPhase('launching');
 
-    await startNewGame(path);
+    await startNewGame(path, name);
 
     setTimeout(() => {
       setPhase('playing');

@@ -15,11 +15,6 @@ interface CommandCenterProps {
   onExitGame: () => void;
 }
 
-/**
- * CommandCenter: The main 3-column gameplay layout.
- * Desktop: [Ledger (25%) | Terminal (45%) | ActionDeck (30%)]
- * Mobile: Full-width Terminal with bottom nav and slide-up sheets
- */
 export function CommandCenter({ onExitGame }: CommandCenterProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showMobileStats, setShowMobileStats] = useState(false);
@@ -35,7 +30,6 @@ export function CommandCenter({ onExitGame }: CommandCenterProps) {
     try {
       await saveGame();
       setSaveStatus('saved');
-      // Reset to idle after showing success
       setTimeout(() => {
         setSaveStatus('idle');
       }, 2000);
@@ -55,10 +49,8 @@ export function CommandCenter({ onExitGame }: CommandCenterProps) {
 
   return (
     <div className="h-screen bg-[#0D1117] text-[#C9D1D9] font-mono overflow-hidden relative">
-      {/* CRT Scanline Overlay */}
       <div className="fixed inset-0 crt-scanlines z-50 pointer-events-none" />
 
-      {/* Exit Game Modal */}
       {showExitModal && (
         <ExitGameModal
           onConfirm={handleExitConfirm}
@@ -68,9 +60,7 @@ export function CommandCenter({ onExitGame }: CommandCenterProps) {
         />
       )}
 
-      {/* Desktop Layout */}
       <div className="hidden lg:flex h-full flex-col">
-        {/* Header */}
         <header className="shrink-0 h-14 border-b border-[#30363D] bg-[#161B22] flex items-center justify-between px-6">
           <button
             onClick={() => {
@@ -117,28 +107,22 @@ export function CommandCenter({ onExitGame }: CommandCenterProps) {
           </button>
         </header>
 
-        {/* Main Content Grid */}
         <div className="flex-1 grid grid-cols-[300px_1fr_380px] gap-0 overflow-hidden">
-          {/* Left: The Ledger */}
           <aside className="border-r border-[#30363D] overflow-y-auto">
             <Ledger />
           </aside>
 
-          {/* Center: The Terminal */}
           <main className="overflow-hidden flex flex-col">
             <Terminal />
           </main>
 
-          {/* Right: Action Deck */}
           <aside className="border-l border-[#30363D] overflow-y-auto">
             <ActionDeck />
           </aside>
         </div>
       </div>
 
-      {/* Mobile Layout */}
       <div className="lg:hidden flex flex-col h-full">
-        {/* Mobile Header with Stats */}
         <MobileHeader
           onTapStats={() => {
             setShowMobileStats(!showMobileStats);
@@ -148,19 +132,16 @@ export function CommandCenter({ onExitGame }: CommandCenterProps) {
           }}
         />
 
-        {/* Stats Drawer (slides down on mobile) */}
         {showMobileStats && (
           <div className="fixed inset-x-0 top-14 z-40 bg-[#161B22] border-b border-[#30363D] p-4 animate-slide-down">
             <Ledger compact />
           </div>
         )}
 
-        {/* Terminal Feed */}
         <main className="flex-1 overflow-hidden">
           <Terminal />
         </main>
 
-        {/* Mobile Bottom Navigation */}
         <MobileNav
           activeCategory={activeCategory}
           onCategorySelect={(cat: string) => {
@@ -168,7 +149,6 @@ export function CommandCenter({ onExitGame }: CommandCenterProps) {
           }}
         />
 
-        {/* Mobile Action Sheet */}
         {activeCategory && (
           <MobileActionSheet
             category={activeCategory}

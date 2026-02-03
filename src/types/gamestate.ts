@@ -15,6 +15,9 @@ export interface GameMeta {
 
   /** Age when simulation began (18 for Dropout, 18 for University paths). */
   startAge: number;
+
+  /** Player's chosen name. */
+  playerName: string;
 }
 
 /**

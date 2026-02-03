@@ -26,6 +26,7 @@ function createTestState(
       version: '2.0.0',
       tick: overrides.tick ?? 0,
       startAge: overrides.startAge ?? 18,
+      playerName: 'TestPlayer',
     },
     resources: {
       money: 0,

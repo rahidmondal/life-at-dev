@@ -178,7 +178,7 @@ export const useGameStore = create<GameStore>()(
             'advanceWeek',
           ),
 
-        startNewGame: async (path?: string, _playerName?: string) => {
+        startNewGame: async (path?: string, playerName?: string) => {
           const pathConfig = getPathInitialState(path);
           const startingPath = path as 'scholar' | 'funded' | 'dropout';
           const initialState: GameState = {
@@ -186,6 +186,7 @@ export const useGameStore = create<GameStore>()(
             meta: {
               ...INITIAL_GAME_STATE.meta,
               startAge: pathConfig.startAge,
+              playerName: playerName ?? 'Developer',
             },
             resources: {
               ...INITIAL_GAME_STATE.resources,
@@ -236,10 +237,40 @@ export const useGameStore = create<GameStore>()(
       }),
       {
         name: 'life-at-dev-v2-storage',
+        version: 1,
         partialize: state => ({
           ...extractGameState(state),
           currentSaveId: state.currentSaveId,
         }),
+        migrate: (persistedState, version) => {
+          // Migration from version 0 (no playerName, no debt fields)
+          if (version === 0) {
+            interface OldState {
+              meta?: { playerName?: string; [key: string]: unknown };
+              resources?: { debt?: number; [key: string]: unknown };
+              flags?: { accumulatesDebt?: boolean; startingPath?: string; [key: string]: unknown };
+              [key: string]: unknown;
+            }
+            const state = persistedState as OldState;
+            return {
+              ...state,
+              meta: {
+                ...state.meta,
+                playerName: state.meta?.playerName ?? 'Developer',
+              },
+              resources: {
+                ...state.resources,
+                debt: state.resources?.debt ?? 0,
+              },
+              flags: {
+                ...state.flags,
+                accumulatesDebt: state.flags?.accumulatesDebt ?? false,
+                startingPath: state.flags?.startingPath ?? null,
+              },
+            };
+          }
+          return persistedState;
+        },
       },
     ),
     { name: 'LifeAtDev' },

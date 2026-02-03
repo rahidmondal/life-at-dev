@@ -27,6 +27,7 @@ function createMockState(overrides: MockOverrides = {}): GameState {
       tick: overrides.tick ?? 0,
       version: '2.0.0',
       startAge: 18,
+      playerName: 'TestPlayer',
     },
     career: {
       currentJobId: overrides.jobId ?? 'corp_junior',

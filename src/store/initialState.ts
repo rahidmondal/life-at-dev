@@ -6,6 +6,7 @@ export const INITIAL_GAME_STATE: GameState = {
     version: '2.0.0',
     tick: 0,
     startAge: 18,
+    playerName: 'Developer',
   },
 
   resources: {

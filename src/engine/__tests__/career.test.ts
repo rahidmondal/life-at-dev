@@ -140,6 +140,7 @@ describe('getEligibleJobs', () => {
       tick: 0,
       version: '2.0.0',
       startAge: 18,
+      playerName: 'TestPlayer',
     },
     career: {
       currentJobId,
@@ -163,12 +164,15 @@ describe('getEligibleJobs', () => {
       energy: 100,
       stress: 0,
       money: 0,
+      debt: 0,
       fulfillment: 0,
     },
     flags: {
       isBurnedOut: false,
       streak: 0,
       cooldowns: {},
+      accumulatesDebt: false,
+      startingPath: null,
     },
     eventLog: [],
   });
@@ -316,6 +320,7 @@ describe('promotePlayer', () => {
       tick,
       version: '2.0.0',
       startAge: 18,
+      playerName: 'TestPlayer',
     },
     career: {
       currentJobId,
@@ -337,12 +342,15 @@ describe('promotePlayer', () => {
       energy: 100,
       stress: 0,
       money: 50000,
+      debt: 0,
       fulfillment: 0,
     },
     flags: {
       isBurnedOut: false,
       streak: 0,
       cooldowns: {},
+      accumulatesDebt: false,
+      startingPath: null,
     },
     eventLog: [],
   });
