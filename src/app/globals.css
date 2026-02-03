@@ -125,3 +125,131 @@ body {
     transform: scale(0.97);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIFE@DEV v2.0 ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Blinking cursor for terminal */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* Slide up animation for mobile sheet */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Slide down animation for mobile stats drawer */
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
+
+/* Heartbeat pulse for stress warning */
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 0.8s ease-in-out infinite;
+}
+
+/* Glow pulse for active elements */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(57, 211, 83, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(57, 211, 83, 0.6);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Text flicker for critical alerts */
+@keyframes text-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  33% {
+    opacity: 0.8;
+  }
+  66% {
+    opacity: 0.9;
+  }
+}
+
+.animate-text-flicker {
+  animation: text-flicker 0.3s ease-in-out infinite;
+}
+
+/* Scale down for button press */
+.active\:scale-98:active {
+  transform: scale(0.98);
+}
+
+.active\:scale-95:active {
+  transform: scale(0.95);
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
