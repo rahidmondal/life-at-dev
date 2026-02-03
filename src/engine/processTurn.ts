@@ -121,18 +121,54 @@ export function processTurn(state: GameState, actionId: string): GameState {
   const meta = advanceTime(state.meta, weeks);
   const isBurnedOut = calculateBurnoutRisk(stress, energy);
 
+  // Calculate actual deltas for action feedback
+  const finalEnergy = Math.round(energy);
+  const finalStress = Math.round(stress);
+  const finalMoney = money;
+  const finalCoding = Math.floor(coding);
+
+  const deltaEnergy = finalEnergy - state.resources.energy;
+  const deltaStress = finalStress - state.resources.stress;
+  const deltaMoney = finalMoney - state.resources.money;
+  const deltaSkill = finalCoding - state.stats.skills.coding;
+
+  // Build delta summary for terminal display (matching Terminal.tsx regex patterns)
+  const deltaFragments: string[] = [];
+  if (deltaSkill !== 0) {
+    deltaFragments.push(`${deltaSkill >= 0 ? '+' : ''}${deltaSkill.toString()} Skill`);
+  }
+  if (deltaEnergy !== 0) {
+    deltaFragments.push(`${deltaEnergy >= 0 ? '+' : ''}${deltaEnergy.toString()} Energy`);
+  }
+  if (deltaStress !== 0) {
+    deltaFragments.push(`${deltaStress >= 0 ? '+' : ''}${deltaStress.toString()} Stress`);
+  }
+  if (deltaMoney !== 0) {
+    deltaFragments.push(`${deltaMoney >= 0 ? '+' : ''}$${Math.abs(Math.round(deltaMoney)).toString()}`);
+  }
+
+  const deltaSummary = deltaFragments.length > 0 ? deltaFragments.join(', ') : 'No changes';
+
+  // Create action log entry with eventId triggering correct Terminal.tsx color
+  const eventIdSuffix = action.category === 'WORK' ? 'work' : 'success';
+  const actionLogEntry = {
+    tick: state.meta.tick,
+    eventId: `action_${actionId}_${eventIdSuffix}`,
+    message: `Executing ${action.label}... COMPLETE. ${deltaSummary}.`,
+  };
+
   const newState = {
     ...state,
     meta,
     resources: {
-      energy: Math.round(energy),
-      stress: Math.round(stress),
-      money,
+      energy: finalEnergy,
+      stress: finalStress,
+      money: finalMoney,
       fulfillment: Math.round(fulfillment),
     },
     stats: {
       skills: {
-        coding: Math.floor(coding),
+        coding: finalCoding,
         politics: Math.floor(politics),
       },
       xp: {
@@ -145,6 +181,7 @@ export function processTurn(state: GameState, actionId: string): GameState {
       ...state.flags,
       isBurnedOut,
     },
+    eventLog: [...state.eventLog, actionLogEntry],
   };
 
   return triggerRandomEvents(newState);
