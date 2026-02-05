@@ -2,6 +2,7 @@ import { ACTIONS_REGISTRY } from '../data/actions';
 import { JOB_REGISTRY } from '../data/tracks';
 import type { GameState } from '../types/gamestate';
 import { hasMissedPayment, makeDebtPayment, processWeeklyDebt } from './debt';
+import { generateEventLogEntry } from './eventLog';
 import { triggerRandomEvents } from './events';
 import { calculateBurnoutRisk, calculateDecay, calculateDiminishingGrowth } from './mechanics';
 import { advanceTime, calculateResourceDelta } from './time';
@@ -151,35 +152,18 @@ export function processTurn(state: GameState, actionId: string): GameState {
   const finalMoney = money;
   const finalCoding = Math.floor(coding);
 
-  const deltaEnergy = finalEnergy - state.resources.energy;
-  const deltaStress = finalStress - state.resources.stress;
-  const deltaMoney = finalMoney - state.resources.money;
-  const deltaSkill = finalCoding - state.stats.skills.coding;
-
-  const deltaFragments: string[] = [];
-  if (deltaSkill !== 0) {
-    deltaFragments.push(`${deltaSkill >= 0 ? '+' : ''}${deltaSkill.toString()} Skill`);
-  }
-  if (deltaEnergy !== 0) {
-    deltaFragments.push(`${deltaEnergy >= 0 ? '+' : ''}${deltaEnergy.toString()} Energy`);
-  }
-  if (deltaStress !== 0) {
-    deltaFragments.push(`${deltaStress >= 0 ? '+' : ''}${deltaStress.toString()} Stress`);
-  }
-  if (deltaMoney !== 0) {
-    deltaFragments.push(`${deltaMoney >= 0 ? '+' : ''}$${Math.abs(Math.round(deltaMoney)).toString()}`);
-  }
-
-  const deltaSummary = deltaFragments.length > 0 ? deltaFragments.join(', ') : 'No changes';
-
-  const eventIdSuffix = action.category === 'WORK' ? 'work' : 'success';
-  const actionLogEntry = {
-    tick: state.meta.tick,
-    eventId: `action_${actionId}_${eventIdSuffix}`,
-    message: `Executing ${action.label}... COMPLETE. ${deltaSummary}.`,
+  // Calculate deltas for the event log
+  const deltas = {
+    skill: finalCoding - state.stats.skills.coding,
+    energy: finalEnergy - state.resources.energy,
+    stress: finalStress - state.resources.stress,
+    money: finalMoney - state.resources.money,
+    xp: action.rewards.xp ?? 0,
+    reputation: action.rewards.reputation ?? 0,
   };
 
-  const newState = {
+  // Build the new state before generating the log entry
+  const newState: GameState = {
     ...state,
     meta,
     resources: {
@@ -204,8 +188,13 @@ export function processTurn(state: GameState, actionId: string): GameState {
       ...state.flags,
       isBurnedOut,
     },
-    eventLog: [...state.eventLog, actionLogEntry],
   };
 
-  return triggerRandomEvents(newState);
+  // Generate procedural event log entry
+  const actionLogEntry = generateEventLogEntry(actionId, action.label, action.category, newState, deltas);
+
+  return triggerRandomEvents({
+    ...newState,
+    eventLog: [...state.eventLog, actionLogEntry],
+  });
 }

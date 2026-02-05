@@ -1,6 +1,6 @@
+import { JOB_REGISTRY, UNEMPLOYED_JOB_ID } from '../data/tracks';
 import type { GameAction } from '../types/actions';
 import type { CareerState, JobNode } from '../types/career';
-import { JOB_REGISTRY, UNEMPLOYED_JOB_ID } from '../data/tracks';
 
 /**
  * Checks if a work action is available for the player's current job.

@@ -2,7 +2,8 @@ import { JOB_REGISTRY } from '../data/tracks';
 import type { GameState, PlayerStats } from '../types/gamestate';
 import type { Flags } from '../types/resources';
 import { processAnnualDebtPayment } from './debt';
-import { isYearEnd } from './time';
+import { generateBankruptcyWarning, generateYearEndMessage } from './eventLog';
+import { getDateFromTick, isYearEnd } from './time';
 
 /**
  * Scholar skill bonus per year of college.
@@ -181,6 +182,8 @@ export function processYearEnd(state: GameState): YearEndResult {
   const salary = job.salary;
   const rent = calculateYearlyRent(state.career.currentJobId);
   const netIncome = salary - rent;
+  const { year: currentYear } = getDateFromTick(state.meta.tick);
+  const jobTitle = job.title;
 
   let newMoney = state.resources.money + netIncome;
   let newDebt = state.resources.debt;
@@ -196,6 +199,10 @@ export function processYearEnd(state: GameState): YearEndResult {
     isBankrupt = true;
     messages.push(`BANKRUPTCY! Deficit of $${Math.abs(newMoney).toLocaleString()} exceeded threshold.`);
 
+    // Generate procedural year-end message
+    const yearEndEntry = generateYearEndMessage(currentYear, salary, rent, netIncome, jobTitle);
+    const bankruptcyEntry = generateBankruptcyWarning(newDebt, bankruptcyThreshold);
+
     const newState: GameState = {
       ...state,
       resources: {
@@ -209,11 +216,8 @@ export function processYearEnd(state: GameState): YearEndResult {
       },
       eventLog: [
         ...state.eventLog,
-        {
-          tick: state.meta.tick,
-          eventId: 'year_end_bankruptcy',
-          message: `> YEAR END: ${messages.join(' ')}`,
-        },
+        { ...yearEndEntry, tick: state.meta.tick },
+        { ...bankruptcyEntry, tick: state.meta.tick, eventId: 'year_end_bankruptcy' },
       ],
     };
 
@@ -273,6 +277,20 @@ export function processYearEnd(state: GameState): YearEndResult {
     isBankrupt = true;
   }
 
+  // Generate procedural year-end message
+  const yearEndEntry = generateYearEndMessage(currentYear, salary, rent, netIncome, jobTitle);
+
+  // Add debt warning if applicable
+  const eventLogEntries = [{ ...yearEndEntry, tick: state.meta.tick }];
+  if (newDebt > 0) {
+    const debtWarning = generateBankruptcyWarning(newDebt, bankruptcyThreshold);
+    eventLogEntries.push({
+      ...debtWarning,
+      tick: state.meta.tick,
+      eventId: isBankrupt ? 'year_end_bankruptcy' : 'debt_status',
+    });
+  }
+
   const newState: GameState = {
     ...state,
     resources: {
@@ -288,14 +306,7 @@ export function processYearEnd(state: GameState): YearEndResult {
       consecutiveMissedPayments: debtResult.newConsecutiveMissedPayments,
       totalMissedPayments: debtResult.newTotalMissedPayments,
     },
-    eventLog: [
-      ...state.eventLog,
-      {
-        tick: state.meta.tick,
-        eventId: isBankrupt ? 'year_end_bankruptcy' : 'year_end_review',
-        message: `> YEAR END: ${messages.join(' ')}`,
-      },
-    ],
+    eventLog: [...state.eventLog, ...eventLogEntries],
   };
 
   return {

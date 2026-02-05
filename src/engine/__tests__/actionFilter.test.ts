@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { isActionAvailableForJob, filterActionsForJob, getAvailableWorkActions } from '../actionFilter';
+import { describe, expect, it } from 'vitest';
 import type { GameAction } from '../../types/actions';
 import type { CareerState } from '../../types/career';
+import { filterActionsForJob, getAvailableWorkActions, isActionAvailableForJob } from '../actionFilter';
 
 /**
  * Test helper: Creates a minimal CareerState object for testing.

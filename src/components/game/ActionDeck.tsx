@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ACTIONS } from '../../data/actions';
 import { filterActionsForJob } from '../../engine/actionFilter';
 import { useGameStore } from '../../store/useGameStore';

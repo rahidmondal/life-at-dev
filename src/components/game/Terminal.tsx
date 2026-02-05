@@ -155,6 +155,47 @@ function TerminalEntry({ entry }: TerminalEntryProps) {
 
 // Helper to parse event type from ID
 function parseEventType(eventId: string): { tag: string; type: string } {
+  // Year-end events
+  if (eventId.includes('year_end')) {
+    if (eventId.includes('bankruptcy')) {
+      return { tag: '💀 BANKRUPT', type: 'ERROR' };
+    }
+    return { tag: '📅 YEAR END', type: 'INFO' };
+  }
+
+  // Debt events
+  if (eventId.includes('debt')) {
+    return { tag: '💳 DEBT', type: 'WARN' };
+  }
+
+  // Job events
+  if (eventId.includes('job_change')) {
+    return { tag: '🎉 PROMOTED', type: 'SUCCESS' };
+  }
+
+  // Random events
+  if (eventId.includes('random')) {
+    return { tag: '🎲 EVENT', type: 'EVENT' };
+  }
+
+  // Action-based events
+  if (eventId.includes('action_')) {
+    if (eventId.includes('_work')) {
+      return { tag: '💼 WORK', type: 'WORK' };
+    }
+    if (eventId.includes('_recover')) {
+      return { tag: '💤 REST', type: 'SUCCESS' };
+    }
+    if (eventId.includes('_flow')) {
+      return { tag: '🔥 FLOW', type: 'FLOW' };
+    }
+    if (eventId.includes('_broke')) {
+      return { tag: '💸 BROKE', type: 'BROKE' };
+    }
+    return { tag: '✓ DONE', type: 'SUCCESS' };
+  }
+
+  // Legacy parsing
   if (eventId.includes('success') || eventId.includes('complete')) {
     return { tag: 'SUCCESS', type: 'SUCCESS' };
   }
@@ -164,15 +205,7 @@ function parseEventType(eventId: string): { tag: string; type: string } {
   if (eventId.includes('warn')) {
     return { tag: 'WARNING', type: 'WARN' };
   }
-  if (eventId.includes('work') || eventId.includes('job')) {
-    return { tag: 'WORK', type: 'WORK' };
-  }
-  if (eventId.includes('broke')) {
-    return { tag: 'BROKE', type: 'BROKE' };
-  }
-  if (eventId.includes('flow')) {
-    return { tag: 'FLOW_STATE', type: 'FLOW' };
-  }
+
   return { tag: 'EVENT', type: 'EVENT' };
 }
 
@@ -180,16 +213,16 @@ function parseEventType(eventId: string): { tag: string; type: string } {
 function parseEffects(message: string): string[] {
   const effects: string[] = [];
   const patterns = [
-    /\+\d+ Skill/gi,
-    /-\d+ Skill/gi,
-    /\+\d+ XP/gi,
-    /-\d+ XP/gi,
-    /\+\$\d+/gi,
-    /-\$\d+/gi,
-    /\+\d+ Energy/gi,
-    /-\d+ Energy/gi,
-    /\+\d+ Stress/gi,
-    /-\d+ Stress/gi,
+    // Standard format
+    /[+-]\d+ Skill/gi,
+    /[+-]\d+ XP/gi,
+    /[+-]\d+ Rep/gi,
+    /[+-]\$\d+/gi,
+    /[+-]\d+ Energy/gi,
+    /[+-]\d+ Stress/gi,
+    // Emoji format (from new system)
+    /[+-]\d+ ⚡/gi,
+    /[+-]\d+ 💢/gi,
   ];
 
   patterns.forEach(pattern => {
