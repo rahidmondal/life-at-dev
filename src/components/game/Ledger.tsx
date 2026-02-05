@@ -1,5 +1,7 @@
 'use client';
 
+import { JOB_REGISTRY } from '../../data/tracks';
+import { calculateYearlyRent } from '../../engine/yearEnd';
 import { useGameStore } from '../../store/useGameStore';
 import {
   BriefcaseIcon,
@@ -43,7 +45,6 @@ const getJobIcon = (jobId: string | null): React.ReactNode => {
 interface LedgerProps {
   compact?: boolean;
 }
-
 
 const PATH_LABELS: Record<string, { label: string; color: string; emoji: string }> = {
   scholar: { label: 'Scholar', color: '#39D353', emoji: '🎓' },
@@ -115,7 +116,7 @@ export function Ledger({ compact = false }: LedgerProps) {
             </div>
           </div>
           <h2 className="text-[#39D353] font-bold">{meta.playerName || 'Developer'}</h2>
-          <p className="text-[#8B949E] text-sm">{career.currentJobId || 'Unemployed'}</p>
+          <p className="text-[#8B949E] text-sm">{JOB_REGISTRY[career.currentJobId].title}</p>
           {flags.startingPath && (
             <div
               className="mt-1 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"
@@ -137,11 +138,15 @@ export function Ledger({ compact = false }: LedgerProps) {
         <div className="grid grid-cols-2 gap-2 text-center">
           <div className="bg-[#0D1117] rounded p-2">
             <p className="text-[#484F58] text-xs">Salary</p>
-            <p className="text-[#39D353] font-mono text-sm">${(resources.money * 4).toLocaleString()}/yr</p>
+            <p className="text-[#39D353] font-mono text-sm">
+              ${JOB_REGISTRY[career.currentJobId].salary.toLocaleString()}/yr
+            </p>
           </div>
           <div className="bg-[#0D1117] rounded p-2">
             <p className="text-[#484F58] text-xs">Rent</p>
-            <p className="text-[#FF7B72] font-mono text-sm">-$1,200/mo</p>
+            <p className="text-[#FF7B72] font-mono text-sm">
+              -${calculateYearlyRent(career.currentJobId).toLocaleString()}/yr
+            </p>
           </div>
         </div>
       </div>
