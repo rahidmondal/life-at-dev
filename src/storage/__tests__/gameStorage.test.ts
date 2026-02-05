@@ -37,10 +37,16 @@ const createMockGameState = (overrides?: Partial<GameState>): GameState => ({
   },
   flags: {
     isBurnedOut: false,
+    isBankrupt: false,
+    consecutiveMissedPayments: 0,
+    totalMissedPayments: 0,
     streak: 0,
     cooldowns: {},
     accumulatesDebt: false,
     startingPath: null,
+    isScholar: false,
+    scholarYearsRemaining: 0,
+    hasGraduated: false,
   },
   eventLog: [],
   ...overrides,
@@ -69,14 +75,18 @@ describe('gameStorage', () => {
     });
 
     it('should calculate year and week from tick', () => {
-      const state = createMockGameState({ meta: { version: '1.0.0', tick: 104, startAge: 18 } });
+      const state = createMockGameState({
+        meta: { version: '1.0.0', tick: 104, startAge: 18, playerName: 'TestPlayer' },
+      });
       const preview = generatePreview(state);
       expect(preview.year).toBe(3);
       expect(preview.week).toBe(1);
     });
 
     it('should extract money and stress from resources', () => {
-      const state = createMockGameState({ resources: { money: 10000, stress: 75, energy: 10, fulfillment: 500 } });
+      const state = createMockGameState({
+        resources: { money: 10000, debt: 0, stress: 75, energy: 10, fulfillment: 500 },
+      });
       const preview = generatePreview(state);
       expect(preview.money).toBe(10000);
       expect(preview.stress).toBe(75);
@@ -127,7 +137,7 @@ describe('gameStorage', () => {
       const id = await createSave(state, false);
 
       const updatedState = createMockGameState({
-        resources: { money: 99999, stress: 10, energy: 10, fulfillment: 500 },
+        resources: { money: 99999, stress: 10, energy: 10, fulfillment: 500, debt: 0 },
       });
       await updateSave(id, updatedState);
 

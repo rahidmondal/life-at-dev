@@ -1,8 +1,12 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { JOB_REGISTRY } from '../data/tracks';
+import { getEligibleJobsForApplication, promotePlayer } from '../engine/career';
+import { generateJobChangeMessage } from '../engine/eventLog';
 import { processTurn } from '../engine/processTurn';
 import { isYearEnd, processYearEnd } from '../engine/yearEnd';
 import { createSave, loadSave, updateSave } from '../storage/gameStorage';
+import type { JobNode } from '../types/career';
 import type { GameState } from '../types/gamestate';
 import type { Resources } from '../types/resources';
 import type { SkillMap, XPCurrency } from '../types/stats';
@@ -58,6 +62,15 @@ interface GameActions {
   advanceWeek: () => void;
   triggerYearEnd: () => boolean;
 
+  // Job application flow
+  openJobApplication: () => void;
+  closeJobApplication: () => void;
+  applyForJob: (jobId: string) => void;
+  getAvailableJobs: () => JobNode[];
+
+  // Graduation flow
+  acknowledgeGraduation: () => void;
+
   startNewGame: (path?: string, playerName?: string) => Promise<void>;
   loadGame: (saveId: string) => Promise<void>;
   saveGame: () => Promise<void>;
@@ -65,7 +78,12 @@ interface GameActions {
   resetState: () => void;
 }
 
-type GameStore = GameState & { currentSaveId: string | null } & GameActions;
+interface UIState {
+  showJobApplicationModal: boolean;
+  showGraduationModal: boolean;
+}
+
+type GameStore = GameState & { currentSaveId: string | null } & UIState & GameActions;
 
 function extractGameState(store: GameStore): GameState {
   return {
@@ -84,6 +102,8 @@ export const useGameStore = create<GameStore>()(
       (set, get) => ({
         ...INITIAL_GAME_STATE,
         currentSaveId: null,
+        showJobApplicationModal: false,
+        showGraduationModal: false,
 
         tick: () =>
           set(
@@ -158,9 +178,20 @@ export const useGameStore = create<GameStore>()(
             'updateStats',
           ),
 
-        resetGame: () => set({ ...INITIAL_GAME_STATE, currentSaveId: null }, false, 'resetGame'),
+        resetGame: () =>
+          set(
+            { ...INITIAL_GAME_STATE, currentSaveId: null, showJobApplicationModal: false, showGraduationModal: false },
+            false,
+            'resetGame',
+          ),
 
         performAction: (actionId: string) => {
+          // Special handling for apply_job - open modal instead of processing
+          if (actionId === 'apply_job') {
+            get().openJobApplication();
+            return;
+          }
+
           const currentState = extractGameState(get());
           const newState = processTurn(currentState, actionId);
           set({ ...newState }, false, `performAction:${actionId}`);
@@ -172,6 +203,46 @@ export const useGameStore = create<GameStore>()(
 
           void get().saveGame();
         },
+
+        // Job application flow
+        openJobApplication: () => set({ showJobApplicationModal: true }, false, 'openJobApplication'),
+
+        closeJobApplication: () => set({ showJobApplicationModal: false }, false, 'closeJobApplication'),
+
+        getAvailableJobs: () => {
+          const currentState = extractGameState(get());
+          return getEligibleJobsForApplication(currentState);
+        },
+
+        applyForJob: (jobId: string) => {
+          const currentState = extractGameState(get());
+          const oldJobId = currentState.career.currentJobId;
+          const oldJob = JOB_REGISTRY[oldJobId];
+          const newJob = JOB_REGISTRY[jobId];
+
+          // Use promotePlayer to handle the job change
+          const newState = promotePlayer(currentState, jobId);
+
+          // Generate job change event
+          const oldJobTitle = oldJob.title;
+          const jobChangeEntry = generateJobChangeMessage(oldJobTitle, newJob.title, newJob.salary);
+
+          // Merge the event into state
+          set(
+            {
+              ...newState,
+              eventLog: [...newState.eventLog, { ...jobChangeEntry, tick: newState.meta.tick }],
+              showJobApplicationModal: false,
+            },
+            false,
+            `applyForJob:${jobId}`,
+          );
+
+          void get().saveGame();
+        },
+
+        // Graduation flow
+        acknowledgeGraduation: () => set({ showGraduationModal: false }, false, 'acknowledgeGraduation'),
 
         advanceWeek: () =>
           set(
@@ -188,6 +259,7 @@ export const useGameStore = create<GameStore>()(
 
         triggerYearEnd: () => {
           const currentState = extractGameState(get());
+          const wasGraduated = currentState.flags.hasGraduated;
           const result = processYearEnd(currentState);
 
           if (result.isBankrupt) {
@@ -206,7 +278,17 @@ export const useGameStore = create<GameStore>()(
             return true; // Returns true if bankrupt
           }
 
-          set({ ...result.newState }, false, 'yearEnd:success');
+          // Check if player just graduated
+          const justGraduated = !wasGraduated && result.newState.flags.hasGraduated;
+
+          set(
+            {
+              ...result.newState,
+              showGraduationModal: justGraduated,
+            },
+            false,
+            justGraduated ? 'yearEnd:graduation' : 'yearEnd:success',
+          );
           return false;
         },
 

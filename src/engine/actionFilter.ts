@@ -1,21 +1,41 @@
 import { JOB_REGISTRY, UNEMPLOYED_JOB_ID } from '../data/tracks';
 import type { GameAction } from '../types/actions';
 import type { CareerState, JobNode } from '../types/career';
+import type { Flags } from '../types/resources';
+
+/**
+ * Context for filtering actions.
+ */
+export interface ActionFilterContext {
+  career: CareerState;
+  flags: Partial<Flags>;
+}
 
 /**
  * Checks if a work action is available for the player's current job.
  *
  * @param action - The action to check
- * @param career - The player's current career state
+ * @param context - The player's career and flags state
  * @returns true if the action should be shown for this job
  */
-export function isActionAvailableForJob(action: GameAction, career: CareerState): boolean {
-  // Non-WORK actions are always available (no job filtering)
-  if (action.category !== 'WORK') {
+export function isActionAvailableForJob(action: GameAction, context: ActionFilterContext): boolean {
+  const { career, flags } = context;
+  const jobReqs = action.jobRequirements;
+
+  // Check studentOnly requirement for any category
+  if (jobReqs?.studentOnly) {
+    // Student-only actions require isScholar to be true
+    if (!flags.isScholar) {
+      return false;
+    }
+    // Students can use student-only actions
     return true;
   }
 
-  const jobReqs = action.jobRequirements;
+  // Non-WORK actions are always available (no job filtering) for non-students
+  if (action.category !== 'WORK') {
+    return true;
+  }
 
   // If no job requirements defined, action is available to all (legacy behavior)
   if (!jobReqs) {
@@ -75,20 +95,20 @@ export function isActionAvailableForJob(action: GameAction, career: CareerState)
  * Filters an array of actions based on job availability.
  *
  * @param actions - Array of all actions
- * @param career - The player's current career state
+ * @param context - The player's career and flags state
  * @returns Filtered array of available actions
  */
-export function filterActionsForJob(actions: GameAction[], career: CareerState): GameAction[] {
-  return actions.filter(action => isActionAvailableForJob(action, career));
+export function filterActionsForJob(actions: GameAction[], context: ActionFilterContext): GameAction[] {
+  return actions.filter(action => isActionAvailableForJob(action, context));
 }
 
 /**
  * Gets all WORK actions available for a specific job.
  *
  * @param actions - Array of all actions
- * @param career - The player's current career state
+ * @param context - The player's career and flags state
  * @returns Array of available WORK actions
  */
-export function getAvailableWorkActions(actions: GameAction[], career: CareerState): GameAction[] {
-  return actions.filter(action => action.category === 'WORK' && isActionAvailableForJob(action, career));
+export function getAvailableWorkActions(actions: GameAction[], context: ActionFilterContext): GameAction[] {
+  return actions.filter(action => action.category === 'WORK' && isActionAvailableForJob(action, context));
 }

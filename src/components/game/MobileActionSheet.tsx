@@ -137,10 +137,10 @@ interface MobileActionSheetProps {
  * Swipeable and tap-to-close.
  */
 export function MobileActionSheet({ category, onClose }: MobileActionSheetProps) {
-  const { career } = useGameStore();
+  const { career, flags } = useGameStore();
 
-  // Filter actions based on job requirements (only affects WORK category)
-  const availableActions = useMemo(() => filterActionsForJob(ACTIONS, career), [career]);
+  // Filter actions based on job requirements and student status
+  const availableActions = useMemo(() => filterActionsForJob(ACTIONS, { career, flags }), [career, flags]);
 
   const categoryActions = availableActions.filter(action => action.category === category);
 

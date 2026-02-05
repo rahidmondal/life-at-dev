@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { GameAction } from '../../types/actions';
 import type { CareerState } from '../../types/career';
-import { filterActionsForJob, getAvailableWorkActions, isActionAvailableForJob } from '../actionFilter';
+import type { Flags } from '../../types/resources';
+import {
+  type ActionFilterContext,
+  filterActionsForJob,
+  getAvailableWorkActions,
+  isActionAvailableForJob,
+} from '../actionFilter';
 
 /**
  * Test helper: Creates a minimal CareerState object for testing.
@@ -13,6 +19,30 @@ function createMockCareer(overrides: Partial<CareerState> = {}): CareerState {
     jobHistory: [],
   };
   return { ...base, ...overrides };
+}
+
+/**
+ * Test helper: Creates a minimal Flags object for testing.
+ */
+function createMockFlags(overrides: Partial<Flags> = {}): Partial<Flags> {
+  return {
+    isScholar: false,
+    hasGraduated: false,
+    ...overrides,
+  };
+}
+
+/**
+ * Test helper: Creates an ActionFilterContext for testing.
+ */
+function createContext(
+  careerOverrides: Partial<CareerState> = {},
+  flagsOverrides: Partial<Flags> = {},
+): ActionFilterContext {
+  return {
+    career: createMockCareer(careerOverrides),
+    flags: createMockFlags(flagsOverrides),
+  };
 }
 
 /**
@@ -42,8 +72,7 @@ describe('actionFilter', () => {
         rewards: { skill: 5 },
       };
 
-      const career = createMockCareer({ currentJobId: 'unemployed' });
-      expect(isActionAvailableForJob(action, career)).toBe(true);
+      expect(isActionAvailableForJob(action, createContext({ currentJobId: 'unemployed' }))).toBe(true);
     });
 
     it('should allow universal actions for all jobs', () => {
@@ -53,13 +82,13 @@ describe('actionFilter', () => {
       });
 
       // Test with unemployed
-      expect(isActionAvailableForJob(action, createMockCareer({ currentJobId: 'unemployed' }))).toBe(true);
+      expect(isActionAvailableForJob(action, createContext({ currentJobId: 'unemployed' }))).toBe(true);
 
       // Test with corporate job
-      expect(isActionAvailableForJob(action, createMockCareer({ currentJobId: 'corp_junior' }))).toBe(true);
+      expect(isActionAvailableForJob(action, createContext({ currentJobId: 'corp_junior' }))).toBe(true);
 
       // Test with freelancer
-      expect(isActionAvailableForJob(action, createMockCareer({ currentJobId: 'hustle_freelancer' }))).toBe(true);
+      expect(isActionAvailableForJob(action, createContext({ currentJobId: 'hustle_freelancer' }))).toBe(true);
     });
 
     it('should allow unemployed-specific actions only for unemployed players', () => {
@@ -69,10 +98,10 @@ describe('actionFilter', () => {
       });
 
       // Unemployed should have access
-      expect(isActionAvailableForJob(action, createMockCareer({ currentJobId: 'unemployed' }))).toBe(true);
+      expect(isActionAvailableForJob(action, createContext({ currentJobId: 'unemployed' }))).toBe(true);
 
       // Corporate job should not have access (not unemployed, not on Hustler track)
-      expect(isActionAvailableForJob(action, createMockCareer({ currentJobId: 'corp_junior' }))).toBe(false);
+      expect(isActionAvailableForJob(action, createContext({ currentJobId: 'corp_junior' }))).toBe(false);
     });
 
     it('should filter by track correctly', () => {
@@ -82,10 +111,10 @@ describe('actionFilter', () => {
       });
 
       // Corporate L1 job should have access
-      expect(isActionAvailableForJob(corpAction, createMockCareer({ currentJobId: 'corp_junior' }))).toBe(true);
+      expect(isActionAvailableForJob(corpAction, createContext({ currentJobId: 'corp_junior' }))).toBe(true);
 
       // Hustler job should not have access
-      expect(isActionAvailableForJob(corpAction, createMockCareer({ currentJobId: 'hustle_freelancer' }))).toBe(false);
+      expect(isActionAvailableForJob(corpAction, createContext({ currentJobId: 'hustle_freelancer' }))).toBe(false);
     });
 
     it('should respect minTier requirement', () => {
@@ -95,10 +124,10 @@ describe('actionFilter', () => {
       });
 
       // Junior (tier 1) should not have access
-      expect(isActionAvailableForJob(seniorAction, createMockCareer({ currentJobId: 'corp_junior' }))).toBe(false);
+      expect(isActionAvailableForJob(seniorAction, createContext({ currentJobId: 'corp_junior' }))).toBe(false);
 
       // Senior (tier 3) should have access
-      expect(isActionAvailableForJob(seniorAction, createMockCareer({ currentJobId: 'corp_senior' }))).toBe(true);
+      expect(isActionAvailableForJob(seniorAction, createContext({ currentJobId: 'corp_senior' }))).toBe(true);
     });
 
     it('should respect maxTier requirement', () => {
@@ -108,13 +137,13 @@ describe('actionFilter', () => {
       });
 
       // Intern (tier 0) should have access
-      expect(isActionAvailableForJob(juniorAction, createMockCareer({ currentJobId: 'corp_intern' }))).toBe(true);
+      expect(isActionAvailableForJob(juniorAction, createContext({ currentJobId: 'corp_intern' }))).toBe(true);
 
       // Junior (tier 1) should have access
-      expect(isActionAvailableForJob(juniorAction, createMockCareer({ currentJobId: 'corp_junior' }))).toBe(true);
+      expect(isActionAvailableForJob(juniorAction, createContext({ currentJobId: 'corp_junior' }))).toBe(true);
 
       // Mid (tier 2) should not have access
-      expect(isActionAvailableForJob(juniorAction, createMockCareer({ currentJobId: 'corp_mid' }))).toBe(false);
+      expect(isActionAvailableForJob(juniorAction, createContext({ currentJobId: 'corp_mid' }))).toBe(false);
     });
 
     it('should allow actions without jobRequirements for all jobs (legacy behavior)', () => {
@@ -123,8 +152,22 @@ describe('actionFilter', () => {
         // No jobRequirements defined
       });
 
-      expect(isActionAvailableForJob(legacyAction, createMockCareer({ currentJobId: 'unemployed' }))).toBe(true);
-      expect(isActionAvailableForJob(legacyAction, createMockCareer({ currentJobId: 'corp_senior' }))).toBe(true);
+      expect(isActionAvailableForJob(legacyAction, createContext({ currentJobId: 'unemployed' }))).toBe(true);
+      expect(isActionAvailableForJob(legacyAction, createContext({ currentJobId: 'corp_senior' }))).toBe(true);
+    });
+
+    it('should allow studentOnly actions only for students', () => {
+      const studentAction = createMockWorkAction({
+        id: 'attend_lecture',
+        category: 'SKILL',
+        jobRequirements: { studentOnly: true },
+      });
+
+      // Non-student should not have access
+      expect(isActionAvailableForJob(studentAction, createContext({}, { isScholar: false }))).toBe(false);
+
+      // Student should have access
+      expect(isActionAvailableForJob(studentAction, createContext({}, { isScholar: true }))).toBe(true);
     });
   });
 
@@ -137,14 +180,29 @@ describe('actionFilter', () => {
         { id: 'skill_action', label: 'Skill', category: 'SKILL', energyCost: 10, moneyCost: 0, rewards: { skill: 5 } },
       ];
 
-      const corpCareer = createMockCareer({ currentJobId: 'corp_junior' });
-      const filtered: GameAction[] = filterActionsForJob(actions, corpCareer);
+      const filtered: GameAction[] = filterActionsForJob(actions, createContext({ currentJobId: 'corp_junior' }));
 
       expect(filtered).toHaveLength(3); // universal + corp_only + skill_action
       expect(filtered.map(a => a.id)).toContain('universal');
       expect(filtered.map(a => a.id)).toContain('corp_only');
       expect(filtered.map(a => a.id)).toContain('skill_action');
       expect(filtered.map(a => a.id)).not.toContain('hustle_only');
+    });
+
+    it('should include student actions for students', () => {
+      const actions: GameAction[] = [
+        createMockWorkAction({ id: 'universal', jobRequirements: { universal: true } }),
+        createMockWorkAction({ id: 'attend_lecture', category: 'SKILL', jobRequirements: { studentOnly: true } }),
+        { id: 'skill_action', label: 'Skill', category: 'SKILL', energyCost: 10, moneyCost: 0, rewards: { skill: 5 } },
+      ];
+
+      // Non-student should not see student actions
+      const nonStudentFiltered = filterActionsForJob(actions, createContext({}, { isScholar: false }));
+      expect(nonStudentFiltered.map(a => a.id)).not.toContain('attend_lecture');
+
+      // Student should see student actions
+      const studentFiltered = filterActionsForJob(actions, createContext({}, { isScholar: true }));
+      expect(studentFiltered.map(a => a.id)).toContain('attend_lecture');
     });
   });
 
@@ -156,8 +214,10 @@ describe('actionFilter', () => {
         { id: 'skill_action', label: 'Skill', category: 'SKILL', energyCost: 10, moneyCost: 0, rewards: { skill: 5 } },
       ];
 
-      const corpCareer = createMockCareer({ currentJobId: 'corp_junior' });
-      const workActions: GameAction[] = getAvailableWorkActions(actions, corpCareer);
+      const workActions: GameAction[] = getAvailableWorkActions(
+        actions,
+        createContext({ currentJobId: 'corp_junior' }),
+      );
 
       expect(workActions).toHaveLength(2); // universal + corp_only (not skill_action)
       expect(workActions.every(a => a.category === 'WORK')).toBe(true);

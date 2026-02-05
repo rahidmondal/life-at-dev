@@ -564,3 +564,32 @@ export function generateJobChangeMessage(oldJobTitle: string, newJobTitle: strin
     message: pickRandom(messages),
   };
 }
+
+/**
+ * Generate a graduation ceremony message.
+ */
+export function generateGraduationMessage(
+  path: 'scholar' | 'funded' | 'dropout' | null,
+  yearsCompleted: number,
+): EventLogEntry {
+  const pathNames: Record<string, string> = {
+    scholar: 'Full Scholarship',
+    funded: 'Self-Funded',
+    dropout: 'Dropout',
+  };
+
+  const pathName = path ? pathNames[path] : 'Unknown';
+
+  const messages = [
+    `🎓 GRADUATION! You've completed your ${String(yearsCompleted)}-year ${pathName} degree! Time to enter the workforce.`,
+    `🎓 CEREMONY COMPLETE! After ${String(yearsCompleted)} years, you're officially a graduate. The job market awaits!`,
+    `🎓 DEGREE UNLOCKED! ${pathName} path complete. Your skills and knowledge are ready for the real world.`,
+    `🎓 CONGRATULATIONS! You survived ${String(yearsCompleted)} years of college. Now the fun begins...`,
+  ];
+
+  return {
+    tick: 0,
+    eventId: 'graduation',
+    message: pickRandom(messages),
+  };
+}

@@ -13,7 +13,7 @@ import {
  */
 function createMockState(overrides: Partial<GameState> = {}): GameState {
   return {
-    meta: { tick: 52, startAge: 22, retirementAge: 65 },
+    meta: { tick: 52, startAge: 22, version: '1.0.0', playerName: 'TestPlayer' },
     resources: { energy: 70, stress: 30, money: 5000, debt: 0, fulfillment: 100 },
     stats: {
       skills: { coding: 500, politics: 50 },
@@ -23,11 +23,15 @@ function createMockState(overrides: Partial<GameState> = {}): GameState {
     flags: {
       isBurnedOut: false,
       isBankrupt: false,
-      hasStartedGame: true,
       consecutiveMissedPayments: 0,
       totalMissedPayments: 0,
+      streak: 0,
+      cooldowns: {},
+      accumulatesDebt: false,
+      startingPath: null,
       isScholar: false,
       scholarYearsRemaining: 0,
+      hasGraduated: false,
     },
     eventLog: [],
     ...overrides,
@@ -86,7 +90,7 @@ describe('eventLog', () => {
 
   describe('generateEventLogEntry', () => {
     it('should return an EventLogEntry with tick, eventId, and message', () => {
-      const state = createMockState({ meta: { tick: 10, startAge: 22, retirementAge: 65 } });
+      const state = createMockState({ meta: { tick: 10, startAge: 22, version: '1.0.0', playerName: 'TestPlayer' } });
       const entry = generateEventLogEntry('gig_fix', 'Quick Fix Gig', 'WORK', state, {
         xp: 10,
         money: 100,

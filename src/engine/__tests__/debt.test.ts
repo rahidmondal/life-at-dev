@@ -59,6 +59,9 @@ function createTestState(
       cooldowns: {},
       accumulatesDebt: overrides.accumulatesDebt ?? false,
       startingPath: 'funded',
+      isScholar: false,
+      scholarYearsRemaining: 0,
+      hasGraduated: false,
     },
     eventLog: [],
   };

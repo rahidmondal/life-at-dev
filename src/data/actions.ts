@@ -132,6 +132,87 @@ export const ACTIONS: GameAction[] = [
   },
 
   // ───────────────────────────────────────────────────────────────────────────
+  // STUDENT ACTIONS (Scholar/Funded paths only)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'attend_lecture',
+    label: 'Attend Lecture',
+    category: 'SKILL',
+    energyCost: 15,
+    moneyCost: 0,
+    rewards: { skill: 15, stress: 5 },
+    jobRequirements: { studentOnly: true },
+    duration: 1,
+  },
+
+  {
+    id: 'study_session',
+    label: 'Study Session',
+    category: 'SKILL',
+    energyCost: 25,
+    moneyCost: 0,
+    rewards: { skill: 25, stress: 10 },
+    jobRequirements: { studentOnly: true },
+    duration: 2,
+  },
+
+  {
+    id: 'group_project',
+    label: 'Group Project',
+    category: 'WORK',
+    energyCost: 35,
+    moneyCost: 0,
+    rewards: { skill: 20, politics: 5, stress: 15 },
+    jobRequirements: { studentOnly: true },
+    duration: 3,
+  },
+
+  {
+    id: 'office_hours',
+    label: 'Visit Office Hours',
+    category: 'SKILL',
+    energyCost: 10,
+    moneyCost: 0,
+    rewards: { skill: 10, stress: -5 },
+    jobRequirements: { studentOnly: true },
+    duration: 0,
+  },
+
+  {
+    id: 'campus_networking',
+    label: 'Campus Networking',
+    category: 'NETWORK',
+    energyCost: 20,
+    moneyCost: 0,
+    rewards: { reputation: 10, politics: 5 },
+    jobRequirements: { studentOnly: true },
+    duration: 1,
+  },
+
+  {
+    id: 'internship_prep',
+    label: 'Prep for Internship',
+    category: 'SKILL',
+    energyCost: 30,
+    moneyCost: 0,
+    rewards: { skill: 30, corporate: 10, stress: 10 },
+    jobRequirements: { studentOnly: true },
+    duration: 2,
+  },
+
+  {
+    id: 'part_time_job',
+    label: 'Part-Time Job',
+    category: 'WORK',
+    energyCost: 25,
+    moneyCost: 0,
+    rewards: { money: 200, stress: 5, freelance: 5 },
+    jobRequirements: { studentOnly: true },
+    duration: 1,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
   // CORPORATE L1 ACTIONS (Intern → Senior Dev)
   // ───────────────────────────────────────────────────────────────────────────
 

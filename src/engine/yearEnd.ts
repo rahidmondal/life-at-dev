@@ -2,7 +2,7 @@ import { JOB_REGISTRY } from '../data/tracks';
 import type { GameState, PlayerStats } from '../types/gamestate';
 import type { Flags } from '../types/resources';
 import { processAnnualDebtPayment } from './debt';
-import { generateBankruptcyWarning, generateYearEndMessage } from './eventLog';
+import { generateBankruptcyWarning, generateGraduationMessage, generateYearEndMessage } from './eventLog';
 import { getDateFromTick, isYearEnd } from './time';
 
 /**
@@ -116,12 +116,16 @@ export function calculateBankruptcyThreshold(salary: number): number {
  * Decrements scholar years remaining and applies skill bonuses during college.
  * Returns updated stats and flags.
  */
-function processScholarProgress(state: GameState): { stats: PlayerStats; flags: Partial<Flags> } {
+function processScholarProgress(state: GameState): {
+  stats: PlayerStats;
+  flags: Partial<Flags>;
+  isGraduating: boolean;
+} {
   const { flags, stats } = state;
 
   // Not a scholar or already graduated
   if (!flags.isScholar || flags.scholarYearsRemaining <= 0) {
-    return { stats, flags: {} };
+    return { stats, flags: {}, isGraduating: false };
   }
 
   // Decrement years remaining
@@ -142,7 +146,9 @@ function processScholarProgress(state: GameState): { stats: PlayerStats; flags: 
     flags: {
       scholarYearsRemaining: newYearsRemaining,
       isScholar: !isGraduating, // No longer a scholar after graduation
+      hasGraduated: isGraduating ? true : undefined, // Set hasGraduated on graduation
     },
+    isGraduating,
   };
 }
 
@@ -291,6 +297,18 @@ export function processYearEnd(state: GameState): YearEndResult {
     });
   }
 
+  // Process scholar progress (graduation check)
+  const scholarResult = processScholarProgress(state);
+
+  // Add graduation event if graduating
+  if (scholarResult.isGraduating) {
+    const graduationEntry = generateGraduationMessage(state.flags.startingPath, 4);
+    eventLogEntries.push({
+      ...graduationEntry,
+      tick: state.meta.tick,
+    });
+  }
+
   const newState: GameState = {
     ...state,
     resources: {
@@ -298,10 +316,10 @@ export function processYearEnd(state: GameState): YearEndResult {
       money: Math.round(newMoney),
       debt: Math.round(newDebt),
     },
-    stats: processScholarProgress(state).stats,
+    stats: scholarResult.stats,
     flags: {
       ...state.flags,
-      ...processScholarProgress(state).flags,
+      ...scholarResult.flags,
       isBankrupt: isBankrupt || state.flags.isBankrupt,
       consecutiveMissedPayments: debtResult.newConsecutiveMissedPayments,
       totalMissedPayments: debtResult.newTotalMissedPayments,

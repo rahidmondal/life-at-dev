@@ -28,9 +28,10 @@ function createMockState(overrides: {
 }): GameState {
   return {
     meta: {
-      version: 1,
+      version: '1.0.0',
       tick: overrides.tick ?? 0,
-      phase: 'action',
+      startAge: 18,
+      playerName: 'TestPlayer',
     },
     career: {
       currentJobId: overrides.currentJobId ?? 'unemployed',
@@ -53,13 +54,22 @@ function createMockState(overrides: {
       energy: 100,
       stress: 0,
       debt: 0,
+      fulfillment: 0,
     },
     flags: {
+      isBurnedOut: false,
       isBankrupt: false,
       consecutiveMissedPayments: 0,
       totalMissedPayments: 0,
+      streak: 0,
+      cooldowns: {},
+      accumulatesDebt: false,
+      startingPath: null,
+      isScholar: false,
+      scholarYearsRemaining: 0,
+      hasGraduated: false,
     },
-    ledger: [],
+    eventLog: [],
   };
 }
 

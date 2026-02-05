@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useGameStore } from '../../store/useGameStore';
 import { CommandCenter } from './CommandCenter';
 import { GameOverScreen } from './GameOverScreen';
+import { GraduationModal } from './GraduationModal';
+import { JobApplicationModal } from './JobApplicationModal';
 import { LandingScreen } from './LandingScreen';
 import { LoadingScreen } from './LoadingScreen';
 import { StartScreen } from './StartScreen';
@@ -17,7 +19,20 @@ export function GameWrapper() {
   const [playerName, setPlayerName] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
 
-  const { resources, flags, meta, resetGame, startNewGame, currentSaveId } = useGameStore();
+  const {
+    resources,
+    flags,
+    meta,
+    resetGame,
+    startNewGame,
+    currentSaveId,
+    showGraduationModal,
+    showJobApplicationModal,
+    acknowledgeGraduation,
+    closeJobApplication,
+    getAvailableJobs,
+    applyForJob,
+  } = useGameStore();
 
   useEffect(() => {
     const unsubFinishHydration = useGameStore.persist.onFinishHydration(() => {
@@ -160,5 +175,20 @@ export function GameWrapper() {
     setPhase('landing');
   };
 
-  return <CommandCenter onExitGame={handleExitGame} />;
+  return (
+    <>
+      <CommandCenter onExitGame={handleExitGame} />
+      {showGraduationModal && (
+        <GraduationModal playerName={meta.playerName} path={flags.startingPath} onContinue={acknowledgeGraduation} />
+      )}
+      {showJobApplicationModal && (
+        <JobApplicationModal
+          availableJobs={getAvailableJobs()}
+          isStudent={flags.isScholar && !flags.hasGraduated}
+          onSelectJob={applyForJob}
+          onClose={closeJobApplication}
+        />
+      )}
+    </>
+  );
 }

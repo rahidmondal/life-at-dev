@@ -51,4 +51,7 @@ export interface Flags {
 
   /** Remaining years of college for scholar path. 0 means graduated or not a scholar. */
   scholarYearsRemaining: number;
+
+  /** Whether the player has completed their degree (scholar/funded paths). */
+  hasGraduated: boolean;
 }

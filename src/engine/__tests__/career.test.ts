@@ -169,10 +169,16 @@ describe('getEligibleJobs', () => {
     },
     flags: {
       isBurnedOut: false,
+      isBankrupt: false,
+      consecutiveMissedPayments: 0,
+      totalMissedPayments: 0,
       streak: 0,
       cooldowns: {},
       accumulatesDebt: false,
       startingPath: null,
+      isScholar: false,
+      scholarYearsRemaining: 0,
+      hasGraduated: false,
     },
     eventLog: [],
   });
@@ -347,10 +353,16 @@ describe('promotePlayer', () => {
     },
     flags: {
       isBurnedOut: false,
+      isBankrupt: false,
+      consecutiveMissedPayments: 0,
+      totalMissedPayments: 0,
       streak: 0,
       cooldowns: {},
       accumulatesDebt: false,
       startingPath: null,
+      isScholar: false,
+      scholarYearsRemaining: 0,
+      hasGraduated: false,
     },
     eventLog: [],
   });

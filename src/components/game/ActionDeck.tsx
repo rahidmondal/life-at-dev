@@ -135,10 +135,10 @@ const getActionIcon = (actionId: string): React.ReactNode => {
 
 export function ActionDeck() {
   const [activeCategory, setActiveCategory] = useState<ActionCategory>('SKILL');
-  const { career } = useGameStore();
+  const { career, flags } = useGameStore();
 
-  // Filter actions based on job requirements (only affects WORK category)
-  const availableActions = useMemo(() => filterActionsForJob(ACTIONS, career), [career]);
+  // Filter actions based on job requirements and student status
+  const availableActions = useMemo(() => filterActionsForJob(ACTIONS, { career, flags }), [career, flags]);
 
   const categoryActions = availableActions.filter(action => action.category === activeCategory);
 

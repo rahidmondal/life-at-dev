@@ -47,6 +47,8 @@ export interface JobRequirements {
   unemployed?: boolean;
   /** Show for all jobs (universal action). */
   universal?: boolean;
+  /** Show only for students (isScholar === true). */
+  studentOnly?: boolean;
 }
 
 /**
