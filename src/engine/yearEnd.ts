@@ -1,5 +1,6 @@
 import { JOB_REGISTRY } from '../data/tracks';
 import type { GameState } from '../types/gamestate';
+import { processAnnualDebtPayment } from './debt';
 import { isYearEnd } from './time';
 
 /**
@@ -46,6 +47,12 @@ export interface YearEndSummary {
   /** Amount converted to debt (if money went negative). */
   debtIncurred: number;
 
+  /** Debt payment made. */
+  debtPayment: number;
+
+  /** Whether an annual debt payment was missed. */
+  missedDebtPayment: boolean;
+
   /** Final money after processing. */
   finalMoney: number;
 
@@ -91,14 +98,15 @@ export function calculateBankruptcyThreshold(salary: number): number {
 }
 
 /**
- * Process year-end finances: salary payment, rent deduction, and bankruptcy check.
+ * Process year-end finances: salary payment, rent deduction, debt payment, and bankruptcy check.
  *
  * Logic:
  * 1. Add yearly salary to money
  * 2. Deduct yearly rent from money
  * 3. If money goes negative beyond 50% of yearly salary → BANKRUPTCY
  * 4. If money is slightly negative → convert deficit to debt
- * 5. Otherwise → player keeps the money
+ * 5. Process annual debt payment (if player has debt)
+ * 6. If 3 consecutive missed debt payments → BANKRUPTCY
  */
 export function processYearEnd(state: GameState): YearEndResult {
   const job = JOB_REGISTRY[state.career.currentJobId] as (typeof JOB_REGISTRY)[string] | undefined;
@@ -113,6 +121,8 @@ export function processYearEnd(state: GameState): YearEndResult {
         rentPaid: 0,
         netIncome: 0,
         debtIncurred: 0,
+        debtPayment: 0,
+        missedDebtPayment: false,
         finalMoney: state.resources.money,
         finalDebt: state.resources.debt,
         message: 'Year ended. No changes.',
@@ -128,29 +138,91 @@ export function processYearEnd(state: GameState): YearEndResult {
   let newDebt = state.resources.debt;
   let debtIncurred = 0;
   let isBankrupt = false;
-  let message = '';
+  const messages: string[] = [];
 
   const bankruptcyThreshold = calculateBankruptcyThreshold(salary);
 
+  // Step 1: Check if player can cover expenses
   if (newMoney < -bankruptcyThreshold) {
     // BANKRUPTCY: Money is too far negative
     isBankrupt = true;
-    message = `BANKRUPTCY! Debt exceeded ${bankruptcyThreshold.toLocaleString()}. You couldn't cover your expenses.`;
-  } else if (newMoney < 0) {
-    // Money is negative but within threshold - convert to debt
+    messages.push(`BANKRUPTCY! Deficit of $${Math.abs(newMoney).toLocaleString()} exceeded threshold.`);
+
+    const newState: GameState = {
+      ...state,
+      resources: {
+        ...state.resources,
+        money: Math.round(newMoney),
+        debt: Math.round(newDebt),
+      },
+      flags: {
+        ...state.flags,
+        isBankrupt: true,
+      },
+      eventLog: [
+        ...state.eventLog,
+        {
+          tick: state.meta.tick,
+          eventId: 'year_end_bankruptcy',
+          message: `> YEAR END: ${messages.join(' ')}`,
+        },
+      ],
+    };
+
+    return {
+      newState,
+      isBankrupt: true,
+      summary: {
+        salaryEarned: salary,
+        rentPaid: rent,
+        netIncome,
+        debtIncurred: 0,
+        debtPayment: 0,
+        missedDebtPayment: false,
+        finalMoney: Math.round(newMoney),
+        finalDebt: Math.round(newDebt),
+        message: messages.join(' '),
+      },
+    };
+  }
+
+  // Step 2: Convert deficit to debt if within threshold
+  if (newMoney < 0) {
     debtIncurred = Math.abs(newMoney);
     newDebt += debtIncurred;
     newMoney = 0;
-    message = `Year ended with deficit. $${debtIncurred.toLocaleString()} added to debt.`;
-  } else {
-    // Positive balance
-    if (netIncome > 0) {
-      message = `Year ended. Earned $${salary.toLocaleString()}, paid $${rent.toLocaleString()} rent. Net: +$${netIncome.toLocaleString()}.`;
-    } else if (netIncome < 0) {
-      message = `Year ended. Lost $${Math.abs(netIncome).toLocaleString()} after expenses.`;
-    } else {
-      message = 'Year ended. Broke even on finances.';
-    }
+    messages.push(`Deficit of $${debtIncurred.toLocaleString()} added to debt.`);
+  } else if (netIncome > 0) {
+    messages.push(`Earned $${salary.toLocaleString()}, paid $${rent.toLocaleString()} rent.`);
+  } else if (netIncome < 0) {
+    messages.push(`Lost $${Math.abs(netIncome).toLocaleString()} after expenses.`);
+  }
+
+  // Step 3: Process annual debt payment
+  const debtResult = processAnnualDebtPayment(
+    newDebt,
+    newMoney,
+    state.meta.tick,
+    state.meta.startAge,
+    state.flags.consecutiveMissedPayments,
+    state.flags.totalMissedPayments,
+  );
+
+  // Update money and debt based on debt payment result
+  newMoney -= debtResult.amountPaid;
+  newDebt = debtResult.newDebt;
+
+  if (debtResult.amountPaid > 0) {
+    messages.push(`Paid $${debtResult.amountPaid.toLocaleString()} towards debt.`);
+  }
+
+  if (debtResult.missedPayment) {
+    messages.push(debtResult.message);
+  }
+
+  // Check for debt-related bankruptcy
+  if (debtResult.isBankrupt) {
+    isBankrupt = true;
   }
 
   const newState: GameState = {
@@ -160,12 +232,18 @@ export function processYearEnd(state: GameState): YearEndResult {
       money: Math.round(newMoney),
       debt: Math.round(newDebt),
     },
+    flags: {
+      ...state.flags,
+      isBankrupt: isBankrupt || state.flags.isBankrupt,
+      consecutiveMissedPayments: debtResult.newConsecutiveMissedPayments,
+      totalMissedPayments: debtResult.newTotalMissedPayments,
+    },
     eventLog: [
       ...state.eventLog,
       {
         tick: state.meta.tick,
-        eventId: 'year_end_review',
-        message: `> YEAR END: ${message}`,
+        eventId: isBankrupt ? 'year_end_bankruptcy' : 'year_end_review',
+        message: `> YEAR END: ${messages.join(' ')}`,
       },
     ],
   };
@@ -178,9 +256,11 @@ export function processYearEnd(state: GameState): YearEndResult {
       rentPaid: rent,
       netIncome,
       debtIncurred,
+      debtPayment: debtResult.amountPaid,
+      missedDebtPayment: debtResult.missedPayment,
       finalMoney: Math.round(newMoney),
       finalDebt: Math.round(newDebt),
-      message,
+      message: messages.join(' '),
     },
   };
 }

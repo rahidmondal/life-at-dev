@@ -28,6 +28,12 @@ export interface Flags {
   /** Is the player bankrupt? Game over condition. */
   isBankrupt: boolean;
 
+  /** Consecutive years of missed debt payments. Triggers bankruptcy at 3. */
+  consecutiveMissedPayments: number;
+
+  /** Total lifetime missed debt payments. Affects credit rating. */
+  totalMissedPayments: number;
+
   /** Consecutive weeks of same action category. Triggers Flow State at 3+. */
   streak: number;
 

@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import type { GameState } from '../../types/gamestate';
 import {
+  calculateAnnualMinimumPayment,
   calculateDebtInterest,
   calculateDebtStressPenalty,
   calculateMinimumDebtPayment,
   calculateWeeklyDebtAccumulation,
   getCurrentAge,
   getDebtStatusMessage,
+  getMissedPaymentBankruptcyThreshold,
   hasMissedPayment,
   isInUniversityPeriod,
   makeDebtPayment,
+  processAnnualDebtPayment,
   processWeeklyDebt,
+  shouldTriggerDebtBankruptcy,
 } from '../debt';
 
 function createTestState(
@@ -19,6 +23,8 @@ function createTestState(
     startAge: number;
     debt: number;
     accumulatesDebt: boolean;
+    consecutiveMissedPayments: number;
+    totalMissedPayments: number;
   }>,
 ): GameState {
   return {
@@ -46,6 +52,9 @@ function createTestState(
     },
     flags: {
       isBurnedOut: false,
+      isBankrupt: false,
+      consecutiveMissedPayments: overrides.consecutiveMissedPayments ?? 0,
+      totalMissedPayments: overrides.totalMissedPayments ?? 0,
       streak: 0,
       cooldowns: {},
       accumulatesDebt: overrides.accumulatesDebt ?? false,
@@ -236,6 +245,155 @@ describe('Debt Mechanics', () => {
       const message = getDebtStatusMessage(40000, 208, 18);
       expect(message).toContain('$40,000');
       expect(message).toContain('Min payment');
+    });
+  });
+
+  describe('calculateAnnualMinimumPayment', () => {
+    it('returns 0 during university period', () => {
+      expect(calculateAnnualMinimumPayment(10000, 0, 18)).toBe(0);
+    });
+
+    it('returns 0 for no debt', () => {
+      expect(calculateAnnualMinimumPayment(0, 208, 18)).toBe(0);
+    });
+
+    it('returns 10% of debt for normal amounts', () => {
+      expect(calculateAnnualMinimumPayment(10000, 208, 18)).toBe(1000);
+    });
+
+    it('returns minimum of $500 for small debts', () => {
+      expect(calculateAnnualMinimumPayment(1000, 208, 18)).toBe(500);
+    });
+  });
+
+  describe('processAnnualDebtPayment', () => {
+    it('returns no payment needed when debt is 0', () => {
+      const result = processAnnualDebtPayment(0, 5000, 208, 18, 0, 0);
+      expect(result.amountPaid).toBe(0);
+      expect(result.missedPayment).toBe(false);
+      expect(result.isBankrupt).toBe(false);
+    });
+
+    it('defers payment during university', () => {
+      const result = processAnnualDebtPayment(10000, 0, 0, 18, 0, 0);
+      expect(result.amountPaid).toBe(0);
+      expect(result.missedPayment).toBe(false);
+      expect(result.message).toContain('deferred');
+    });
+
+    it('pays debt when player has enough money', () => {
+      const result = processAnnualDebtPayment(10000, 5000, 208, 18, 0, 0);
+      // 10% of 10000 = 1000
+      expect(result.amountPaid).toBe(1000);
+      expect(result.newDebt).toBe(9000);
+      expect(result.missedPayment).toBe(false);
+      expect(result.newConsecutiveMissedPayments).toBe(0);
+    });
+
+    it('resets consecutive count on successful payment', () => {
+      const result = processAnnualDebtPayment(10000, 5000, 208, 18, 2, 5);
+      expect(result.newConsecutiveMissedPayments).toBe(0);
+      expect(result.newTotalMissedPayments).toBe(5); // Total stays the same
+    });
+
+    it('increments missed payment counters when unable to pay', () => {
+      const result = processAnnualDebtPayment(10000, 100, 208, 18, 0, 0);
+      expect(result.missedPayment).toBe(true);
+      expect(result.newConsecutiveMissedPayments).toBe(1);
+      expect(result.newTotalMissedPayments).toBe(1);
+    });
+
+    it('triggers bankruptcy after 3 consecutive missed payments', () => {
+      const result = processAnnualDebtPayment(10000, 100, 208, 18, 2, 5);
+      expect(result.isBankrupt).toBe(true);
+      expect(result.newConsecutiveMissedPayments).toBe(3);
+      expect(result.message).toContain('BANKRUPTCY');
+    });
+
+    it('shows final warning at 2 consecutive missed payments', () => {
+      const result = processAnnualDebtPayment(10000, 100, 208, 18, 1, 3);
+      expect(result.isBankrupt).toBe(false);
+      expect(result.newConsecutiveMissedPayments).toBe(2);
+      expect(result.message).toContain('FINAL WARNING');
+    });
+  });
+
+  describe('shouldTriggerDebtBankruptcy', () => {
+    it('returns false for less than 3 missed payments', () => {
+      expect(shouldTriggerDebtBankruptcy(0)).toBe(false);
+      expect(shouldTriggerDebtBankruptcy(1)).toBe(false);
+      expect(shouldTriggerDebtBankruptcy(2)).toBe(false);
+    });
+
+    it('returns true for 3 or more missed payments', () => {
+      expect(shouldTriggerDebtBankruptcy(3)).toBe(true);
+      expect(shouldTriggerDebtBankruptcy(5)).toBe(true);
+    });
+  });
+
+  describe('getMissedPaymentBankruptcyThreshold', () => {
+    it('returns 3', () => {
+      expect(getMissedPaymentBankruptcyThreshold()).toBe(3);
+    });
+  });
+
+  describe('calculateDebtInterest with penalty rate', () => {
+    it('applies higher interest rate when hasMissedPayments is true', () => {
+      const normalInterest = calculateDebtInterest(40000, 208, 18, false);
+      const penaltyInterest = calculateDebtInterest(40000, 208, 18, true);
+
+      // Penalty rate (8%) should be higher than normal rate (5%)
+      expect(penaltyInterest).toBeGreaterThan(normalInterest);
+      // Penalty should be ~60% higher (8/5 = 1.6)
+      expect(penaltyInterest / normalInterest).toBeCloseTo(1.6, 1);
+    });
+  });
+
+  describe('calculateDebtStressPenalty with missed payments', () => {
+    it('adds extra stress for missed payments', () => {
+      const noMissedStress = calculateDebtStressPenalty(40000, 0);
+      const withMissedStress = calculateDebtStressPenalty(40000, 2);
+
+      // Should have 2 extra stress per missed payment
+      expect(withMissedStress - noMissedStress).toBe(4); // 2 * 2
+    });
+
+    it('returns stress even with 0 debt if missed payments exist', () => {
+      expect(calculateDebtStressPenalty(0, 3)).toBe(6); // 3 * 2
+    });
+  });
+
+  describe('processWeeklyDebt with missed payments history', () => {
+    it('applies penalty interest rate for players with missed payments', () => {
+      const stateNoHistory = createTestState({
+        tick: 208,
+        debt: 40000,
+        totalMissedPayments: 0,
+      });
+
+      const stateWithHistory = createTestState({
+        tick: 208,
+        debt: 40000,
+        totalMissedPayments: 2,
+      });
+
+      const resultNoHistory = processWeeklyDebt(stateNoHistory);
+      const resultWithHistory = processWeeklyDebt(stateWithHistory);
+
+      expect(resultWithHistory.interestAccrued).toBeGreaterThan(resultNoHistory.interestAccrued);
+    });
+
+    it('includes missed payment stress penalty', () => {
+      const stateWithHistory = createTestState({
+        tick: 208,
+        debt: 40000,
+        totalMissedPayments: 3,
+      });
+
+      const result = processWeeklyDebt(stateWithHistory);
+
+      // Base debt stress + missed payment penalty
+      expect(result.stressPenalty).toBeGreaterThan(2); // Just debt stress would be 2
     });
   });
 });

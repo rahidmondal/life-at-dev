@@ -38,6 +38,8 @@ export const INITIAL_GAME_STATE: GameState = {
   flags: {
     isBurnedOut: false,
     isBankrupt: false,
+    consecutiveMissedPayments: 0,
+    totalMissedPayments: 0,
     streak: 0,
     cooldowns: {},
     accumulatesDebt: false,
