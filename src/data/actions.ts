@@ -76,7 +76,38 @@ export const ACTIONS: GameAction[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // CATEGORY: WORK (The Job)
   // Focus: Gain XP & Money, Gain Stress. Context-sensitive to Job Title.
+  // Actions filtered by jobRequirements based on player's current job.
   // ═══════════════════════════════════════════════════════════════════════════
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // UNIVERSAL ACTIONS (Always Available)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'apply_job',
+    label: 'Apply for Job',
+    category: 'WORK',
+    energyCost: 15,
+    moneyCost: 0,
+    rewards: { stress: 10 },
+    jobRequirements: { universal: true },
+    duration: 0,
+  },
+
+  {
+    id: 'find_freelance',
+    label: 'Find Freelance Gig',
+    category: 'WORK',
+    energyCost: 10,
+    moneyCost: 0,
+    rewards: { freelance: 5, stress: 5 },
+    jobRequirements: { universal: true },
+    duration: 0,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // UNEMPLOYED ACTIONS (Tier 0 / No Job)
+  // ───────────────────────────────────────────────────────────────────────────
 
   {
     id: 'gig_fix',
@@ -84,7 +115,8 @@ export const ACTIONS: GameAction[] = [
     category: 'WORK',
     energyCost: 20,
     moneyCost: 0,
-    rewards: { xp: 10, money: 100, stress: 10 },
+    rewards: { xp: 10, money: 100, freelance: 8, stress: 10 },
+    jobRequirements: { unemployed: true, tracks: ['Hustler_L1', 'Hustler_Business', 'Hustler_Specialist'] },
     duration: 1,
   },
 
@@ -94,9 +126,14 @@ export const ACTIONS: GameAction[] = [
     category: 'WORK',
     energyCost: 40,
     moneyCost: 0,
-    rewards: { xp: 50, money: 500, stress: 25 },
+    rewards: { xp: 50, money: 500, freelance: 20, stress: 25 },
+    jobRequirements: { unemployed: true, tracks: ['Hustler_L1', 'Hustler_Business', 'Hustler_Specialist'] },
     duration: 3,
   },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // CORPORATE L1 ACTIONS (Intern → Senior Dev)
+  // ───────────────────────────────────────────────────────────────────────────
 
   {
     id: 'corp_ticket',
@@ -104,9 +141,47 @@ export const ACTIONS: GameAction[] = [
     category: 'WORK',
     energyCost: 30,
     moneyCost: 0,
-    rewards: { xp: 20, stress: 15 },
+    rewards: { xp: 20, corporate: 10, stress: 15 },
+    jobRequirements: { tracks: ['Corporate_L1', 'Corp_IC'] },
     duration: 1,
   },
+
+  {
+    id: 'corp_standup',
+    label: 'Daily Standup',
+    category: 'WORK',
+    energyCost: 5,
+    moneyCost: 0,
+    rewards: { xp: 2, corporate: 3, politics: 2, stress: 5 },
+    jobRequirements: { tracks: ['Corporate_L1', 'Corp_IC', 'Corp_Management'] },
+    duration: 0,
+  },
+
+  {
+    id: 'corp_code_review',
+    label: 'Code Review',
+    category: 'WORK',
+    energyCost: 20,
+    moneyCost: 0,
+    rewards: { xp: 15, corporate: 8, skill: 10, stress: 10 },
+    jobRequirements: { tracks: ['Corporate_L1', 'Corp_IC'], minTier: 1 },
+    duration: 1,
+  },
+
+  {
+    id: 'corp_oncall',
+    label: 'On-Call Duty',
+    category: 'WORK',
+    energyCost: 40,
+    moneyCost: 0,
+    rewards: { xp: 30, corporate: 15, stress: 35 },
+    jobRequirements: { tracks: ['Corporate_L1', 'Corp_IC'], minTier: 2 },
+    duration: 1,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // CORPORATE MANAGEMENT ACTIONS (Team Lead → CTO)
+  // ───────────────────────────────────────────────────────────────────────────
 
   {
     id: 'corp_lead',
@@ -114,7 +189,8 @@ export const ACTIONS: GameAction[] = [
     category: 'WORK',
     energyCost: 50,
     moneyCost: 0,
-    rewards: { xp: 40, stress: 30 },
+    rewards: { xp: 40, corporate: 25, politics: 15, stress: 30 },
+    jobRequirements: { tracks: ['Corp_Management', 'Corp_IC'], minTier: 3 },
     duration: 4,
   },
 
@@ -124,8 +200,191 @@ export const ACTIONS: GameAction[] = [
     category: 'WORK',
     energyCost: 20,
     moneyCost: 0,
-    rewards: { xp: 5, politics: 10, stress: 25 },
+    rewards: { xp: 5, politics: 10, corporate: 5, stress: 25 },
+    jobRequirements: { tracks: ['Corporate_L1', 'Corp_Management', 'Corp_IC'], minTier: 1 },
+    duration: 0,
+  },
+
+  {
+    id: 'mgmt_1on1',
+    label: '1-on-1 Meetings',
+    category: 'WORK',
+    energyCost: 25,
+    moneyCost: 0,
+    rewards: { xp: 10, politics: 15, corporate: 10, stress: 15 },
+    jobRequirements: { tracks: ['Corp_Management'], minTier: 4 },
+    duration: 1,
+  },
+
+  {
+    id: 'mgmt_perf_review',
+    label: 'Performance Reviews',
+    category: 'WORK',
+    energyCost: 35,
+    moneyCost: 0,
+    rewards: { xp: 20, politics: 25, corporate: 20, stress: 30 },
+    jobRequirements: { tracks: ['Corp_Management'], minTier: 5 },
+    duration: 2,
+  },
+
+  {
+    id: 'mgmt_roadmap',
+    label: 'Quarterly Roadmap',
+    category: 'WORK',
+    energyCost: 45,
+    moneyCost: 0,
+    rewards: { xp: 35, politics: 30, corporate: 30, stress: 40 },
+    jobRequirements: { tracks: ['Corp_Management'], minTier: 5 },
     duration: 3,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // CORPORATE IC ACTIONS (Staff → Fellow)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'ic_architecture',
+    label: 'Architecture Review',
+    category: 'WORK',
+    energyCost: 40,
+    moneyCost: 0,
+    rewards: { xp: 35, corporate: 20, skill: 25, stress: 20 },
+    jobRequirements: { tracks: ['Corp_IC'], minTier: 4 },
+    duration: 2,
+  },
+
+  {
+    id: 'ic_tech_talk',
+    label: 'Internal Tech Talk',
+    category: 'WORK',
+    energyCost: 30,
+    moneyCost: 0,
+    rewards: { xp: 25, reputation: 10, skill: 15, stress: 15 },
+    jobRequirements: { tracks: ['Corp_IC'], minTier: 4 },
+    duration: 1,
+  },
+
+  {
+    id: 'ic_rfc',
+    label: 'Write RFC',
+    category: 'WORK',
+    energyCost: 35,
+    moneyCost: 0,
+    rewards: { xp: 30, corporate: 25, skill: 20, stress: 25 },
+    jobRequirements: { tracks: ['Corp_IC'], minTier: 5 },
+    duration: 2,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // HUSTLER FREELANCER ACTIONS (Freelancer → Digital Nomad)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'hustle_portfolio',
+    label: 'Update Portfolio',
+    category: 'WORK',
+    energyCost: 15,
+    moneyCost: 0,
+    rewards: { reputation: 8, freelance: 10, stress: 5 },
+    jobRequirements: { tracks: ['Hustler_L1', 'Hustler_Business', 'Hustler_Specialist'] },
+    duration: 1,
+  },
+
+  {
+    id: 'hustle_invoice',
+    label: 'Invoice Clients',
+    category: 'WORK',
+    energyCost: 10,
+    moneyCost: 0,
+    rewards: { money: 50, freelance: 5, stress: 8 },
+    jobRequirements: { tracks: ['Hustler_L1', 'Hustler_Business', 'Hustler_Specialist'], minTier: 1 },
+    duration: 0,
+  },
+
+  {
+    id: 'hustle_proposal',
+    label: 'Write Proposal',
+    category: 'WORK',
+    energyCost: 25,
+    moneyCost: 0,
+    rewards: { freelance: 15, reputation: 5, stress: 12 },
+    jobRequirements: { tracks: ['Hustler_L1', 'Hustler_Specialist'], minTier: 1 },
+    duration: 1,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // HUSTLER BUSINESS ACTIONS (Agency → Mogul)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'agency_pitch',
+    label: 'Client Pitch',
+    category: 'WORK',
+    energyCost: 35,
+    moneyCost: 0,
+    rewards: { money: 200, freelance: 25, reputation: 15, stress: 20 },
+    jobRequirements: { tracks: ['Hustler_Business'], minTier: 3 },
+    duration: 1,
+  },
+
+  {
+    id: 'agency_hire',
+    label: 'Hire Contractor',
+    category: 'WORK',
+    energyCost: 20,
+    moneyCost: 500,
+    rewards: { freelance: 30, stress: 15 },
+    requirements: { money: 500 },
+    jobRequirements: { tracks: ['Hustler_Business'], minTier: 3 },
+    duration: 1,
+  },
+
+  {
+    id: 'agency_sponsor',
+    label: 'Land Sponsorship',
+    category: 'WORK',
+    energyCost: 40,
+    moneyCost: 0,
+    rewards: { money: 1000, reputation: 30, stress: 25 },
+    jobRequirements: { tracks: ['Hustler_Business'], minTier: 4 },
+    duration: 2,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // HUSTLER SPECIALIST ACTIONS (Contractor → Architect)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'specialist_retainer',
+    label: 'Retainer Contract',
+    category: 'WORK',
+    energyCost: 30,
+    moneyCost: 0,
+    rewards: { money: 800, freelance: 20, stress: 15 },
+    jobRequirements: { tracks: ['Hustler_Specialist'], minTier: 3 },
+    duration: 2,
+  },
+
+  {
+    id: 'specialist_audit',
+    label: 'Code Audit',
+    category: 'WORK',
+    energyCost: 35,
+    moneyCost: 0,
+    rewards: { money: 600, skill: 20, freelance: 15, stress: 20 },
+    jobRequirements: { tracks: ['Hustler_Specialist'], minTier: 4 },
+    duration: 1,
+  },
+
+  {
+    id: 'specialist_workshop',
+    label: 'Paid Workshop',
+    category: 'WORK',
+    energyCost: 45,
+    moneyCost: 0,
+    rewards: { money: 1500, reputation: 25, skill: 15, stress: 25 },
+    jobRequirements: { tracks: ['Hustler_Specialist'], minTier: 5 },
+    duration: 2,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════

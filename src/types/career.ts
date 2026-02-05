@@ -1,6 +1,11 @@
 import type { SkillMap, XPCurrency } from './stats';
 
 /**
+ * JobId: Type alias for job identifiers (string keys in JOB_REGISTRY).
+ */
+export type JobId = string;
+
+/**
  * Career Track Types.
  * L1 = Foundation tracks (shared early game).
  * L2 = Specialization tracks (unlocked at Senior Dev / Digital Nomad).

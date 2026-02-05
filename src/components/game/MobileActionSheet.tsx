@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ACTIONS } from '../../data/actions';
+import { filterActionsForJob } from '../../engine/actionFilter';
 import { useGameStore } from '../../store/useGameStore';
 import type { GameAction } from '../../types/actions';
 import {
@@ -10,14 +11,18 @@ import {
   BookOpenIcon,
   BrainCogIcon,
   BriefcaseIcon,
+  BuildingIcon,
   CalendarCheckIcon,
+  ClockIcon,
   CodeIcon,
   CoffeeIcon,
+  CrownIcon,
   DollarIcon,
   DumbbellIcon,
   FileTextIcon,
   FlagIcon,
   GamepadIcon,
+  GlobeIcon,
   GraduationCapIcon,
   HammerIcon,
   HeartHandshakeIcon,
@@ -33,9 +38,13 @@ import {
   RocketIcon,
   SparklesIcon,
   SprayCanIcon,
+  StarIcon,
   TicketIcon,
   TreesIcon,
+  TrendingUpIcon,
   TwitterIcon,
+  UserCogIcon,
+  UserIcon,
   UsersIcon,
   VideoIcon,
   WrenchIcon,
@@ -53,12 +62,44 @@ const ACTION_ICONS: Record<string, React.ReactNode> = {
   side_project: <RocketIcon size={24} />,
   master_degree: <GraduationCapIcon size={24} />,
 
-  // WORK actions
+  // WORK actions - Universal
+  apply_job: <BriefcaseIcon size={24} />,
+  find_freelance: <GlobeIcon size={24} />,
+
+  // WORK actions - Hustler
   gig_fix: <WrenchIcon size={24} />,
   gig_build: <HammerIcon size={24} />,
+  hustle_portfolio: <StarIcon size={24} />,
+  hustle_invoice: <DollarIcon size={24} />,
+  hustle_proposal: <FileTextIcon size={24} />,
+
+  // WORK actions - Corporate L1
   corp_ticket: <TicketIcon size={24} />,
+  corp_standup: <UsersIcon size={24} />,
+  corp_code_review: <CodeIcon size={24} />,
+  corp_oncall: <ClockIcon size={24} />,
+
+  // WORK actions - Corporate Management
   corp_lead: <FlagIcon size={24} />,
   meetings: <CalendarCheckIcon size={24} />,
+  mgmt_1on1: <UserCogIcon size={24} />,
+  mgmt_perf_review: <UserIcon size={24} />,
+  mgmt_roadmap: <TrendingUpIcon size={24} />,
+
+  // WORK actions - Corporate IC
+  ic_architecture: <BuildingIcon size={24} />,
+  ic_tech_talk: <MicIcon size={24} />,
+  ic_rfc: <FileTextIcon size={24} />,
+
+  // WORK actions - Hustler Business
+  agency_pitch: <CrownIcon size={24} />,
+  agency_hire: <UsersIcon size={24} />,
+  agency_sponsor: <DollarIcon size={24} />,
+
+  // WORK actions - Hustler Specialist
+  specialist_retainer: <FileTextIcon size={24} />,
+  specialist_audit: <CodeIcon size={24} />,
+  specialist_workshop: <GraduationCapIcon size={24} />,
 
   // NETWORK actions
   tweet: <TwitterIcon size={24} />,
@@ -96,7 +137,12 @@ interface MobileActionSheetProps {
  * Swipeable and tap-to-close.
  */
 export function MobileActionSheet({ category, onClose }: MobileActionSheetProps) {
-  const categoryActions = ACTIONS.filter(action => action.category === category);
+  const { career } = useGameStore();
+
+  // Filter actions based on job requirements (only affects WORK category)
+  const availableActions = useMemo(() => filterActionsForJob(ACTIONS, career), [career]);
+
+  const categoryActions = availableActions.filter(action => action.category === category);
 
   return (
     <>

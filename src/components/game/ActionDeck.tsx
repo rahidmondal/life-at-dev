@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ACTIONS } from '../../data/actions';
+import { filterActionsForJob } from '../../engine/actionFilter';
 import { useGameStore } from '../../store/useGameStore';
 import type { ActionCategory, GameAction } from '../../types/actions';
 import {
@@ -10,14 +11,18 @@ import {
   BookOpenIcon,
   BrainCogIcon,
   BriefcaseIcon,
+  BuildingIcon,
   CalendarCheckIcon,
+  ClockIcon,
   CodeIcon,
   CoffeeIcon,
+  CrownIcon,
   DollarIcon,
   DumbbellIcon,
   FileTextIcon,
   FlagIcon,
   GamepadIcon,
+  GlobeIcon,
   GraduationCapIcon,
   HammerIcon,
   HeartHandshakeIcon,
@@ -33,9 +38,13 @@ import {
   RocketIcon,
   SparklesIcon,
   SprayCanIcon,
+  StarIcon,
   TicketIcon,
   TreesIcon,
+  TrendingUpIcon,
   TwitterIcon,
+  UserCogIcon,
+  UserIcon,
   UsersIcon,
   VideoIcon,
   WrenchIcon,
@@ -59,12 +68,44 @@ const ACTION_ICONS: Record<string, React.ReactNode> = {
   side_project: <RocketIcon size={32} />,
   master_degree: <GraduationCapIcon size={32} />,
 
-  // WORK actions
+  // WORK actions - Universal
+  apply_job: <BriefcaseIcon size={32} />,
+  find_freelance: <GlobeIcon size={32} />,
+
+  // WORK actions - Hustler
   gig_fix: <WrenchIcon size={32} />,
   gig_build: <HammerIcon size={32} />,
+  hustle_portfolio: <StarIcon size={32} />,
+  hustle_invoice: <DollarIcon size={32} />,
+  hustle_proposal: <FileTextIcon size={32} />,
+
+  // WORK actions - Corporate L1
   corp_ticket: <TicketIcon size={32} />,
+  corp_standup: <UsersIcon size={32} />,
+  corp_code_review: <CodeIcon size={32} />,
+  corp_oncall: <ClockIcon size={32} />,
+
+  // WORK actions - Corporate Management
   corp_lead: <FlagIcon size={32} />,
   meetings: <CalendarCheckIcon size={32} />,
+  mgmt_1on1: <UserCogIcon size={32} />,
+  mgmt_perf_review: <UserIcon size={32} />,
+  mgmt_roadmap: <TrendingUpIcon size={32} />,
+
+  // WORK actions - Corporate IC
+  ic_architecture: <BuildingIcon size={32} />,
+  ic_tech_talk: <MicIcon size={32} />,
+  ic_rfc: <FileTextIcon size={32} />,
+
+  // WORK actions - Hustler Business
+  agency_pitch: <CrownIcon size={32} />,
+  agency_hire: <UsersIcon size={32} />,
+  agency_sponsor: <DollarIcon size={32} />,
+
+  // WORK actions - Hustler Specialist
+  specialist_retainer: <FileTextIcon size={32} />,
+  specialist_audit: <CodeIcon size={32} />,
+  specialist_workshop: <GraduationCapIcon size={32} />,
 
   // NETWORK actions
   tweet: <TwitterIcon size={32} />,
@@ -94,8 +135,12 @@ const getActionIcon = (actionId: string): React.ReactNode => {
 
 export function ActionDeck() {
   const [activeCategory, setActiveCategory] = useState<ActionCategory>('SKILL');
+  const { career } = useGameStore();
 
-  const categoryActions = ACTIONS.filter(action => action.category === activeCategory);
+  // Filter actions based on job requirements (only affects WORK category)
+  const availableActions = useMemo(() => filterActionsForJob(ACTIONS, career), [career]);
+
+  const categoryActions = availableActions.filter(action => action.category === activeCategory);
 
   return (
     <div className="flex flex-col h-full bg-[#0D1117]">
