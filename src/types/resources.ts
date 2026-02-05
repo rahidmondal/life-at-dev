@@ -45,4 +45,10 @@ export interface Flags {
 
   /** The player's selected starting path. */
   startingPath: 'scholar' | 'funded' | 'dropout' | null;
+
+  /** Whether the player is currently in college (scholar path). */
+  isScholar: boolean;
+
+  /** Remaining years of college for scholar path. 0 means graduated or not a scholar. */
+  scholarYearsRemaining: number;
 }

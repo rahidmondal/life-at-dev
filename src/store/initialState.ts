@@ -44,6 +44,8 @@ export const INITIAL_GAME_STATE: GameState = {
     cooldowns: {},
     accumulatesDebt: false,
     startingPath: null,
+    isScholar: false,
+    scholarYearsRemaining: 0,
   },
   eventLog: [],
 };

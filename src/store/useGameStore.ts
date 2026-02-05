@@ -18,9 +18,9 @@ interface PathConfig {
 
 const PATH_CONFIGS: Record<string, PathConfig> = {
   scholar: {
-    startAge: 22,
+    startAge: 18,
     resources: { money: 0, debt: 0 },
-    skills: { coding: 200, politics: 50 },
+    skills: { coding: 0, politics: 0 },
     xp: { corporate: 0, freelance: 0, reputation: 0 },
     accumulatesDebt: false,
   },
@@ -213,6 +213,7 @@ export const useGameStore = create<GameStore>()(
         startNewGame: async (path?: string, playerName?: string) => {
           const pathConfig = getPathInitialState(path);
           const startingPath = path as 'scholar' | 'funded' | 'dropout';
+          const isScholar = startingPath === 'scholar';
           const initialState: GameState = {
             ...INITIAL_GAME_STATE,
             meta: {
@@ -238,6 +239,8 @@ export const useGameStore = create<GameStore>()(
               ...INITIAL_GAME_STATE.flags,
               accumulatesDebt: pathConfig.accumulatesDebt,
               startingPath,
+              isScholar,
+              scholarYearsRemaining: isScholar ? 4 : 0,
             },
           };
 

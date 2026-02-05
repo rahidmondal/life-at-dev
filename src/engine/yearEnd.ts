@@ -1,7 +1,14 @@
 import { JOB_REGISTRY } from '../data/tracks';
-import type { GameState } from '../types/gamestate';
+import type { GameState, PlayerStats } from '../types/gamestate';
+import type { Flags } from '../types/resources';
 import { processAnnualDebtPayment } from './debt';
 import { isYearEnd } from './time';
+
+/**
+ * Scholar skill bonus per year of college.
+ */
+const SCHOLAR_YEARLY_SKILL_BONUS = 50;
+const SCHOLAR_YEARLY_POLITICS_BONUS = 15;
 
 /**
  * Default rent rate if job doesn't specify one.
@@ -101,6 +108,41 @@ export function calculateBankruptcyThreshold(salary: number): number {
   // Minimum threshold of $5000 for unemployed/low-income players
   const minThreshold = 5000;
   return Math.max(minThreshold, salary * BANKRUPTCY_THRESHOLD_RATE);
+}
+
+/**
+ * Process scholar year progression.
+ * Decrements scholar years remaining and applies skill bonuses during college.
+ * Returns updated stats and flags.
+ */
+function processScholarProgress(state: GameState): { stats: PlayerStats; flags: Partial<Flags> } {
+  const { flags, stats } = state;
+
+  // Not a scholar or already graduated
+  if (!flags.isScholar || flags.scholarYearsRemaining <= 0) {
+    return { stats, flags: {} };
+  }
+
+  // Decrement years remaining
+  const newYearsRemaining = flags.scholarYearsRemaining - 1;
+  const isGraduating = newYearsRemaining === 0;
+
+  // Apply yearly skill bonuses from college education
+  const newStats: PlayerStats = {
+    ...stats,
+    skills: {
+      coding: stats.skills.coding + SCHOLAR_YEARLY_SKILL_BONUS,
+      politics: stats.skills.politics + SCHOLAR_YEARLY_POLITICS_BONUS,
+    },
+  };
+
+  return {
+    stats: newStats,
+    flags: {
+      scholarYearsRemaining: newYearsRemaining,
+      isScholar: !isGraduating, // No longer a scholar after graduation
+    },
+  };
 }
 
 /**
@@ -238,8 +280,10 @@ export function processYearEnd(state: GameState): YearEndResult {
       money: Math.round(newMoney),
       debt: Math.round(newDebt),
     },
+    stats: processScholarProgress(state).stats,
     flags: {
       ...state.flags,
+      ...processScholarProgress(state).flags,
       isBankrupt: isBankrupt || state.flags.isBankrupt,
       consecutiveMissedPayments: debtResult.newConsecutiveMissedPayments,
       totalMissedPayments: debtResult.newTotalMissedPayments,

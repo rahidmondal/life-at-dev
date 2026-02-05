@@ -164,3 +164,74 @@ describe('isYearEnd', () => {
     expect(isYearEnd(100)).toBe(false);
   });
 });
+
+describe('scholar progress', () => {
+  it('decrements scholar years at year end', () => {
+    const state: GameState = {
+      ...INITIAL_GAME_STATE,
+      flags: {
+        ...INITIAL_GAME_STATE.flags,
+        isScholar: true,
+        scholarYearsRemaining: 4,
+      },
+    };
+
+    const result = processYearEnd(state);
+    expect(result.newState.flags.scholarYearsRemaining).toBe(3);
+    expect(result.newState.flags.isScholar).toBe(true);
+  });
+
+  it('grants skill bonuses during scholar years', () => {
+    const state: GameState = {
+      ...INITIAL_GAME_STATE,
+      stats: {
+        ...INITIAL_GAME_STATE.stats,
+        skills: { coding: 0, politics: 0 },
+      },
+      flags: {
+        ...INITIAL_GAME_STATE.flags,
+        isScholar: true,
+        scholarYearsRemaining: 4,
+      },
+    };
+
+    const result = processYearEnd(state);
+    expect(result.newState.stats.skills.coding).toBe(50); // SCHOLAR_YEARLY_SKILL_BONUS
+    expect(result.newState.stats.skills.politics).toBe(15); // SCHOLAR_YEARLY_POLITICS_BONUS
+  });
+
+  it('graduates scholar after 4 years', () => {
+    const state: GameState = {
+      ...INITIAL_GAME_STATE,
+      flags: {
+        ...INITIAL_GAME_STATE.flags,
+        isScholar: true,
+        scholarYearsRemaining: 1,
+      },
+    };
+
+    const result = processYearEnd(state);
+    expect(result.newState.flags.scholarYearsRemaining).toBe(0);
+    expect(result.newState.flags.isScholar).toBe(false);
+  });
+
+  it('does not affect non-scholar players', () => {
+    const state: GameState = {
+      ...INITIAL_GAME_STATE,
+      stats: {
+        ...INITIAL_GAME_STATE.stats,
+        skills: { coding: 100, politics: 50 },
+      },
+      flags: {
+        ...INITIAL_GAME_STATE.flags,
+        isScholar: false,
+        scholarYearsRemaining: 0,
+      },
+    };
+
+    const result = processYearEnd(state);
+    // Skills should not change from scholar bonus
+    expect(result.newState.stats.skills.coding).toBe(100);
+    expect(result.newState.stats.skills.politics).toBe(50);
+  });
+});

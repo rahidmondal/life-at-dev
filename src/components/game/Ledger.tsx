@@ -116,7 +116,11 @@ export function Ledger({ compact = false }: LedgerProps) {
             </div>
           </div>
           <h2 className="text-[#39D353] font-bold">{meta.playerName || 'Developer'}</h2>
-          <p className="text-[#8B949E] text-sm">{JOB_REGISTRY[career.currentJobId].title}</p>
+          <p className="text-[#8B949E] text-sm">
+            {flags.isScholar
+              ? `Student (Year ${String(4 - flags.scholarYearsRemaining + 1)}/4)`
+              : JOB_REGISTRY[career.currentJobId].title}
+          </p>
           {flags.startingPath && (
             <div
               className="mt-1 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"
@@ -126,7 +130,11 @@ export function Ledger({ compact = false }: LedgerProps) {
               }}
             >
               <span>{PATH_LABELS[flags.startingPath].emoji}</span>
-              <span>{PATH_LABELS[flags.startingPath].label}</span>
+              <span>
+                {flags.isScholar
+                  ? `College (${String(flags.scholarYearsRemaining)} yrs left)`
+                  : PATH_LABELS[flags.startingPath].label}
+              </span>
               {flags.startingPath === 'funded' && resources.debt > 0 && (
                 <span className="text-[#FF7B72]"> • ${resources.debt.toLocaleString()} debt</span>
               )}
