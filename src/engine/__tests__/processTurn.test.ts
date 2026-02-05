@@ -64,6 +64,8 @@ function createMockState(overrides: MockOverrides = {}): GameState {
       isScholar: false,
       scholarYearsRemaining: 0,
       hasGraduated: false,
+      purchasedInvestments: [],
+      activeBuffs: [],
     },
     eventLog: [],
   };

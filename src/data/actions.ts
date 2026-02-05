@@ -694,6 +694,245 @@ export const ACTIONS: GameAction[] = [
       description: '+20% Recovery Efficiency (Health)',
     },
   },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // INVEST: Learning & Skills (Tier 1-3)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'online_course_basic',
+    label: 'Online Course (Basic)',
+    category: 'INVEST',
+    energyCost: 15,
+    moneyCost: 50,
+    rewards: { skill: 20 },
+    duration: 0,
+    passiveBuff: {
+      stat: 'skill',
+      type: 'flat',
+      value: 2,
+      description: '+2 Skill/Week (Fundamentals)',
+    },
+  },
+
+  {
+    id: 'online_course_advanced',
+    label: 'Online Course (Advanced)',
+    category: 'INVEST',
+    energyCost: 25,
+    moneyCost: 300,
+    rewards: { skill: 50 },
+    requirements: { skill: 500 },
+    duration: 1,
+    passiveBuff: {
+      stat: 'skill',
+      type: 'flat',
+      value: 8,
+      description: '+8 Skill/Week (Deep dive)',
+    },
+  },
+
+  {
+    id: 'bootcamp_intensive',
+    label: 'Coding Bootcamp',
+    category: 'INVEST',
+    energyCost: 60,
+    moneyCost: 5000,
+    rewards: { skill: 200, stress: 20 },
+    requirements: { money: 5000 },
+    duration: 4,
+    passiveBuff: {
+      stat: 'skill',
+      type: 'multiplier',
+      value: 1.25,
+      description: '+25% Skill Gain (Intensive training)',
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // INVEST: Subscriptions (Recurring)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'sub_learning_platform',
+    label: 'Learning Platform Sub',
+    category: 'INVEST',
+    energyCost: 5,
+    moneyCost: 30,
+    rewards: {},
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'xp',
+      type: 'flat',
+      value: 10,
+      description: '+10 XP/Week (Tutorials)',
+    },
+  },
+
+  {
+    id: 'sub_gym_membership',
+    label: 'Gym Membership',
+    category: 'INVEST',
+    energyCost: 10,
+    moneyCost: 50,
+    rewards: { stress: -5 },
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'stress',
+      type: 'multiplier',
+      value: 0.85,
+      description: '-15% Stress Gain (Exercise)',
+    },
+  },
+
+  {
+    id: 'sub_meal_prep',
+    label: 'Meal Prep Service',
+    category: 'INVEST',
+    energyCost: 5,
+    moneyCost: 100,
+    rewards: {},
+    requirements: { money: 2000 },
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'energy',
+      type: 'flat',
+      value: 10,
+      description: '+10 Energy/Week (No cooking)',
+    },
+  },
+
+  {
+    id: 'sub_coworking',
+    label: 'Coworking Space',
+    category: 'INVEST',
+    energyCost: 10,
+    moneyCost: 200,
+    rewards: { fulfillment: 10 },
+    requirements: { money: 3000 },
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'skill',
+      type: 'multiplier',
+      value: 1.1,
+      description: '+10% Skill Gain (Focus zone)',
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // INVEST: Equipment (One-time, Tiered)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'monitor_ultrawide',
+    label: 'Ultrawide Monitor',
+    category: 'INVEST',
+    energyCost: 15,
+    moneyCost: 800,
+    rewards: { stress: -5 },
+    requirements: { money: 800 },
+    duration: 0,
+    passiveBuff: {
+      stat: 'skill',
+      type: 'multiplier',
+      value: 1.05,
+      description: '+5% Skill Gain (Screen real estate)',
+    },
+  },
+
+  {
+    id: 'standing_desk',
+    label: 'Standing Desk',
+    category: 'INVEST',
+    energyCost: 30,
+    moneyCost: 600,
+    rewards: { stress: -3 },
+    requirements: { money: 600 },
+    duration: 1,
+    passiveBuff: {
+      stat: 'stress',
+      type: 'multiplier',
+      value: 0.95,
+      description: '-5% Stress from Work (Posture)',
+    },
+  },
+
+  {
+    id: 'noise_cancel_headphones',
+    label: 'Noise-Cancel Headphones',
+    category: 'INVEST',
+    energyCost: 10,
+    moneyCost: 350,
+    rewards: { stress: -5 },
+    duration: 0,
+    passiveBuff: {
+      stat: 'recovery',
+      type: 'multiplier',
+      value: 1.1,
+      description: '+10% Recovery (Focus mode)',
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // INVEST: Lifestyle (High-tier)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'hire_personal_trainer',
+    label: 'Personal Trainer',
+    category: 'INVEST',
+    energyCost: 20,
+    moneyCost: 400,
+    rewards: { stress: -10 },
+    requirements: { money: 10000 },
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'recovery',
+      type: 'multiplier',
+      value: 1.3,
+      description: '+30% Recovery (Optimized workouts)',
+    },
+  },
+
+  {
+    id: 'apartment_upgrade',
+    label: 'Better Apartment',
+    category: 'INVEST',
+    energyCost: 50,
+    moneyCost: 10000,
+    rewards: { stress: -15, fulfillment: 100 },
+    requirements: { money: 15000 },
+    duration: 2,
+    passiveBuff: {
+      stat: 'stress',
+      type: 'multiplier',
+      value: 0.8,
+      description: '-20% Stress Gain (Comfortable living)',
+    },
+  },
+
+  {
+    id: 'hire_virtual_assistant',
+    label: 'Virtual Assistant',
+    category: 'INVEST',
+    energyCost: 10,
+    moneyCost: 500,
+    rewards: {},
+    requirements: { money: 20000 },
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'energy',
+      type: 'flat',
+      value: 25,
+      description: '+25 Energy/Week (Delegated tasks)',
+    },
+  },
 ];
 
 /** Lookup map for O(1) action retrieval by ID. */

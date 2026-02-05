@@ -139,8 +139,11 @@ interface MobileActionSheetProps {
 export function MobileActionSheet({ category, onClose }: MobileActionSheetProps) {
   const { career, flags } = useGameStore();
 
-  // Filter actions based on job requirements and student status
-  const availableActions = useMemo(() => filterActionsForJob(ACTIONS, { career, flags }), [career, flags]);
+  // Filter actions based on job requirements, student status, and purchased investments
+  const availableActions = useMemo(
+    () => filterActionsForJob(ACTIONS, { career, flags, purchasedInvestments: flags.purchasedInvestments }),
+    [career, flags],
+  );
 
   const categoryActions = availableActions.filter(action => action.category === category);
 

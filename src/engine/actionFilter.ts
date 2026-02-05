@@ -9,6 +9,8 @@ import type { Flags } from '../types/resources';
 export interface ActionFilterContext {
   career: CareerState;
   flags: Partial<Flags>;
+  /** List of already-purchased non-recurring investment action IDs */
+  purchasedInvestments?: string[];
 }
 
 /**
@@ -30,6 +32,13 @@ export function isActionAvailableForJob(action: GameAction, context: ActionFilte
     }
     // Students can use student-only actions
     return true;
+  }
+
+  // Filter out already-purchased non-recurring INVEST actions
+  if (action.category === 'INVEST' && action.passiveBuff && !action.isRecurring) {
+    if (context.purchasedInvestments?.includes(action.id)) {
+      return false;
+    }
   }
 
   // Non-WORK actions are always available (no job filtering) for non-students

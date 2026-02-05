@@ -47,6 +47,8 @@ const createMockGameState = (overrides?: Partial<GameState>): GameState => ({
     isScholar: false,
     scholarYearsRemaining: 0,
     hasGraduated: false,
+    purchasedInvestments: [],
+    activeBuffs: [],
   },
   eventLog: [],
   ...overrides,

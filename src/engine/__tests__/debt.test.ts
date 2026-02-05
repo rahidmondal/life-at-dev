@@ -62,6 +62,8 @@ function createTestState(
       isScholar: false,
       scholarYearsRemaining: 0,
       hasGraduated: false,
+      purchasedInvestments: [],
+      activeBuffs: [],
     },
     eventLog: [],
   };

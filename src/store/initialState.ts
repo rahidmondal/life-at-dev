@@ -47,6 +47,8 @@ export const INITIAL_GAME_STATE: GameState = {
     isScholar: false,
     scholarYearsRemaining: 0,
     hasGraduated: false,
+    purchasedInvestments: [],
+    activeBuffs: [],
   },
   eventLog: [],
 };

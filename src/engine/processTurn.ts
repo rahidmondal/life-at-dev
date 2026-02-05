@@ -1,6 +1,8 @@
 import { ACTIONS_REGISTRY } from '../data/actions';
 import { JOB_REGISTRY } from '../data/tracks';
 import type { GameState } from '../types/gamestate';
+import type { ActiveBuff } from '../types/resources';
+import { applyRecoveryBuffs, applySkillBuffs, applyStressBuffs, hasAlreadyPurchased } from './buffs';
 import { hasMissedPayment, makeDebtPayment, processWeeklyDebt } from './debt';
 import { generateEventLogEntry } from './eventLog';
 import { triggerRandomEvents } from './events';
@@ -30,6 +32,14 @@ export function processTurn(state: GameState, actionId: string): GameState {
 
   const action = ACTIONS_REGISTRY[actionId];
 
+  // Check if this is a non-recurring INVEST action that's already purchased
+  // Return state unchanged (no-op) rather than crashing
+  if (action.category === 'INVEST' && action.passiveBuff && !action.isRecurring) {
+    if (hasAlreadyPurchased(state.flags.purchasedInvestments, actionId)) {
+      return state;
+    }
+  }
+
   if (state.resources.money < action.moneyCost) {
     throw new Error('Insufficient money');
   }
@@ -40,6 +50,7 @@ export function processTurn(state: GameState, actionId: string): GameState {
 
   const currentJob = JOB_REGISTRY[state.career.currentJobId];
   const weeks = Math.max(0, action.duration ?? 0);
+  const activeBuffs = state.flags.activeBuffs;
 
   let money = state.resources.money - action.moneyCost;
   let energy = calculateResourceDelta(
@@ -50,12 +61,18 @@ export function processTurn(state: GameState, actionId: string): GameState {
   );
 
   if (action.energyGain) {
-    energy = calculateResourceDelta(energy, action.energyGain, RESOURCE_BOUNDS.energy.min, RESOURCE_BOUNDS.energy.max);
+    // Apply recovery buffs to energy restoration
+    const buffedEnergyGain = applyRecoveryBuffs(activeBuffs, action.energyGain);
+    energy = calculateResourceDelta(energy, buffedEnergyGain, RESOURCE_BOUNDS.energy.min, RESOURCE_BOUNDS.energy.max);
   }
+
+  // Apply stress buffs - reduce stress gain from work actions
+  const baseStressChange = action.rewards.stress ?? 0;
+  const buffedStressChange = baseStressChange > 0 ? applyStressBuffs(activeBuffs, baseStressChange) : baseStressChange;
 
   const stress = calculateResourceDelta(
     state.resources.stress,
-    action.rewards.stress ?? 0,
+    buffedStressChange,
     RESOURCE_BOUNDS.stress.min,
     RESOURCE_BOUNDS.stress.max,
   );
@@ -85,11 +102,15 @@ export function processTurn(state: GameState, actionId: string): GameState {
 
     if (currentJob.weeklyGains) {
       if (currentJob.weeklyGains.coding) {
-        coding += calculateDiminishingGrowth(coding, currentJob.weeklyGains.coding * weeks);
+        // Apply skill buffs to job coding gains
+        const buffedCodingGain = applySkillBuffs(activeBuffs, currentJob.weeklyGains.coding * weeks);
+        coding += calculateDiminishingGrowth(coding, buffedCodingGain);
       }
 
       if (currentJob.weeklyGains.politics) {
-        politics += calculateDiminishingGrowth(politics, currentJob.weeklyGains.politics * weeks);
+        // Apply skill buffs to job politics gains
+        const buffedPoliticsGain = applySkillBuffs(activeBuffs, currentJob.weeklyGains.politics * weeks);
+        politics += calculateDiminishingGrowth(politics, buffedPoliticsGain);
       }
 
       corporate += (currentJob.weeklyGains.corporate ?? 0) * weeks;
@@ -102,7 +123,9 @@ export function processTurn(state: GameState, actionId: string): GameState {
   }
 
   if (action.rewards.skill) {
-    coding += calculateDiminishingGrowth(coding, action.rewards.skill);
+    // Apply skill buffs to action skill rewards
+    const buffedSkillGain = applySkillBuffs(activeBuffs, action.rewards.skill);
+    coding += calculateDiminishingGrowth(coding, buffedSkillGain);
   }
 
   if (action.rewards.politics) {
@@ -152,6 +175,30 @@ export function processTurn(state: GameState, actionId: string): GameState {
   const finalMoney = money;
   const finalCoding = Math.floor(coding);
 
+  // Handle INVEST action buff acquisition
+  const newActiveBuffs = [...activeBuffs];
+  const newPurchasedInvestments = [...state.flags.purchasedInvestments];
+
+  if (action.category === 'INVEST' && action.passiveBuff) {
+    const newBuff: ActiveBuff = {
+      sourceActionId: actionId,
+      stat: action.passiveBuff.stat,
+      type: action.passiveBuff.type,
+      value: action.passiveBuff.value,
+      description: action.passiveBuff.description,
+      acquiredAt: meta.tick,
+      isRecurring: action.isRecurring ?? false,
+      weeklyCost: action.isRecurring ? action.moneyCost : undefined,
+    };
+
+    newActiveBuffs.push(newBuff);
+
+    // Track non-recurring investments as purchased
+    if (!action.isRecurring) {
+      newPurchasedInvestments.push(actionId);
+    }
+  }
+
   // Calculate deltas for the event log
   const deltas = {
     skill: finalCoding - state.stats.skills.coding,
@@ -187,6 +234,8 @@ export function processTurn(state: GameState, actionId: string): GameState {
     flags: {
       ...state.flags,
       isBurnedOut,
+      activeBuffs: newActiveBuffs,
+      purchasedInvestments: newPurchasedInvestments,
     },
   };
 

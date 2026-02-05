@@ -359,34 +359,46 @@ export const useGameStore = create<GameStore>()(
           ...extractGameState(state),
           currentSaveId: state.currentSaveId,
         }),
-        migrate: (persistedState, version) => {
-          // Migration from version 0 (no playerName, no debt fields)
-          if (version === 0) {
-            interface OldState {
-              meta?: { playerName?: string; [key: string]: unknown };
-              resources?: { debt?: number; [key: string]: unknown };
-              flags?: { accumulatesDebt?: boolean; startingPath?: string; [key: string]: unknown };
+        migrate: (persistedState, _version) => {
+          interface OldState {
+            meta?: { playerName?: string; [key: string]: unknown };
+            resources?: { debt?: number; [key: string]: unknown };
+            flags?: {
+              accumulatesDebt?: boolean;
+              startingPath?: string;
+              isScholar?: boolean;
+              scholarYearsRemaining?: number;
+              hasGraduated?: boolean;
+              purchasedInvestments?: string[];
+              activeBuffs?: unknown[];
               [key: string]: unknown;
-            }
-            const state = persistedState as OldState;
-            return {
-              ...state,
-              meta: {
-                ...state.meta,
-                playerName: state.meta?.playerName ?? 'Developer',
-              },
-              resources: {
-                ...state.resources,
-                debt: state.resources?.debt ?? 0,
-              },
-              flags: {
-                ...state.flags,
-                accumulatesDebt: state.flags?.accumulatesDebt ?? false,
-                startingPath: state.flags?.startingPath ?? null,
-              },
             };
+            [key: string]: unknown;
           }
-          return persistedState;
+          const state = persistedState as OldState;
+
+          // Always ensure new fields exist (handles all versions)
+          return {
+            ...state,
+            meta: {
+              ...state.meta,
+              playerName: state.meta?.playerName ?? 'Developer',
+            },
+            resources: {
+              ...state.resources,
+              debt: state.resources?.debt ?? 0,
+            },
+            flags: {
+              ...state.flags,
+              accumulatesDebt: state.flags?.accumulatesDebt ?? false,
+              startingPath: state.flags?.startingPath ?? null,
+              isScholar: state.flags?.isScholar ?? false,
+              scholarYearsRemaining: state.flags?.scholarYearsRemaining ?? 0,
+              hasGraduated: state.flags?.hasGraduated ?? false,
+              purchasedInvestments: state.flags?.purchasedInvestments ?? [],
+              activeBuffs: state.flags?.activeBuffs ?? [],
+            },
+          };
         },
       },
     ),

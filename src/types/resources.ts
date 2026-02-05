@@ -1,8 +1,31 @@
 /**
  * Resources: The Ledger - Numbers that fluctuate weekly.
+ */
 
 /** Total weeks played. The simulation's heartbeat. */
 export type GameTime = number;
+
+/**
+ * ActiveBuff: A passive buff currently active from an INVEST action.
+ */
+export interface ActiveBuff {
+  /** ID of the action that granted this buff. */
+  sourceActionId: string;
+  /** Which stat is modified. */
+  stat: 'stress' | 'skill' | 'xp' | 'energy' | 'recovery';
+  /** Modifier type: 'multiplier' (e.g., 0.9 = -10%) or 'flat' (e.g., +5). */
+  type: 'multiplier' | 'flat';
+  /** The modifier value. */
+  value: number;
+  /** Human-readable description. */
+  description: string;
+  /** Tick when buff was acquired. */
+  acquiredAt: number;
+  /** Whether this is a recurring subscription (needs weekly payment). */
+  isRecurring: boolean;
+  /** Weekly cost if recurring. */
+  weeklyCost?: number;
+}
 
 export interface Resources {
   /** The Enabler. Buys time and speed. */
@@ -54,4 +77,10 @@ export interface Flags {
 
   /** Whether the player has completed their degree (scholar/funded paths). */
   hasGraduated: boolean;
+
+  /** Set of investment action IDs that have been purchased (non-recurring). */
+  purchasedInvestments: string[];
+
+  /** Currently active passive buffs from INVEST actions. */
+  activeBuffs: ActiveBuff[];
 }
