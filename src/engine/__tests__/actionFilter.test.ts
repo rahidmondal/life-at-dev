@@ -223,4 +223,96 @@ describe('actionFilter', () => {
       expect(workActions.every(a => a.category === 'WORK')).toBe(true);
     });
   });
+
+  describe('purchased investments filtering', () => {
+    it('should filter out already-purchased non-recurring INVEST actions', () => {
+      const actions: GameAction[] = [
+        {
+          id: 'buy_keyboard',
+          label: 'Keyboard',
+          category: 'INVEST',
+          energyCost: 10,
+          moneyCost: 150,
+          rewards: {},
+          passiveBuff: { stat: 'skill', type: 'multiplier', value: 1.02, description: 'test' },
+        },
+        {
+          id: 'buy_chair',
+          label: 'Chair',
+          category: 'INVEST',
+          energyCost: 10,
+          moneyCost: 1200,
+          rewards: {},
+          passiveBuff: { stat: 'stress', type: 'multiplier', value: 0.9, description: 'test' },
+        },
+        { id: 'skill_action', label: 'Skill', category: 'SKILL', energyCost: 10, moneyCost: 0, rewards: { skill: 5 } },
+      ];
+
+      // With keyboard already purchased
+      const filtered = filterActionsForJob(actions, {
+        career: { currentJobId: 'corp_junior', jobStartTick: 0, jobHistory: [] },
+        flags: {},
+        purchasedInvestments: ['buy_keyboard'],
+      });
+
+      expect(filtered.map(a => a.id)).not.toContain('buy_keyboard');
+      expect(filtered.map(a => a.id)).toContain('buy_chair');
+      expect(filtered.map(a => a.id)).toContain('skill_action');
+    });
+
+    it('should NOT filter recurring INVEST actions', () => {
+      const actions: GameAction[] = [
+        {
+          id: 'hire_cleaner',
+          label: 'Cleaner',
+          category: 'INVEST',
+          energyCost: 10,
+          moneyCost: 250,
+          rewards: {},
+          isRecurring: true,
+          passiveBuff: { stat: 'energy', type: 'flat', value: 15, description: 'test' },
+        },
+      ];
+
+      // Even if somehow in purchasedInvestments, recurring should still appear
+      const filtered = filterActionsForJob(actions, {
+        career: { currentJobId: 'corp_junior', jobStartTick: 0, jobHistory: [] },
+        flags: {},
+        purchasedInvestments: ['hire_cleaner'],
+      });
+
+      expect(filtered.map(a => a.id)).toContain('hire_cleaner');
+    });
+
+    it('should show all INVEST actions when nothing purchased', () => {
+      const actions: GameAction[] = [
+        {
+          id: 'buy_keyboard',
+          label: 'Keyboard',
+          category: 'INVEST',
+          energyCost: 10,
+          moneyCost: 150,
+          rewards: {},
+          passiveBuff: { stat: 'skill', type: 'multiplier', value: 1.02, description: 'test' },
+        },
+        {
+          id: 'buy_chair',
+          label: 'Chair',
+          category: 'INVEST',
+          energyCost: 10,
+          moneyCost: 1200,
+          rewards: {},
+          passiveBuff: { stat: 'stress', type: 'multiplier', value: 0.9, description: 'test' },
+        },
+      ];
+
+      const filtered = filterActionsForJob(actions, {
+        career: { currentJobId: 'corp_junior', jobStartTick: 0, jobHistory: [] },
+        flags: {},
+        purchasedInvestments: [],
+      });
+
+      expect(filtered).toHaveLength(2);
+    });
+  });
 });

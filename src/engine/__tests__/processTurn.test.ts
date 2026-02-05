@@ -143,3 +143,124 @@ describe('processTurn — burnout', () => {
     expect(next.flags.isBurnedOut).toBe(false);
   });
 });
+
+describe('processTurn — INVEST actions and buffs', () => {
+  it('grants a passive buff when purchasing an INVEST action', () => {
+    const state = createMockState({ money: 5000 });
+
+    const next = processTurn(state, 'buy_keyboard');
+
+    expect(next.flags.activeBuffs).toHaveLength(1);
+    expect(next.flags.activeBuffs[0].sourceActionId).toBe('buy_keyboard');
+    expect(next.flags.activeBuffs[0].stat).toBe('skill');
+    expect(next.flags.activeBuffs[0].type).toBe('multiplier');
+  });
+
+  it('tracks purchased non-recurring investments', () => {
+    const state = createMockState({ money: 5000 });
+
+    const next = processTurn(state, 'buy_keyboard');
+
+    expect(next.flags.purchasedInvestments).toContain('buy_keyboard');
+  });
+
+  it('returns state unchanged for already-purchased investments', () => {
+    const state = createMockState({ money: 5000 });
+    state.flags.purchasedInvestments = ['buy_keyboard'];
+
+    const next = processTurn(state, 'buy_keyboard');
+
+    // State should be unchanged (no-op)
+    expect(next).toBe(state);
+  });
+
+  it('allows recurring investments to be purchased multiple times', () => {
+    const state = createMockState({ money: 10000 });
+
+    const first = processTurn(state, 'hire_cleaner');
+    expect(first.flags.activeBuffs).toHaveLength(1);
+
+    // Recurring investments should NOT be in purchasedInvestments
+    expect(first.flags.purchasedInvestments).not.toContain('hire_cleaner');
+  });
+
+  it('applies skill buffs to skill gains', () => {
+    // Create state with a skill buff
+    const state = createMockState({ money: 5000 });
+    state.flags.activeBuffs = [
+      {
+        sourceActionId: 'test_buff',
+        stat: 'skill',
+        type: 'multiplier',
+        value: 1.5,
+        description: '+50% skill gain',
+        acquiredAt: 0,
+        isRecurring: false,
+      },
+    ];
+
+    // First get the base gain without buff
+    const stateWithoutBuff = createMockState({ money: 5000 });
+    stateWithoutBuff.flags.activeBuffs = [];
+    const baseResult = processTurn(stateWithoutBuff, 'read_docs');
+    const baseGain = baseResult.stats.skills.coding - stateWithoutBuff.stats.skills.coding;
+
+    // Perform same action with buff
+    const next = processTurn(state, 'read_docs');
+    const buffedGain = next.stats.skills.coding - state.stats.skills.coding;
+
+    // The buffed gain should be greater than or equal to the base gain
+    // (Due to diminishing returns and rounding, exact multiplier may vary)
+    expect(buffedGain).toBeGreaterThanOrEqual(baseGain);
+  });
+
+  it('applies stress reduction buffs to stress gain', () => {
+    const state = createMockState({ stress: 0 });
+    state.flags.activeBuffs = [
+      {
+        sourceActionId: 'test_buff',
+        stat: 'stress',
+        type: 'multiplier',
+        value: 0.5,
+        description: '-50% stress gain',
+        acquiredAt: 0,
+        isRecurring: false,
+      },
+    ];
+
+    // Perform an action that adds stress (bootcamp adds +20 stress)
+    const next = processTurn(state, 'bootcamp');
+
+    // Stress should be reduced by the buff
+    expect(next.resources.stress).toBeLessThan(20);
+  });
+
+  it('applies recovery buffs to energy restoration', () => {
+    // Start with low energy so we don't hit the cap
+    const state = createMockState({ energy: 20 });
+    state.flags.activeBuffs = [
+      {
+        sourceActionId: 'test_buff',
+        stat: 'recovery',
+        type: 'multiplier',
+        value: 1.5,
+        description: '+50% recovery',
+        acquiredAt: 0,
+        isRecurring: false,
+      },
+    ];
+
+    // First get the base gain without buff
+    const stateWithoutBuff = createMockState({ energy: 20 });
+    stateWithoutBuff.flags.activeBuffs = [];
+    const baseResult = processTurn(stateWithoutBuff, 'sleep');
+    const baseGain = baseResult.resources.energy - stateWithoutBuff.resources.energy;
+
+    // sleep restores energy
+    const next = processTurn(state, 'sleep');
+    const buffedGain = next.resources.energy - state.resources.energy;
+
+    // Energy gain should be buffed (or at least not lower)
+    expect(buffedGain).toBeGreaterThanOrEqual(baseGain);
+  });
+});

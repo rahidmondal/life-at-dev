@@ -215,6 +215,58 @@ describe('scholar progress', () => {
     expect(result.newState.flags.isScholar).toBe(false);
   });
 
+  it('sets hasGraduated flag when scholar completes degree', () => {
+    const state: GameState = {
+      ...INITIAL_GAME_STATE,
+      flags: {
+        ...INITIAL_GAME_STATE.flags,
+        isScholar: true,
+        scholarYearsRemaining: 1,
+        hasGraduated: false,
+      },
+    };
+
+    const result = processYearEnd(state);
+    expect(result.newState.flags.hasGraduated).toBe(true);
+  });
+
+  it('adds graduation event to event log when graduating', () => {
+    const state: GameState = {
+      ...INITIAL_GAME_STATE,
+      flags: {
+        ...INITIAL_GAME_STATE.flags,
+        isScholar: true,
+        scholarYearsRemaining: 1,
+        hasGraduated: false,
+        startingPath: 'scholar',
+      },
+    };
+
+    const result = processYearEnd(state);
+    const graduationEvent = result.newState.eventLog.find(e => e.eventId === 'graduation');
+
+    expect(graduationEvent).toBeDefined();
+    // All graduation messages start with the graduation emoji
+    expect(graduationEvent?.message).toContain('🎓');
+  });
+
+  it('does not set hasGraduated for non-graduating scholars', () => {
+    const state: GameState = {
+      ...INITIAL_GAME_STATE,
+      flags: {
+        ...INITIAL_GAME_STATE.flags,
+        isScholar: true,
+        scholarYearsRemaining: 3, // Still 3 years left
+        hasGraduated: false,
+      },
+    };
+
+    const result = processYearEnd(state);
+    // hasGraduated should remain false (or undefined, not set to true)
+    expect(result.newState.flags.hasGraduated).not.toBe(true);
+    expect(result.newState.flags.scholarYearsRemaining).toBe(2);
+  });
+
   it('does not affect non-scholar players', () => {
     const state: GameState = {
       ...INITIAL_GAME_STATE,
