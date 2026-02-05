@@ -18,6 +18,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 300,
     requirements: {},
     rentRate: 0,
+    energyCost: 0,
+    roleDisplacement: 0,
+    weeklyGains: {
+      coding: 0,
+      freelance: 1,
+      reputation: 0,
+    },
     notes: 'Starting state. No income. Living with parents or friends.',
   },
 
@@ -37,6 +44,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 200,
     requirements: { coding: 100 },
     rentRate: 0.5,
+    energyCost: 25,
+    roleDisplacement: 0.2,
+    weeklyGains: {
+      coding: 3,
+      politics: 1,
+      corporate: 5,
+    },
     notes: 'High energy cost. Cheap shared housing.',
   },
 
@@ -50,6 +64,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 1500,
     requirements: { coding: 500, corporate: 100 },
     rentRate: 0.35,
+    energyCost: 20,
+    roleDisplacement: 0.3,
+    weeklyGains: {
+      coding: 5,
+      politics: 2,
+      corporate: 8,
+    },
     notes: '"The First Job" hurdle. Decent studio apartment.',
   },
 
@@ -63,6 +84,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 3000,
     requirements: { coding: 1500, corporate: 1000 },
     rentRate: 0.3,
+    energyCost: 18,
+    roleDisplacement: 0.4,
+    weeklyGains: {
+      coding: 4,
+      politics: 3,
+      corporate: 12,
+    },
     notes: 'The "Grind" phase. Nice 1BR apartment.',
   },
 
@@ -76,6 +104,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 4250,
     requirements: { coding: 3000, corporate: 2500, politics: 100 },
     rentRate: 0.28,
+    energyCost: 15,
+    roleDisplacement: 0.6,
+    weeklyGains: {
+      coding: 3,
+      politics: 5,
+      corporate: 15,
+    },
     notes: 'Unlock Point: L2 Tracks (Management or IC). Premium apartment.',
   },
 
@@ -95,6 +130,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 2000,
     requirements: { coding: 600, freelance: 200, reputation: 50 },
     rentRate: 0,
+    energyCost: 22,
+    roleDisplacement: 0.25,
+    weeklyGains: {
+      coding: 4,
+      freelance: 10,
+      reputation: 3,
+    },
     notes: 'Gigs unlock. High income volatility. Rent paid from gig money.',
   },
 
@@ -108,6 +150,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 3750,
     requirements: { coding: 2000, freelance: 1500, reputation: 500 },
     rentRate: 0,
+    energyCost: 18,
+    roleDisplacement: 0.35,
+    weeklyGains: {
+      coding: 3,
+      freelance: 15,
+      reputation: 5,
+    },
     notes: 'Unlock Point: L2 Tracks (Business or Specialist). Rent paid from gig money.',
   },
 
@@ -128,6 +177,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 6250,
     requirements: { coding: 4500, corporate: 3500, politics: 250 },
     rentRate: 0.25,
+    energyCost: 20,
+    roleDisplacement: 0.3,
+    weeklyGains: {
+      coding: 2,
+      politics: 8,
+      corporate: 20,
+    },
     notes: 'Balancing code & meetings. Urban apartment.',
   },
 
@@ -141,6 +197,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 8500,
     requirements: { coding: 5000, corporate: 5000, politics: 500 },
     rentRate: 0.22,
+    energyCost: 22,
+    roleDisplacement: 0.2,
+    weeklyGains: {
+      coding: 1,
+      politics: 12,
+      corporate: 25,
+    },
     notes: 'Skill decay accelerates here. Nice house or condo.',
   },
 
@@ -154,6 +217,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: undefined,
     requirements: { coding: 7500, corporate: 8000, politics: 2000 },
     rentRate: 0.2,
+    energyCost: 25,
+    roleDisplacement: 0.1,
+    weeklyGains: {
+      coding: 0,
+      politics: 15,
+      corporate: 30,
+    },
     notes: 'Requires "Boss Interview" event. Terminal role. Luxury property.',
   },
 
@@ -174,6 +244,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 5500,
     requirements: { coding: 4000, corporate: 3000, politics: 200 },
     rentRate: 0.26,
+    energyCost: 18,
+    roleDisplacement: 0.5,
+    weeklyGains: {
+      coding: 8,
+      politics: 3,
+      corporate: 15,
+    },
     notes: '"Glue" work required. Upscale living.',
   },
 
@@ -187,6 +264,14 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 6750,
     requirements: { coding: 5500, corporate: 4250, politics: 500 },
     rentRate: 0.24,
+    energyCost: 15,
+    roleDisplacement: 0.6,
+    weeklyGains: {
+      coding: 10,
+      politics: 4,
+      corporate: 18,
+      reputation: 2,
+    },
     notes: 'Harder to get than Manager. Premium property.',
   },
 
@@ -200,6 +285,14 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: undefined,
     requirements: { coding: 7500, corporate: 6000, politics: 1000 },
     rentRate: 0.22,
+    energyCost: 12,
+    roleDisplacement: 0.7,
+    weeklyGains: {
+      coding: 12,
+      politics: 5,
+      corporate: 22,
+      reputation: 5,
+    },
     notes: '"Legendary" status. Terminal role. Elite housing.',
   },
 
@@ -220,6 +313,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 6000,
     requirements: { coding: 4000, freelance: 4000, reputation: 2000 },
     rentRate: 0,
+    energyCost: 25,
+    roleDisplacement: 0.15,
+    weeklyGains: {
+      coding: 2,
+      freelance: 18,
+      reputation: 8,
+    },
     notes: 'Requires hiring employees. High upside. Rent paid from gig money.',
   },
 
@@ -233,6 +333,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 6750,
     requirements: { coding: 4500, freelance: 5000, reputation: 5000 },
     rentRate: 0,
+    energyCost: 20,
+    roleDisplacement: 0.1,
+    weeklyGains: {
+      coding: 1,
+      freelance: 20,
+      reputation: 15,
+    },
     notes: 'Monetize "Reputation". Extreme volatility. Rent paid from gig money.',
   },
 
@@ -246,6 +353,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: undefined,
     requirements: { coding: 7500, freelance: 6500, reputation: 6000 },
     rentRate: 0,
+    energyCost: 28,
+    roleDisplacement: 0.05,
+    weeklyGains: {
+      coding: 0,
+      freelance: 25,
+      reputation: 20,
+    },
     notes: 'The "Unicorn" ending. Terminal role. Rent paid from gig money.',
   },
 
@@ -266,6 +380,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 5750,
     requirements: { coding: 4500, freelance: 3000, reputation: 1000 },
     rentRate: 0,
+    energyCost: 20,
+    roleDisplacement: 0.4,
+    weeklyGains: {
+      coding: 6,
+      freelance: 12,
+      reputation: 4,
+    },
     notes: 'Mercenary work. High stable income. Rent paid from gig money.',
   },
 
@@ -279,6 +400,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: 7250,
     requirements: { coding: 6000, freelance: 5000, reputation: 2500 },
     rentRate: 0,
+    energyCost: 18,
+    roleDisplacement: 0.5,
+    weeklyGains: {
+      coding: 8,
+      freelance: 15,
+      reputation: 6,
+    },
     notes: 'Fixes "Impossible" bugs. Very high income. Rent paid from gig money.',
   },
 
@@ -292,6 +420,13 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     xpCap: undefined,
     requirements: { coding: 9000, freelance: 7000, reputation: 4000 },
     rentRate: 0,
+    energyCost: 15,
+    roleDisplacement: 0.55,
+    weeklyGains: {
+      coding: 10,
+      freelance: 18,
+      reputation: 8,
+    },
     notes: 'The "Oracle" role. Retainer-based. Terminal role. Rent paid from gig money.',
   },
 };

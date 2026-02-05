@@ -67,11 +67,17 @@ export interface YearEndSummary {
  * Calculate yearly rent based on job and salary.
  * Corporate jobs: rentRate * salary
  * Hustler jobs: fixed yearly rent (they handle rent from gig money)
+ * Unemployed: 0 (living with parents/friends)
  */
 export function calculateYearlyRent(jobId: string): number {
   const job = JOB_REGISTRY[jobId] as (typeof JOB_REGISTRY)[string] | undefined;
 
   if (!job) {
+    return 0;
+  }
+
+  // Unemployed pays no rent (living with parents/friends)
+  if (job.id === 'unemployed' || (job.salary === 0 && job.tier === 0)) {
     return 0;
   }
 
