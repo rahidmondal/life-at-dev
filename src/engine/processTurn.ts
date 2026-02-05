@@ -75,6 +75,10 @@ export function processTurn(state: GameState, actionId: string): GameState {
   if (weeks > 0) {
     const roleDisplacement = currentJob.roleDisplacement ?? ROLE_DISPLACEMENT[currentJob.tier];
 
+    // Apply job's weekly energy cost (working takes energy)
+    const jobEnergyCost = (currentJob.energyCost ?? 0) * weeks;
+    energy = calculateResourceDelta(energy, -jobEnergyCost, RESOURCE_BOUNDS.energy.min, RESOURCE_BOUNDS.energy.max);
+
     coding = Math.max(0, coding - calculateDecay(coding, roleDisplacement) * weeks);
     politics = Math.max(0, politics - calculateDecay(politics, roleDisplacement) * weeks);
 
