@@ -5,8 +5,10 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'node',
+    // Use jsdom for component tests
+    environment: 'jsdom',
     globals: true,
+    setupFiles: ['./vitest.setup.ts'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -15,6 +17,7 @@ export default defineConfig({
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
       '**/legacy_v1/**',
       '**/src/legacy_v1/**',
+      '**/e2e/**',
     ],
   },
   resolve: {
