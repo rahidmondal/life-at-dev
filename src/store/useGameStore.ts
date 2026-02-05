@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { processTurn } from '../engine/processTurn';
+import { isYearEnd, processYearEnd } from '../engine/yearEnd';
 import { createSave, loadSave, updateSave } from '../storage/gameStorage';
 import type { GameState } from '../types/gamestate';
 import type { Resources } from '../types/resources';
@@ -55,6 +56,7 @@ interface GameActions {
 
   performAction: (actionId: string) => void;
   advanceWeek: () => void;
+  triggerYearEnd: () => boolean;
 
   startNewGame: (path?: string, playerName?: string) => Promise<void>;
   loadGame: (saveId: string) => Promise<void>;
@@ -162,6 +164,12 @@ export const useGameStore = create<GameStore>()(
           const currentState = extractGameState(get());
           const newState = processTurn(currentState, actionId);
           set({ ...newState }, false, `performAction:${actionId}`);
+
+          // Check if year-end should be triggered after this action
+          if (isYearEnd(newState.meta.tick)) {
+            get().triggerYearEnd();
+          }
+
           void get().saveGame();
         },
 
@@ -177,6 +185,30 @@ export const useGameStore = create<GameStore>()(
             false,
             'advanceWeek',
           ),
+
+        triggerYearEnd: () => {
+          const currentState = extractGameState(get());
+          const result = processYearEnd(currentState);
+
+          if (result.isBankrupt) {
+            // Set bankruptcy flag
+            set(
+              {
+                ...result.newState,
+                flags: {
+                  ...result.newState.flags,
+                  isBankrupt: true,
+                },
+              },
+              false,
+              'yearEnd:bankruptcy',
+            );
+            return true; // Returns true if bankrupt
+          }
+
+          set({ ...result.newState }, false, 'yearEnd:success');
+          return false;
+        },
 
         startNewGame: async (path?: string, playerName?: string) => {
           const pathConfig = getPathInitialState(path);

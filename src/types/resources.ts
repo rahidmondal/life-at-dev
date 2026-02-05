@@ -25,6 +25,9 @@ export interface Flags {
   /** Has the player hit 100 Stress? Permanently lowers Stress Resistance. */
   isBurnedOut: boolean;
 
+  /** Is the player bankrupt? Game over condition. */
+  isBankrupt: boolean;
+
   /** Consecutive weeks of same action category. Triggers Flow State at 3+. */
   streak: number;
 

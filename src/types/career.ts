@@ -72,6 +72,9 @@ export interface JobNode {
   /** Role displacement risk (0-1). Higher = more vulnerable to automation/outsourcing. */
   roleDisplacement?: number;
 
+  /** Rent rate as percentage of salary (0.0-1.0). Default 0.30 (30%). */
+  rentRate?: number;
+
   /** Notes about the job for UI/debug. */
   notes?: string;
 }

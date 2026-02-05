@@ -102,14 +102,15 @@ describe('processTurn — skill decay', () => {
 });
 
 describe('processTurn — salary and XP', () => {
-  it('earns salary only for timed actions', () => {
+  it('does NOT earn weekly salary (salary is now paid at year-end)', () => {
     const state = createMockState({ money: 1000 });
 
     const instant = processTurn(state, 'sleep');
     expect(instant.resources.money).toBe(1000);
 
+    // Timed actions no longer pay weekly salary - salary is paid at year-end
     const timed = processTurn(state, 'tutorial');
-    expect(timed.resources.money).toBeGreaterThan(1000);
+    expect(timed.resources.money).toBe(1000);
   });
 });
 

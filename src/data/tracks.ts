@@ -17,7 +17,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'volatile',
     xpCap: 300,
     requirements: {},
-    notes: 'Starting state. No income.',
+    rentRate: 0,
+    notes: 'Starting state. No income. Living with parents or friends.',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -35,7 +36,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'salary',
     xpCap: 200,
     requirements: { coding: 100 },
-    notes: 'High energy cost.',
+    rentRate: 0.5,
+    notes: 'High energy cost. Cheap shared housing.',
   },
 
   corp_junior: {
@@ -47,7 +49,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'salary',
     xpCap: 1500,
     requirements: { coding: 500, corporate: 100 },
-    notes: '"The First Job" hurdle.',
+    rentRate: 0.35,
+    notes: '"The First Job" hurdle. Decent studio apartment.',
   },
 
   corp_mid: {
@@ -59,7 +62,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'salary',
     xpCap: 3000,
     requirements: { coding: 1500, corporate: 1000 },
-    notes: 'The "Grind" phase.',
+    rentRate: 0.3,
+    notes: 'The "Grind" phase. Nice 1BR apartment.',
   },
 
   corp_senior: {
@@ -71,7 +75,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'salary',
     xpCap: 4250,
     requirements: { coding: 3000, corporate: 2500, politics: 100 },
-    notes: 'Unlock Point: L2 Tracks (Management or IC).',
+    rentRate: 0.28,
+    notes: 'Unlock Point: L2 Tracks (Management or IC). Premium apartment.',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -89,7 +94,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'volatile',
     xpCap: 2000,
     requirements: { coding: 600, freelance: 200, reputation: 50 },
-    notes: 'Gigs unlock. High income volatility.',
+    rentRate: 0,
+    notes: 'Gigs unlock. High income volatility. Rent paid from gig money.',
   },
 
   hustle_nomad: {
@@ -101,7 +107,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'volatile',
     xpCap: 3750,
     requirements: { coding: 2000, freelance: 1500, reputation: 500 },
-    notes: 'Unlock Point: L2 Tracks (Business or Specialist).',
+    rentRate: 0,
+    notes: 'Unlock Point: L2 Tracks (Business or Specialist). Rent paid from gig money.',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -120,7 +127,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'salary',
     xpCap: 6250,
     requirements: { coding: 4500, corporate: 3500, politics: 250 },
-    notes: 'Balancing code & meetings.',
+    rentRate: 0.25,
+    notes: 'Balancing code & meetings. Urban apartment.',
   },
 
   corp_manager: {
@@ -132,7 +140,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'salary',
     xpCap: 8500,
     requirements: { coding: 5000, corporate: 5000, politics: 500 },
-    notes: 'Skill decay accelerates here.',
+    rentRate: 0.22,
+    notes: 'Skill decay accelerates here. Nice house or condo.',
   },
 
   corp_cto: {
@@ -144,7 +153,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'salary',
     xpCap: undefined,
     requirements: { coding: 7500, corporate: 8000, politics: 2000 },
-    notes: 'Requires "Boss Interview" event. Terminal role.',
+    rentRate: 0.2,
+    notes: 'Requires "Boss Interview" event. Terminal role. Luxury property.',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -163,7 +173,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'salary',
     xpCap: 5500,
     requirements: { coding: 4000, corporate: 3000, politics: 200 },
-    notes: '"Glue" work required.',
+    rentRate: 0.26,
+    notes: '"Glue" work required. Upscale living.',
   },
 
   ic_principal: {
@@ -175,7 +186,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'salary',
     xpCap: 6750,
     requirements: { coding: 5500, corporate: 4250, politics: 500 },
-    notes: 'Harder to get than Manager.',
+    rentRate: 0.24,
+    notes: 'Harder to get than Manager. Premium property.',
   },
 
   ic_fellow: {
@@ -187,7 +199,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'salary',
     xpCap: undefined,
     requirements: { coding: 7500, corporate: 6000, politics: 1000 },
-    notes: '"Legendary" status. Terminal role.',
+    rentRate: 0.22,
+    notes: '"Legendary" status. Terminal role. Elite housing.',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -206,7 +219,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'volatile',
     xpCap: 6000,
     requirements: { coding: 4000, freelance: 4000, reputation: 2000 },
-    notes: 'Requires hiring employees. High upside.',
+    rentRate: 0,
+    notes: 'Requires hiring employees. High upside. Rent paid from gig money.',
   },
 
   hustle_influencer: {
@@ -218,7 +232,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'volatile',
     xpCap: 6750,
     requirements: { coding: 4500, freelance: 5000, reputation: 5000 },
-    notes: 'Monetize "Reputation". Extreme volatility.',
+    rentRate: 0,
+    notes: 'Monetize "Reputation". Extreme volatility. Rent paid from gig money.',
   },
 
   hustle_mogul: {
@@ -230,7 +245,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'volatile',
     xpCap: undefined,
     requirements: { coding: 7500, freelance: 6500, reputation: 6000 },
-    notes: 'The "Unicorn" ending. Terminal role.',
+    rentRate: 0,
+    notes: 'The "Unicorn" ending. Terminal role. Rent paid from gig money.',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -249,7 +265,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'volatile',
     xpCap: 5750,
     requirements: { coding: 4500, freelance: 3000, reputation: 1000 },
-    notes: 'Mercenary work. High stable income.',
+    rentRate: 0,
+    notes: 'Mercenary work. High stable income. Rent paid from gig money.',
   },
 
   hustle_consultant: {
@@ -261,7 +278,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'volatile',
     xpCap: 7250,
     requirements: { coding: 6000, freelance: 5000, reputation: 2500 },
-    notes: 'Fixes "Impossible" bugs. Very high income.',
+    rentRate: 0,
+    notes: 'Fixes "Impossible" bugs. Very high income. Rent paid from gig money.',
   },
 
   hustle_architect: {
@@ -273,7 +291,8 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     incomeType: 'volatile',
     xpCap: undefined,
     requirements: { coding: 9000, freelance: 7000, reputation: 4000 },
-    notes: 'The "Oracle" role. Retainer-based. Terminal role.',
+    rentRate: 0,
+    notes: 'The "Oracle" role. Retainer-based. Terminal role. Rent paid from gig money.',
   },
 };
 

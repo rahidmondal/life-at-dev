@@ -17,7 +17,7 @@ export function GameWrapper() {
   const [playerName, setPlayerName] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
 
-  const { resources, meta, resetGame, startNewGame, currentSaveId } = useGameStore();
+  const { resources, flags, meta, resetGame, startNewGame, currentSaveId } = useGameStore();
 
   useEffect(() => {
     const unsubFinishHydration = useGameStore.persist.onFinishHydration(() => {
@@ -37,7 +37,8 @@ export function GameWrapper() {
     if (!isHydrated) return;
 
     if (currentSaveId && meta.tick > 0) {
-      if (resources.money < -5000) {
+      // Check bankruptcy flag (set by year-end processing)
+      if (flags.isBankrupt) {
         setGameOverReason('bankruptcy');
         setPhase('gameover');
       } else if (resources.stress >= 100) {
@@ -53,12 +54,13 @@ export function GameWrapper() {
         }
       }
     }
-  }, [isHydrated, currentSaveId, meta.tick, meta.startAge, resources.money, resources.stress]);
+  }, [isHydrated, currentSaveId, meta.tick, meta.startAge, flags.isBankrupt, resources.stress]);
 
   useEffect(() => {
     if (phase !== 'playing') return;
 
-    if (resources.money < -5000) {
+    // Check bankruptcy flag (set by year-end processing)
+    if (flags.isBankrupt) {
       setGameOverReason('bankruptcy');
       setPhase('gameover');
       return;
@@ -75,7 +77,7 @@ export function GameWrapper() {
       setGameOverReason('aged_out');
       setPhase('gameover');
     }
-  }, [phase, resources.money, resources.stress, meta.tick, meta.startAge]);
+  }, [phase, flags.isBankrupt, resources.stress, meta.tick, meta.startAge]);
 
   const handleStartClick = () => {
     resetGame();

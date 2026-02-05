@@ -92,7 +92,8 @@ export function processTurn(state: GameState, actionId: string): GameState {
       reputation += (currentJob.weeklyGains.reputation ?? 0) * weeks;
     }
 
-    money += (currentJob.salary / 52) * weeks;
+    // NOTE: Salary is now paid at year-end, not weekly.
+    // See engine/yearEnd.ts for year-end financial processing.
   }
 
   if (action.rewards.skill) {
