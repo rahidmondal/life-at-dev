@@ -32,8 +32,6 @@ export function processTurn(state: GameState, actionId: string): GameState {
 
   const action = ACTIONS_REGISTRY[actionId];
 
-  // Check if this is a non-recurring INVEST action that's already purchased
-  // Return state unchanged (no-op) rather than crashing
   if (action.category === 'INVEST' && action.passiveBuff && !action.isRecurring) {
     if (hasAlreadyPurchased(state.flags.purchasedInvestments, actionId)) {
       return state;
@@ -61,12 +59,10 @@ export function processTurn(state: GameState, actionId: string): GameState {
   );
 
   if (action.energyGain) {
-    // Apply recovery buffs to energy restoration
     const buffedEnergyGain = applyRecoveryBuffs(activeBuffs, action.energyGain);
     energy = calculateResourceDelta(energy, buffedEnergyGain, RESOURCE_BOUNDS.energy.min, RESOURCE_BOUNDS.energy.max);
   }
 
-  // Apply stress buffs - reduce stress gain from work actions
   const baseStressChange = action.rewards.stress ?? 0;
   const buffedStressChange = baseStressChange > 0 ? applyStressBuffs(activeBuffs, baseStressChange) : baseStressChange;
 
@@ -93,22 +89,18 @@ export function processTurn(state: GameState, actionId: string): GameState {
   if (weeks > 0) {
     const roleDisplacement = currentJob.roleDisplacement ?? ROLE_DISPLACEMENT[currentJob.tier];
 
-    // Apply job's weekly energy cost (working takes energy)
     const jobEnergyCost = (currentJob.energyCost ?? 0) * weeks;
     energy = calculateResourceDelta(energy, -jobEnergyCost, RESOURCE_BOUNDS.energy.min, RESOURCE_BOUNDS.energy.max);
 
     coding = Math.max(0, coding - calculateDecay(coding, roleDisplacement) * weeks);
-    politics = Math.max(0, politics - calculateDecay(politics, roleDisplacement) * weeks);
 
     if (currentJob.weeklyGains) {
       if (currentJob.weeklyGains.coding) {
-        // Apply skill buffs to job coding gains
         const buffedCodingGain = applySkillBuffs(activeBuffs, currentJob.weeklyGains.coding * weeks);
         coding += calculateDiminishingGrowth(coding, buffedCodingGain);
       }
 
       if (currentJob.weeklyGains.politics) {
-        // Apply skill buffs to job politics gains
         const buffedPoliticsGain = applySkillBuffs(activeBuffs, currentJob.weeklyGains.politics * weeks);
         politics += calculateDiminishingGrowth(politics, buffedPoliticsGain);
       }
@@ -117,13 +109,9 @@ export function processTurn(state: GameState, actionId: string): GameState {
       freelance += (currentJob.weeklyGains.freelance ?? 0) * weeks;
       reputation += (currentJob.weeklyGains.reputation ?? 0) * weeks;
     }
-
-    // NOTE: Salary is now paid at year-end, not weekly.
-    // See engine/yearEnd.ts for year-end financial processing.
   }
 
   if (action.rewards.skill) {
-    // Apply skill buffs to action skill rewards
     const buffedSkillGain = applySkillBuffs(activeBuffs, action.rewards.skill);
     coding += calculateDiminishingGrowth(coding, buffedSkillGain);
   }
@@ -175,7 +163,6 @@ export function processTurn(state: GameState, actionId: string): GameState {
   const finalMoney = money;
   const finalCoding = Math.floor(coding);
 
-  // Handle INVEST action buff acquisition
   const newActiveBuffs = [...activeBuffs];
   const newPurchasedInvestments = [...state.flags.purchasedInvestments];
 
@@ -193,13 +180,11 @@ export function processTurn(state: GameState, actionId: string): GameState {
 
     newActiveBuffs.push(newBuff);
 
-    // Track non-recurring investments as purchased
     if (!action.isRecurring) {
       newPurchasedInvestments.push(actionId);
     }
   }
 
-  // Calculate deltas for the event log
   const deltas = {
     skill: finalCoding - state.stats.skills.coding,
     energy: finalEnergy - state.resources.energy,
@@ -209,7 +194,6 @@ export function processTurn(state: GameState, actionId: string): GameState {
     reputation: action.rewards.reputation ?? 0,
   };
 
-  // Build the new state before generating the log entry
   const newState: GameState = {
     ...state,
     meta,
@@ -239,7 +223,6 @@ export function processTurn(state: GameState, actionId: string): GameState {
     },
   };
 
-  // Generate procedural event log entry
   const actionLogEntry = generateEventLogEntry(actionId, action.label, action.category, newState, deltas);
 
   return triggerRandomEvents({

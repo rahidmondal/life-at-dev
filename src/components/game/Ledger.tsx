@@ -14,14 +14,12 @@ import {
   RocketIcon,
   StarIcon,
   TerminalIcon,
-  TrendingDownIcon,
   TrendingIcon,
   UserCogIcon,
   UserIcon,
   ZapIcon,
 } from '../ui/icons';
 
-// Job role to icon mapping
 const JOB_ICONS: Record<string, React.ReactNode> = {
   unemployed: <UserIcon size={32} className="text-[#8B949E]" />,
   corp_intern: <GraduationCapIcon size={32} className="text-[#58A6FF]" />,
@@ -53,7 +51,7 @@ const PATH_LABELS: Record<string, { label: string; color: string; emoji: string 
 };
 
 export function Ledger({ compact = false }: LedgerProps) {
-  const { meta, resources, stats, career, flags } = useGameStore();
+  const { meta, resources, stats, career, flags, getProjectedSkillChange } = useGameStore();
 
   const age = meta.startAge + Math.floor(meta.tick / 52);
   const weekInYear = meta.tick % 52;
@@ -72,7 +70,6 @@ export function Ledger({ compact = false }: LedgerProps) {
   if (compact) {
     return (
       <div className="space-y-4">
-        {/* Quick Stats Row */}
         <div className="grid grid-cols-4 gap-3">
           <StatMini label="Energy" value={resources.energy} max={100} color="#58A6FF" icon={<ZapIcon size={14} />} />
           <StatMini
@@ -92,7 +89,6 @@ export function Ledger({ compact = false }: LedgerProps) {
           <StatMini label="Money" value={resources.money} isMoney color="#D2A8FF" icon={<DollarIcon size={14} />} />
         </div>
 
-        {/* Skill vs XP Bar */}
         <div className="grid grid-cols-2 gap-4">
           <DualBar label="Skill" value={stats.skills.coding} max={10000} color="#39D353" />
           <DualBar label="XP" value={totalXP} max={maxXP} color="#A371F7" />
@@ -176,11 +172,9 @@ export function Ledger({ compact = false }: LedgerProps) {
         </p>
       </div>
 
-      {/* Vitals */}
       <div className="bg-[#161B22] border border-[#30363D] rounded-lg p-4 space-y-4">
         <h3 className="text-[#58A6FF] text-xs font-bold flex items-center gap-2">⚡ VITALS</h3>
 
-        {/* Energy Bar (Segmented) */}
         <div>
           <div className="flex justify-between text-xs mb-1">
             <span className="flex items-center gap-1">
@@ -234,20 +228,31 @@ export function Ledger({ compact = false }: LedgerProps) {
         <p className="text-[#D2A8FF] font-mono text-3xl text-center">${resources.money.toLocaleString()}</p>
       </div>
 
-      {/* Skill vs XP (The Dual Currency) */}
+      {/* Skills & Experience */}
       <div className="bg-[#161B22] border border-[#30363D] rounded-lg p-4 space-y-4">
-        <h3 className="text-[#8B949E] text-xs font-bold">POTENTIAL vs PROOF</h3>
+        <h3 className="text-[#8B949E] text-xs font-bold">SKILLS & EXPERIENCE</h3>
 
         {/* Skill (Potential) */}
         <div>
           <div className="flex justify-between items-center text-xs mb-1">
             <span className="text-[#39D353] flex items-center gap-1">
               <CodeIcon size={12} />
-              Skill (Potential)
+              Skill (Coding)
             </span>
             <span className="text-[#8B949E] flex items-center gap-1">
-              <TrendingDownIcon size={12} className="text-[#FF7B72]" />
-              Decays weekly
+              {(() => {
+                // Use the store selector for projection
+                // This respects the architecture: Engine -> Store -> UI
+                const netChange = getProjectedSkillChange();
+                const netChangeRounded = Math.round(netChange * 10) / 10;
+
+                if (netChangeRounded > 0) {
+                  return <span className="text-[#39D353]">+{netChangeRounded}/wk</span>;
+                } else if (netChangeRounded < 0) {
+                  return <span className="text-[#FF7B72]">{netChangeRounded}/wk</span>;
+                }
+                return <span className="text-[#8B949E]">Stable</span>;
+              })()}
             </span>
           </div>
           <div className="h-4 bg-[#0D1117] rounded overflow-hidden">
@@ -263,31 +268,54 @@ export function Ledger({ compact = false }: LedgerProps) {
           </div>
         </div>
 
-        {/* XP (Proof) */}
+        {/* Politics */}
         <div>
           <div className="flex justify-between items-center text-xs mb-1">
-            <span className="text-[#A371F7] flex items-center gap-1">
-              <BriefcaseIcon size={12} />
-              XP (Proof)
+            <span className="text-[#D2A8FF] flex items-center gap-1">
+              <UserCogIcon size={12} />
+              Politics
             </span>
-            <span className="text-[#8B949E]">Never decays</span>
           </div>
-          {/* Segmented bar showing Corporate vs Freelance */}
-          <div className="h-4 bg-[#0D1117] rounded overflow-hidden flex">
+          <div className="h-4 bg-[#0D1117] rounded overflow-hidden">
             <div
-              className="h-full bg-[#A371F7] transition-all duration-300"
-              style={{ width: `${String((stats.xp.corporate / maxXP) * 100)}%` }}
-              title={`Corporate: ${String(stats.xp.corporate)}`}
-            />
-            <div
-              className="h-full bg-[#F0883E] transition-all duration-300"
-              style={{ width: `${String((stats.xp.freelance / maxXP) * 100)}%` }}
-              title={`Freelance: ${String(stats.xp.freelance)}`}
+              className="h-full bg-linear-to-r from-[#D2A8FF] to-[#D2A8FF]/60 transition-all duration-300"
+              style={{ width: `${String((stats.skills.politics / 10000) * 100)}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs mt-1">
-            <span className="text-[#A371F7]">Corp: {stats.xp.corporate}</span>
-            <span className="text-[#F0883E]">Free: {stats.xp.freelance}</span>
+          <div className="flex justify-between text-xs mt-1 text-[#484F58]">
+            <span>0</span>
+            <span className="text-[#D2A8FF] font-mono">{stats.skills.politics.toLocaleString()}</span>
+            <span>10,000</span>
+          </div>
+        </div>
+
+        {/* XP & Reputation Stats Grid */}
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#30363D]">
+          {/* Corporate XP */}
+          <div className="bg-[#0D1117] rounded p-2">
+            <div className="flex items-center gap-1 text-[#484F58] text-xs mb-1">
+              <BriefcaseIcon size={12} className="text-[#A371F7]" />
+              <span>Corp XP</span>
+            </div>
+            <p className="text-[#A371F7] font-mono text-sm">{stats.xp.corporate.toLocaleString()}</p>
+          </div>
+
+          {/* Freelance XP */}
+          <div className="bg-[#0D1117] rounded p-2">
+            <div className="flex items-center gap-1 text-[#484F58] text-xs mb-1">
+              <RocketIcon size={12} className="text-[#F0883E]" />
+              <span>Free XP</span>
+            </div>
+            <p className="text-[#F0883E] font-mono text-sm">{stats.xp.freelance.toLocaleString()}</p>
+          </div>
+
+          {/* Reputation */}
+          <div className="bg-[#0D1117] rounded p-2 col-span-2">
+            <div className="flex items-center gap-1 text-[#484F58] text-xs mb-1">
+              <CrownIcon size={12} className="text-[#FFD700]" />
+              <span>Reputation</span>
+            </div>
+            <p className="text-[#FFD700] font-mono text-sm">{stats.xp.reputation.toLocaleString()}</p>
           </div>
         </div>
       </div>

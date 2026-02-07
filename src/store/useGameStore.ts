@@ -3,6 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { JOB_REGISTRY } from '../data/tracks';
 import { getEligibleJobsForApplication, promotePlayer } from '../engine/career';
 import { generateJobChangeMessage } from '../engine/eventLog';
+import { calculateProjectedSkillChange } from '../engine/mechanics';
 import { processTurn } from '../engine/processTurn';
 import { isYearEnd, processYearEnd } from '../engine/yearEnd';
 import { createSave, loadSave, updateSave } from '../storage/gameStorage';
@@ -76,6 +77,9 @@ interface GameActions {
   saveGame: () => Promise<void>;
 
   resetState: () => void;
+
+  // Selectors/Computed
+  getProjectedSkillChange: () => number;
 }
 
 interface UIState {
@@ -351,6 +355,15 @@ export const useGameStore = create<GameStore>()(
         },
 
         resetState: () => set({ ...INITIAL_GAME_STATE, currentSaveId: null }, false, 'resetState'),
+
+        getProjectedSkillChange: () => {
+          const state = get();
+          const currentJob = JOB_REGISTRY[state.career.currentJobId];
+          const displacement = currentJob.roleDisplacement ?? 0;
+          const weeklyGain = currentJob.weeklyGains?.coding ?? 0;
+
+          return calculateProjectedSkillChange(state.stats.skills.coding, displacement, weeklyGain);
+        },
       }),
       {
         name: 'life-at-dev-v2-storage',

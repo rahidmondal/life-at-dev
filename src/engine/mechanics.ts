@@ -20,3 +20,17 @@ export function calculateDecay(coreSkill: number, roleDisplacement: number): num
 export function calculateBurnoutRisk(stress: number, energy: number): boolean {
   return stress > BURNOUT_STRESS_THRESHOLD && energy < BURNOUT_ENERGY_THRESHOLD;
 }
+
+/**
+ * Calculates the projected weekly skill change based on current skill, job displacement, and job gains.
+ * This is used for UI feedback to show the player if they are gaining or losing skill.
+ */
+export function calculateProjectedSkillChange(
+  currentSkill: number,
+  roleDisplacement: number,
+  weeklyJobGain: number,
+): number {
+  const decay = calculateDecay(currentSkill, roleDisplacement);
+  const gain = calculateDiminishingGrowth(currentSkill, weeklyJobGain);
+  return gain - decay;
+}

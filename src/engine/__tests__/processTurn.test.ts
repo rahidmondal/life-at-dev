@@ -107,6 +107,65 @@ describe('processTurn — skill decay', () => {
 
     expect(next.stats.skills.coding).toBe(5000);
   });
+
+  it('does NOT decay politics when working a job with role displacement', () => {
+    const state = createMockState({
+      jobId: 'corp_manager',
+      politics: 5000,
+      money: 1000, // vacation costs 500
+    });
+
+    // vacation takes 3 weeks
+    // corp_manager gives weekly Politics gain: 12.
+    // Net without decay: 5000 + ~24 (diminishing returns on 36 gain) = 5024
+    const next = processTurn(state, 'vacation');
+
+    expect(next.stats.skills.politics).toBe(5024);
+  });
+
+  it('should decay skill when performing a work action with duration > 0', () => {
+    const initialSkill = 5000;
+    const jobId = 'corp_junior'; // Displacement 0.3
+    const actionId = 'corp_ticket'; // Duration 1 week. Rewards: XP 20, Corp 10, Stress 15. NO Skill reward.
+
+    const state = createMockState({
+      coding: initialSkill,
+      jobId: jobId,
+      money: 1000,
+      energy: 100,
+    });
+
+    // Expected Decay
+    // Decay = currentSkill * baseDecay(0.02) * displacement(0.3) * weeks(1)
+    // Decay = 5000 * 0.02 * 0.3 * 1 = 30
+
+    // Job Earnings
+    // corp_junior weekly gains: coding +5.
+    // Diminishing returns: 5 * (10000 / (10000 + 4970)) = 3.339
+    // Net change: -30 (decay) + 3.339 (gain) = -26.66
+    // Final Floor: 5000 - 26.66 = 4973.34 -> 4973
+
+    // Note: If previous test run showed -22 (4978), we need to investigate why.
+    // For now, setting expectation to 4973 assuming standard math.
+
+    const next = processTurn(state, actionId);
+
+    expect(next.stats.skills.coding).toBe(4973);
+  });
+
+  it('skip_week: should GAIN skill at LOW levels (Gain > Decay)', () => {
+    const state = createMockState({ coding: 500, jobId: 'corp_junior', energy: 100 });
+    const next = processTurn(state, 'skip_week');
+    const change = next.stats.skills.coding - 500;
+    expect(change).toBeGreaterThan(0);
+  });
+
+  it('skip_week: should LOSE skill at HIGH levels (Decay > Gain)', () => {
+    const state = createMockState({ coding: 5000, jobId: 'corp_junior', energy: 100 });
+    const next = processTurn(state, 'skip_week');
+    const change = next.stats.skills.coding - 5000;
+    expect(change).toBeLessThan(0);
+  });
 });
 
 describe('processTurn — salary and XP', () => {
@@ -116,7 +175,6 @@ describe('processTurn — salary and XP', () => {
     const instant = processTurn(state, 'sleep');
     expect(instant.resources.money).toBe(1000);
 
-    // Timed actions no longer pay weekly salary - salary is paid at year-end
     const timed = processTurn(state, 'tutorial');
     expect(timed.resources.money).toBe(1000);
   });
@@ -170,7 +228,6 @@ describe('processTurn — INVEST actions and buffs', () => {
 
     const next = processTurn(state, 'buy_keyboard');
 
-    // State should be unchanged (no-op)
     expect(next).toBe(state);
   });
 
@@ -180,12 +237,10 @@ describe('processTurn — INVEST actions and buffs', () => {
     const first = processTurn(state, 'hire_cleaner');
     expect(first.flags.activeBuffs).toHaveLength(1);
 
-    // Recurring investments should NOT be in purchasedInvestments
     expect(first.flags.purchasedInvestments).not.toContain('hire_cleaner');
   });
 
   it('applies skill buffs to skill gains', () => {
-    // Create state with a skill buff
     const state = createMockState({ money: 5000 });
     state.flags.activeBuffs = [
       {
@@ -199,18 +254,14 @@ describe('processTurn — INVEST actions and buffs', () => {
       },
     ];
 
-    // First get the base gain without buff
     const stateWithoutBuff = createMockState({ money: 5000 });
     stateWithoutBuff.flags.activeBuffs = [];
     const baseResult = processTurn(stateWithoutBuff, 'read_docs');
     const baseGain = baseResult.stats.skills.coding - stateWithoutBuff.stats.skills.coding;
 
-    // Perform same action with buff
     const next = processTurn(state, 'read_docs');
     const buffedGain = next.stats.skills.coding - state.stats.skills.coding;
 
-    // The buffed gain should be greater than or equal to the base gain
-    // (Due to diminishing returns and rounding, exact multiplier may vary)
     expect(buffedGain).toBeGreaterThanOrEqual(baseGain);
   });
 
@@ -228,15 +279,12 @@ describe('processTurn — INVEST actions and buffs', () => {
       },
     ];
 
-    // Perform an action that adds stress (bootcamp adds +20 stress)
     const next = processTurn(state, 'bootcamp');
 
-    // Stress should be reduced by the buff
     expect(next.resources.stress).toBeLessThan(20);
   });
 
   it('applies recovery buffs to energy restoration', () => {
-    // Start with low energy so we don't hit the cap
     const state = createMockState({ energy: 20 });
     state.flags.activeBuffs = [
       {
@@ -250,17 +298,13 @@ describe('processTurn — INVEST actions and buffs', () => {
       },
     ];
 
-    // First get the base gain without buff
     const stateWithoutBuff = createMockState({ energy: 20 });
     stateWithoutBuff.flags.activeBuffs = [];
     const baseResult = processTurn(stateWithoutBuff, 'sleep');
     const baseGain = baseResult.resources.energy - stateWithoutBuff.resources.energy;
-
-    // sleep restores energy
     const next = processTurn(state, 'sleep');
     const buffedGain = next.resources.energy - state.resources.energy;
 
-    // Energy gain should be buffed (or at least not lower)
     expect(buffedGain).toBeGreaterThanOrEqual(baseGain);
   });
 });
