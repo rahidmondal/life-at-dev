@@ -1,6 +1,11 @@
 import type { SkillMap, XPCurrency } from './stats';
 
 /**
+ * JobId: Type alias for job identifiers (string keys in JOB_REGISTRY).
+ */
+export type JobId = string;
+
+/**
  * Career Track Types.
  * L1 = Foundation tracks (shared early game).
  * L2 = Specialization tracks (unlocked at Senior Dev / Digital Nomad).
@@ -71,6 +76,9 @@ export interface JobNode {
 
   /** Role displacement risk (0-1). Higher = more vulnerable to automation/outsourcing. */
   roleDisplacement?: number;
+
+  /** Rent rate as percentage of salary (0.0-1.0). Default 0.30 (30%). */
+  rentRate?: number;
 
   /** Notes about the job for UI/debug. */
   notes?: string;

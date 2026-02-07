@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { calculateBurnoutRisk, calculateDecay, calculateDiminishingGrowth } from '../mechanics';
+import {
+  calculateBurnoutRisk,
+  calculateDecay,
+  calculateDiminishingGrowth,
+  calculateProjectedSkillChange,
+} from '../mechanics';
 
 describe('calculateDiminishingGrowth', () => {
   it('should return full gain when starting from zero skill', () => {
@@ -125,5 +130,28 @@ describe('calculateBurnoutRisk', () => {
     expect(calculateBurnoutRisk(96, 10)).toBe(false);
     expect(calculateBurnoutRisk(95, 9)).toBe(false);
     expect(calculateBurnoutRisk(96, 9)).toBe(true);
+  });
+});
+
+describe('calculateProjectedSkillChange', () => {
+  it('returns positive change when gain > decay', () => {
+    // Skill 500, Gain 5, Decay ~3. Net > 0.
+    // Gain: 5 * (10000/10500) = 4.76
+    // Decay: 500 * 0.02 * 0.3 = 3
+    // Net: 1.76
+    const change = calculateProjectedSkillChange(500, 0.3, 5);
+    expect(change).toBeGreaterThan(0);
+    expect(change).toBeCloseTo(1.76, 1);
+  });
+
+  it('returns negative change when decay > gain', () => {
+    // Skill 5000, Gain 5, Decay 30. Net < 0.
+    // Gain: 5 * (10000/15000) = 3.33
+    // Decay: 5000 * 0.02 * 0.3 = 30
+    // Net: -26.6
+    const change = calculateProjectedSkillChange(5000, 0.3, 5);
+    expect(change).toBeLessThan(0);
+    expect(change).toBeGreaterThan(-27);
+    expect(change).toBeLessThan(-26);
   });
 });

@@ -9,19 +9,22 @@ interface LoadingScreenProps {
 
 const BOOT_MESSAGES = [
   '> mount --bind /life /dev/null',
-  '> initializing economy_engine... OK',
+  '> initializing coffee_engine... OK',
   '> loading career_paths... OK',
   '> checking student_loans.sys...',
   '> WARNING: debt_accumulation detected',
+  '> installing caffeine_patch... OK',
   '> loading skill_trees... OK',
   '> entropy_decay_rate: 0.02/week',
+  '> compiling dreams... OK',
+  '> running procrastination_daemon...',
+  '> WARNING: motivation_low detected',
+  '> updating imposter_syndrome... OK',
+  '> fetching StackOverflow wisdom... OK',
+  '> debugging reality.exe...',
   '> Ready to initialize developer...',
 ];
 
-/**
- * LoadingScreen: Terminal-style boot animation.
- * Displays after clicking "Start Game" and before path selection.
- */
 export function LoadingScreen({ onComplete, playerName }: LoadingScreenProps) {
   const [bootIndex, setBootIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
@@ -51,10 +54,8 @@ export function LoadingScreen({ onComplete, playerName }: LoadingScreenProps) {
 
   return (
     <div className="min-h-screen bg-[#0D1117] text-[#C9D1D9] font-mono flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* CRT Scanlines */}
       <div className="fixed inset-0 crt-scanlines z-50 pointer-events-none" />
 
-      {/* Nebula Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute w-96 h-96 rounded-full opacity-10 blur-3xl"
@@ -74,16 +75,13 @@ export function LoadingScreen({ onComplete, playerName }: LoadingScreenProps) {
         />
       </div>
 
-      {/* Terminal Boot Sequence */}
       <div className="w-full max-w-2xl animate-fade-in relative z-10">
         <div className="bg-[#161B22] border border-[#30363D] rounded-lg p-6 font-mono text-sm">
-          {/* Terminal Header */}
           <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[#30363D]">
             <span className="text-[#39D353]">❯</span>
             <span className="text-[#8B949E] text-xs">life@dev:~$</span>
           </div>
 
-          {/* Boot Messages */}
           <div className="space-y-1 min-h-50">
             {BOOT_MESSAGES.slice(0, bootIndex).map((msg, i) => (
               <p
@@ -98,7 +96,6 @@ export function LoadingScreen({ onComplete, playerName }: LoadingScreenProps) {
             {bootIndex < BOOT_MESSAGES.length && <span className="inline-block animate-pulse text-[#39D353]">█</span>}
           </div>
 
-          {/* Loading Progress */}
           <div className="mt-4 pt-4 border-t border-[#30363D]">
             <div className="flex items-center justify-between text-xs text-[#8B949E] mb-2">
               <span>Loading...</span>
@@ -113,7 +110,6 @@ export function LoadingScreen({ onComplete, playerName }: LoadingScreenProps) {
           </div>
         </div>
 
-        {/* Welcome Message */}
         {playerName && bootIndex >= BOOT_MESSAGES.length && (
           <p className="text-center text-[#8B949E] text-sm mt-4 animate-fade-in">
             Welcome back, <span className="text-[#39D353]">{playerName}</span>
@@ -121,8 +117,7 @@ export function LoadingScreen({ onComplete, playerName }: LoadingScreenProps) {
         )}
       </div>
 
-      {/* Version Footer */}
-      <div className="absolute bottom-4 text-center text-[#484F58] text-xs">Life@Dev v2.0 • Initializing...</div>
+      <div className="absolute bottom-4 text-center text-[#484F58] text-xs">Life@Dev • Initializing...</div>
     </div>
   );
 }

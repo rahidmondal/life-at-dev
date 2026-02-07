@@ -76,7 +76,38 @@ export const ACTIONS: GameAction[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // CATEGORY: WORK (The Job)
   // Focus: Gain XP & Money, Gain Stress. Context-sensitive to Job Title.
+  // Actions filtered by jobRequirements based on player's current job.
   // ═══════════════════════════════════════════════════════════════════════════
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // UNIVERSAL ACTIONS (Always Available)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'apply_job',
+    label: 'Apply for Job',
+    category: 'WORK',
+    energyCost: 15,
+    moneyCost: 0,
+    rewards: { stress: 10 },
+    jobRequirements: { universal: true },
+    duration: 0,
+  },
+
+  {
+    id: 'find_freelance',
+    label: 'Find Freelance Gig',
+    category: 'WORK',
+    energyCost: 10,
+    moneyCost: 0,
+    rewards: { freelance: 5, stress: 5 },
+    jobRequirements: { universal: true },
+    duration: 0,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // UNEMPLOYED ACTIONS (Tier 0 / No Job)
+  // ───────────────────────────────────────────────────────────────────────────
 
   {
     id: 'gig_fix',
@@ -84,7 +115,8 @@ export const ACTIONS: GameAction[] = [
     category: 'WORK',
     energyCost: 20,
     moneyCost: 0,
-    rewards: { xp: 10, money: 100, stress: 10 },
+    rewards: { xp: 10, money: 100, freelance: 8, stress: 10 },
+    jobRequirements: { unemployed: true, tracks: ['Hustler_L1', 'Hustler_Business', 'Hustler_Specialist'] },
     duration: 1,
   },
 
@@ -94,9 +126,95 @@ export const ACTIONS: GameAction[] = [
     category: 'WORK',
     energyCost: 40,
     moneyCost: 0,
-    rewards: { xp: 50, money: 500, stress: 25 },
+    rewards: { xp: 50, money: 500, freelance: 20, stress: 25 },
+    jobRequirements: { unemployed: true, tracks: ['Hustler_L1', 'Hustler_Business', 'Hustler_Specialist'] },
     duration: 3,
   },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // STUDENT ACTIONS (Scholar/Funded paths only)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'attend_lecture',
+    label: 'Attend Lecture',
+    category: 'SKILL',
+    energyCost: 15,
+    moneyCost: 0,
+    rewards: { skill: 15, stress: 5 },
+    jobRequirements: { studentOnly: true },
+    duration: 1,
+  },
+
+  {
+    id: 'study_session',
+    label: 'Study Session',
+    category: 'SKILL',
+    energyCost: 25,
+    moneyCost: 0,
+    rewards: { skill: 25, stress: 10 },
+    jobRequirements: { studentOnly: true },
+    duration: 2,
+  },
+
+  {
+    id: 'group_project',
+    label: 'Group Project',
+    category: 'WORK',
+    energyCost: 35,
+    moneyCost: 0,
+    rewards: { skill: 20, politics: 5, stress: 15 },
+    jobRequirements: { studentOnly: true },
+    duration: 3,
+  },
+
+  {
+    id: 'office_hours',
+    label: 'Visit Office Hours',
+    category: 'SKILL',
+    energyCost: 10,
+    moneyCost: 0,
+    rewards: { skill: 10, stress: -5 },
+    jobRequirements: { studentOnly: true },
+    duration: 0,
+  },
+
+  {
+    id: 'campus_networking',
+    label: 'Campus Networking',
+    category: 'NETWORK',
+    energyCost: 20,
+    moneyCost: 0,
+    rewards: { reputation: 10, politics: 5 },
+    jobRequirements: { studentOnly: true },
+    duration: 1,
+  },
+
+  {
+    id: 'internship_prep',
+    label: 'Prep for Internship',
+    category: 'SKILL',
+    energyCost: 30,
+    moneyCost: 0,
+    rewards: { skill: 30, corporate: 10, stress: 10 },
+    jobRequirements: { studentOnly: true },
+    duration: 2,
+  },
+
+  {
+    id: 'part_time_job',
+    label: 'Part-Time Job',
+    category: 'WORK',
+    energyCost: 25,
+    moneyCost: 0,
+    rewards: { money: 200, stress: 5, freelance: 5 },
+    jobRequirements: { studentOnly: true },
+    duration: 1,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // CORPORATE L1 ACTIONS (Intern → Senior Dev)
+  // ───────────────────────────────────────────────────────────────────────────
 
   {
     id: 'corp_ticket',
@@ -104,9 +222,47 @@ export const ACTIONS: GameAction[] = [
     category: 'WORK',
     energyCost: 30,
     moneyCost: 0,
-    rewards: { xp: 20, stress: 15 },
+    rewards: { xp: 20, corporate: 10, stress: 15 },
+    jobRequirements: { tracks: ['Corporate_L1', 'Corp_IC'] },
     duration: 1,
   },
+
+  {
+    id: 'corp_standup',
+    label: 'Daily Standup',
+    category: 'WORK',
+    energyCost: 5,
+    moneyCost: 0,
+    rewards: { xp: 2, corporate: 3, politics: 2, stress: 5 },
+    jobRequirements: { tracks: ['Corporate_L1', 'Corp_IC', 'Corp_Management'] },
+    duration: 0,
+  },
+
+  {
+    id: 'corp_code_review',
+    label: 'Code Review',
+    category: 'WORK',
+    energyCost: 20,
+    moneyCost: 0,
+    rewards: { xp: 15, corporate: 8, skill: 10, stress: 10 },
+    jobRequirements: { tracks: ['Corporate_L1', 'Corp_IC'], minTier: 1 },
+    duration: 1,
+  },
+
+  {
+    id: 'corp_oncall',
+    label: 'On-Call Duty',
+    category: 'WORK',
+    energyCost: 40,
+    moneyCost: 0,
+    rewards: { xp: 30, corporate: 15, stress: 35 },
+    jobRequirements: { tracks: ['Corporate_L1', 'Corp_IC'], minTier: 2 },
+    duration: 1,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // CORPORATE MANAGEMENT ACTIONS (Team Lead → CTO)
+  // ───────────────────────────────────────────────────────────────────────────
 
   {
     id: 'corp_lead',
@@ -114,7 +270,8 @@ export const ACTIONS: GameAction[] = [
     category: 'WORK',
     energyCost: 50,
     moneyCost: 0,
-    rewards: { xp: 40, stress: 30 },
+    rewards: { xp: 40, corporate: 25, politics: 15, stress: 30 },
+    jobRequirements: { tracks: ['Corp_Management', 'Corp_IC'], minTier: 3 },
     duration: 4,
   },
 
@@ -124,8 +281,191 @@ export const ACTIONS: GameAction[] = [
     category: 'WORK',
     energyCost: 20,
     moneyCost: 0,
-    rewards: { xp: 5, politics: 10, stress: 25 },
+    rewards: { xp: 5, politics: 10, corporate: 5, stress: 25 },
+    jobRequirements: { tracks: ['Corporate_L1', 'Corp_Management', 'Corp_IC'], minTier: 1 },
+    duration: 0,
+  },
+
+  {
+    id: 'mgmt_1on1',
+    label: '1-on-1 Meetings',
+    category: 'WORK',
+    energyCost: 25,
+    moneyCost: 0,
+    rewards: { xp: 10, politics: 15, corporate: 10, stress: 15 },
+    jobRequirements: { tracks: ['Corp_Management'], minTier: 4 },
+    duration: 1,
+  },
+
+  {
+    id: 'mgmt_perf_review',
+    label: 'Performance Reviews',
+    category: 'WORK',
+    energyCost: 35,
+    moneyCost: 0,
+    rewards: { xp: 20, politics: 25, corporate: 20, stress: 30 },
+    jobRequirements: { tracks: ['Corp_Management'], minTier: 5 },
+    duration: 2,
+  },
+
+  {
+    id: 'mgmt_roadmap',
+    label: 'Quarterly Roadmap',
+    category: 'WORK',
+    energyCost: 45,
+    moneyCost: 0,
+    rewards: { xp: 35, politics: 30, corporate: 30, stress: 40 },
+    jobRequirements: { tracks: ['Corp_Management'], minTier: 5 },
     duration: 3,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // CORPORATE IC ACTIONS (Staff → Fellow)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'ic_architecture',
+    label: 'Architecture Review',
+    category: 'WORK',
+    energyCost: 40,
+    moneyCost: 0,
+    rewards: { xp: 35, corporate: 20, skill: 25, stress: 20 },
+    jobRequirements: { tracks: ['Corp_IC'], minTier: 4 },
+    duration: 2,
+  },
+
+  {
+    id: 'ic_tech_talk',
+    label: 'Internal Tech Talk',
+    category: 'WORK',
+    energyCost: 30,
+    moneyCost: 0,
+    rewards: { xp: 25, reputation: 10, skill: 15, stress: 15 },
+    jobRequirements: { tracks: ['Corp_IC'], minTier: 4 },
+    duration: 1,
+  },
+
+  {
+    id: 'ic_rfc',
+    label: 'Write RFC',
+    category: 'WORK',
+    energyCost: 35,
+    moneyCost: 0,
+    rewards: { xp: 30, corporate: 25, skill: 20, stress: 25 },
+    jobRequirements: { tracks: ['Corp_IC'], minTier: 5 },
+    duration: 2,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // HUSTLER FREELANCER ACTIONS (Freelancer → Digital Nomad)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'hustle_portfolio',
+    label: 'Update Portfolio',
+    category: 'WORK',
+    energyCost: 15,
+    moneyCost: 0,
+    rewards: { reputation: 8, freelance: 10, stress: 5 },
+    jobRequirements: { tracks: ['Hustler_L1', 'Hustler_Business', 'Hustler_Specialist'] },
+    duration: 1,
+  },
+
+  {
+    id: 'hustle_invoice',
+    label: 'Invoice Clients',
+    category: 'WORK',
+    energyCost: 10,
+    moneyCost: 0,
+    rewards: { money: 50, freelance: 5, stress: 8 },
+    jobRequirements: { tracks: ['Hustler_L1', 'Hustler_Business', 'Hustler_Specialist'], minTier: 1 },
+    duration: 0,
+  },
+
+  {
+    id: 'hustle_proposal',
+    label: 'Write Proposal',
+    category: 'WORK',
+    energyCost: 25,
+    moneyCost: 0,
+    rewards: { freelance: 15, reputation: 5, stress: 12 },
+    jobRequirements: { tracks: ['Hustler_L1', 'Hustler_Specialist'], minTier: 1 },
+    duration: 1,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // HUSTLER BUSINESS ACTIONS (Agency → Mogul)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'agency_pitch',
+    label: 'Client Pitch',
+    category: 'WORK',
+    energyCost: 35,
+    moneyCost: 0,
+    rewards: { money: 200, freelance: 25, reputation: 15, stress: 20 },
+    jobRequirements: { tracks: ['Hustler_Business'], minTier: 3 },
+    duration: 1,
+  },
+
+  {
+    id: 'agency_hire',
+    label: 'Hire Contractor',
+    category: 'WORK',
+    energyCost: 20,
+    moneyCost: 500,
+    rewards: { freelance: 30, stress: 15 },
+    requirements: { money: 500 },
+    jobRequirements: { tracks: ['Hustler_Business'], minTier: 3 },
+    duration: 1,
+  },
+
+  {
+    id: 'agency_sponsor',
+    label: 'Land Sponsorship',
+    category: 'WORK',
+    energyCost: 40,
+    moneyCost: 0,
+    rewards: { money: 1000, reputation: 30, stress: 25 },
+    jobRequirements: { tracks: ['Hustler_Business'], minTier: 4 },
+    duration: 2,
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // HUSTLER SPECIALIST ACTIONS (Contractor → Architect)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'specialist_retainer',
+    label: 'Retainer Contract',
+    category: 'WORK',
+    energyCost: 30,
+    moneyCost: 0,
+    rewards: { money: 800, freelance: 20, stress: 15 },
+    jobRequirements: { tracks: ['Hustler_Specialist'], minTier: 3 },
+    duration: 2,
+  },
+
+  {
+    id: 'specialist_audit',
+    label: 'Code Audit',
+    category: 'WORK',
+    energyCost: 35,
+    moneyCost: 0,
+    rewards: { money: 600, skill: 20, freelance: 15, stress: 20 },
+    jobRequirements: { tracks: ['Hustler_Specialist'], minTier: 4 },
+    duration: 1,
+  },
+
+  {
+    id: 'specialist_workshop',
+    label: 'Paid Workshop',
+    category: 'WORK',
+    energyCost: 45,
+    moneyCost: 0,
+    rewards: { money: 1500, reputation: 25, skill: 15, stress: 25 },
+    jobRequirements: { tracks: ['Hustler_Specialist'], minTier: 5 },
+    duration: 2,
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -236,6 +576,17 @@ export const ACTIONS: GameAction[] = [
     duration: 5,
   },
 
+  {
+    id: 'skip_week',
+    label: 'Skip Week',
+    category: 'RECOVER',
+    energyCost: 0,
+    moneyCost: 0,
+    energyGain: 50,
+    rewards: { stress: 0 },
+    duration: 1,
+  },
+
   // ═══════════════════════════════════════════════════════════════════════════
   // CATEGORY: INVEST (The Future)
   // Focus: Convert Money into Passive Buffs. One-time or recurring purchases.
@@ -341,6 +692,245 @@ export const ACTIONS: GameAction[] = [
       type: 'multiplier',
       value: 1.2,
       description: '+20% Recovery Efficiency (Health)',
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // INVEST: Learning & Skills (Tier 1-3)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'online_course_basic',
+    label: 'Online Course (Basic)',
+    category: 'INVEST',
+    energyCost: 15,
+    moneyCost: 50,
+    rewards: { skill: 20 },
+    duration: 0,
+    passiveBuff: {
+      stat: 'skill',
+      type: 'flat',
+      value: 2,
+      description: '+2 Skill/Week (Fundamentals)',
+    },
+  },
+
+  {
+    id: 'online_course_advanced',
+    label: 'Online Course (Advanced)',
+    category: 'INVEST',
+    energyCost: 25,
+    moneyCost: 300,
+    rewards: { skill: 50 },
+    requirements: { skill: 500 },
+    duration: 1,
+    passiveBuff: {
+      stat: 'skill',
+      type: 'flat',
+      value: 8,
+      description: '+8 Skill/Week (Deep dive)',
+    },
+  },
+
+  {
+    id: 'bootcamp_intensive',
+    label: 'Coding Bootcamp',
+    category: 'INVEST',
+    energyCost: 60,
+    moneyCost: 5000,
+    rewards: { skill: 200, stress: 20 },
+    requirements: { money: 5000 },
+    duration: 4,
+    passiveBuff: {
+      stat: 'skill',
+      type: 'multiplier',
+      value: 1.25,
+      description: '+25% Skill Gain (Intensive training)',
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // INVEST: Subscriptions (Recurring)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'sub_learning_platform',
+    label: 'Learning Platform Sub',
+    category: 'INVEST',
+    energyCost: 5,
+    moneyCost: 30,
+    rewards: {},
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'xp',
+      type: 'flat',
+      value: 10,
+      description: '+10 XP/Week (Tutorials)',
+    },
+  },
+
+  {
+    id: 'sub_gym_membership',
+    label: 'Gym Membership',
+    category: 'INVEST',
+    energyCost: 10,
+    moneyCost: 50,
+    rewards: { stress: -5 },
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'stress',
+      type: 'multiplier',
+      value: 0.85,
+      description: '-15% Stress Gain (Exercise)',
+    },
+  },
+
+  {
+    id: 'sub_meal_prep',
+    label: 'Meal Prep Service',
+    category: 'INVEST',
+    energyCost: 5,
+    moneyCost: 100,
+    rewards: {},
+    requirements: { money: 2000 },
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'energy',
+      type: 'flat',
+      value: 10,
+      description: '+10 Energy/Week (No cooking)',
+    },
+  },
+
+  {
+    id: 'sub_coworking',
+    label: 'Coworking Space',
+    category: 'INVEST',
+    energyCost: 10,
+    moneyCost: 200,
+    rewards: { fulfillment: 10 },
+    requirements: { money: 3000 },
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'skill',
+      type: 'multiplier',
+      value: 1.1,
+      description: '+10% Skill Gain (Focus zone)',
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // INVEST: Equipment (One-time, Tiered)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'monitor_ultrawide',
+    label: 'Ultrawide Monitor',
+    category: 'INVEST',
+    energyCost: 15,
+    moneyCost: 800,
+    rewards: { stress: -5 },
+    requirements: { money: 800 },
+    duration: 0,
+    passiveBuff: {
+      stat: 'skill',
+      type: 'multiplier',
+      value: 1.05,
+      description: '+5% Skill Gain (Screen real estate)',
+    },
+  },
+
+  {
+    id: 'standing_desk',
+    label: 'Standing Desk',
+    category: 'INVEST',
+    energyCost: 30,
+    moneyCost: 600,
+    rewards: { stress: -3 },
+    requirements: { money: 600 },
+    duration: 1,
+    passiveBuff: {
+      stat: 'stress',
+      type: 'multiplier',
+      value: 0.95,
+      description: '-5% Stress from Work (Posture)',
+    },
+  },
+
+  {
+    id: 'noise_cancel_headphones',
+    label: 'Noise-Cancel Headphones',
+    category: 'INVEST',
+    energyCost: 10,
+    moneyCost: 350,
+    rewards: { stress: -5 },
+    duration: 0,
+    passiveBuff: {
+      stat: 'recovery',
+      type: 'multiplier',
+      value: 1.1,
+      description: '+10% Recovery (Focus mode)',
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // INVEST: Lifestyle (High-tier)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  {
+    id: 'hire_personal_trainer',
+    label: 'Personal Trainer',
+    category: 'INVEST',
+    energyCost: 20,
+    moneyCost: 400,
+    rewards: { stress: -10 },
+    requirements: { money: 10000 },
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'recovery',
+      type: 'multiplier',
+      value: 1.3,
+      description: '+30% Recovery (Optimized workouts)',
+    },
+  },
+
+  {
+    id: 'apartment_upgrade',
+    label: 'Better Apartment',
+    category: 'INVEST',
+    energyCost: 50,
+    moneyCost: 10000,
+    rewards: { stress: -15, fulfillment: 100 },
+    requirements: { money: 15000 },
+    duration: 2,
+    passiveBuff: {
+      stat: 'stress',
+      type: 'multiplier',
+      value: 0.8,
+      description: '-20% Stress Gain (Comfortable living)',
+    },
+  },
+
+  {
+    id: 'hire_virtual_assistant',
+    label: 'Virtual Assistant',
+    category: 'INVEST',
+    energyCost: 10,
+    moneyCost: 500,
+    rewards: {},
+    requirements: { money: 20000 },
+    duration: 0,
+    isRecurring: true,
+    passiveBuff: {
+      stat: 'energy',
+      type: 'flat',
+      value: 25,
+      description: '+25 Energy/Week (Delegated tasks)',
     },
   },
 ];

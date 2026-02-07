@@ -1,6 +1,10 @@
 import type { JobHistoryEntry, JobNode } from '@/types/career';
 import { JOB_REGISTRY } from '../data/tracks';
 import type { GameState, PlayerStats } from '../types/gamestate';
+import type { Flags } from '../types/resources';
+
+/** Job IDs that are available to students (internships). */
+const STUDENT_ELIGIBLE_JOBS = ['corp_intern', 'hustle_freelancer'];
 
 export function checkJobRequirements(job: JobNode, stats: PlayerStats): boolean {
   const reqs = job.requirements;
@@ -35,6 +39,48 @@ export function getEligibleJobs(state: GameState): JobNode[] {
 
     return checkJobRequirements(job, state.stats);
   });
+}
+
+/**
+ * Get eligible jobs for job application, considering student status.
+ * Students can only apply to internships.
+ * Graduated/non-students can apply to any job they qualify for.
+ */
+export function getEligibleJobsForApplication(state: GameState): JobNode[] {
+  const { flags, career, stats } = state;
+  const currentJobId = career.currentJobId;
+
+  // Students can only apply to specific jobs (internships/entry level)
+  if (flags.isScholar) {
+    return STUDENT_ELIGIBLE_JOBS.filter(jobId => {
+      if (jobId === currentJobId) return false;
+      const job = JOB_REGISTRY[jobId];
+      return checkJobRequirements(job, stats);
+    }).map(jobId => JOB_REGISTRY[jobId]);
+  }
+
+  // Non-students/graduates can apply to any eligible job
+  return Object.values(JOB_REGISTRY).filter(job => {
+    // Can't apply to current job
+    if (job.id === currentJobId) return false;
+    // Can't "apply" to unemployed
+    if (job.id === 'unemployed') return false;
+    return checkJobRequirements(job, stats);
+  });
+}
+
+/**
+ * Check if the player is a student (can use student actions, limited job options).
+ */
+export function isStudent(flags: Partial<Flags>): boolean {
+  return flags.isScholar === true;
+}
+
+/**
+ * Check if the player has graduated from college.
+ */
+export function hasGraduated(flags: Partial<Flags>): boolean {
+  return flags.hasGraduated === true;
 }
 
 export function detectTrackSwitch(currentJob: JobNode, newJob: JobNode): boolean {

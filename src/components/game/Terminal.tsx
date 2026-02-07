@@ -9,7 +9,7 @@ import { PlayIcon, TerminalIcon } from '../ui/icons';
  * Styled like VS Code terminal or Git log output.
  */
 export function Terminal() {
-  const { meta, eventLog } = useGameStore();
+  const { meta, eventLog, performAction } = useGameStore();
   const terminalRef = useRef<HTMLDivElement>(null);
 
   const weekInYear = meta.tick % 52;
@@ -58,6 +58,9 @@ export function Terminal() {
           <span className="text-[#8B949E] text-xs">{entries.length} entries</span>
         </div>
         <button
+          onClick={() => {
+            performAction('skip_week');
+          }}
           className="w-full py-3 px-4 bg-linear-to-r from-[#39D353]/20 to-[#39D353]/10
                      border border-[#39D353] rounded-lg text-[#39D353] font-bold
                      hover:from-[#39D353]/30 hover:to-[#39D353]/20 hover:shadow-[0_0_20px_rgba(57,211,83,0.3)]
@@ -152,6 +155,47 @@ function TerminalEntry({ entry }: TerminalEntryProps) {
 
 // Helper to parse event type from ID
 function parseEventType(eventId: string): { tag: string; type: string } {
+  // Year-end events
+  if (eventId.includes('year_end')) {
+    if (eventId.includes('bankruptcy')) {
+      return { tag: '💀 BANKRUPT', type: 'ERROR' };
+    }
+    return { tag: '📅 YEAR END', type: 'INFO' };
+  }
+
+  // Debt events
+  if (eventId.includes('debt')) {
+    return { tag: '💳 DEBT', type: 'WARN' };
+  }
+
+  // Job events
+  if (eventId.includes('job_change')) {
+    return { tag: '🎉 PROMOTED', type: 'SUCCESS' };
+  }
+
+  // Random events
+  if (eventId.includes('random')) {
+    return { tag: '🎲 EVENT', type: 'EVENT' };
+  }
+
+  // Action-based events
+  if (eventId.includes('action_')) {
+    if (eventId.includes('_work')) {
+      return { tag: '💼 WORK', type: 'WORK' };
+    }
+    if (eventId.includes('_recover')) {
+      return { tag: '💤 REST', type: 'SUCCESS' };
+    }
+    if (eventId.includes('_flow')) {
+      return { tag: '🔥 FLOW', type: 'FLOW' };
+    }
+    if (eventId.includes('_broke')) {
+      return { tag: '💸 BROKE', type: 'BROKE' };
+    }
+    return { tag: '✓ DONE', type: 'SUCCESS' };
+  }
+
+  // Legacy parsing
   if (eventId.includes('success') || eventId.includes('complete')) {
     return { tag: 'SUCCESS', type: 'SUCCESS' };
   }
@@ -161,15 +205,7 @@ function parseEventType(eventId: string): { tag: string; type: string } {
   if (eventId.includes('warn')) {
     return { tag: 'WARNING', type: 'WARN' };
   }
-  if (eventId.includes('work') || eventId.includes('job')) {
-    return { tag: 'WORK', type: 'WORK' };
-  }
-  if (eventId.includes('broke')) {
-    return { tag: 'BROKE', type: 'BROKE' };
-  }
-  if (eventId.includes('flow')) {
-    return { tag: 'FLOW_STATE', type: 'FLOW' };
-  }
+
   return { tag: 'EVENT', type: 'EVENT' };
 }
 
@@ -177,16 +213,16 @@ function parseEventType(eventId: string): { tag: string; type: string } {
 function parseEffects(message: string): string[] {
   const effects: string[] = [];
   const patterns = [
-    /\+\d+ Skill/gi,
-    /-\d+ Skill/gi,
-    /\+\d+ XP/gi,
-    /-\d+ XP/gi,
-    /\+\$\d+/gi,
-    /-\$\d+/gi,
-    /\+\d+ Energy/gi,
-    /-\d+ Energy/gi,
-    /\+\d+ Stress/gi,
-    /-\d+ Stress/gi,
+    // Standard format
+    /[+-]\d+ Skill/gi,
+    /[+-]\d+ XP/gi,
+    /[+-]\d+ Rep/gi,
+    /[+-]\$\d+/gi,
+    /[+-]\d+ Energy/gi,
+    /[+-]\d+ Stress/gi,
+    // Emoji format (from new system)
+    /[+-]\d+ ⚡/gi,
+    /[+-]\d+ 💢/gi,
   ];
 
   patterns.forEach(pattern => {

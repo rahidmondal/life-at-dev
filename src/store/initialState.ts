@@ -6,10 +6,12 @@ export const INITIAL_GAME_STATE: GameState = {
     version: '2.0.0',
     tick: 0,
     startAge: 18,
+    playerName: 'Developer',
   },
 
   resources: {
     money: 0,
+    debt: 0,
     stress: 0,
     energy: 100,
     fulfillment: 0,
@@ -35,8 +37,18 @@ export const INITIAL_GAME_STATE: GameState = {
 
   flags: {
     isBurnedOut: false,
+    isBankrupt: false,
+    consecutiveMissedPayments: 0,
+    totalMissedPayments: 0,
     streak: 0,
     cooldowns: {},
+    accumulatesDebt: false,
+    startingPath: null,
+    isScholar: false,
+    scholarYearsRemaining: 0,
+    hasGraduated: false,
+    purchasedInvestments: [],
+    activeBuffs: [],
   },
   eventLog: [],
 };

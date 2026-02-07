@@ -2,31 +2,35 @@ import { RANDOM_EVENTS } from '../data/events';
 import { JOB_REGISTRY } from '../data/tracks';
 import type { EventLogEntry, RandomEvent } from '../types/events';
 import type { GameState } from '../types/gamestate';
+import { getAvailablePromotions, isAtCrossroads, isReadyForPromotion } from './promotion';
 
 export function triggerRandomEvents(state: GameState): GameState {
+  // First check for promotion events
+  const stateAfterPromotion = checkPromotionEvent(state);
+
   const eligibleEvents = RANDOM_EVENTS.filter(event => {
     if (event.requirements) {
       const { minStress, maxStress, minEnergy, minMoney, minSkill, track, jobTier } = event.requirements;
-      const currentJob = JOB_REGISTRY[state.career.currentJobId];
+      const currentJob = JOB_REGISTRY[stateAfterPromotion.career.currentJobId];
 
-      if (minStress !== undefined && state.resources.stress < minStress) return false;
-      if (maxStress !== undefined && state.resources.stress > maxStress) return false;
-      if (minEnergy !== undefined && state.resources.energy < minEnergy) return false;
-      if (minMoney !== undefined && state.resources.money < minMoney) return false;
-      if (minSkill !== undefined && state.stats.skills.coding < minSkill) return false;
+      if (minStress !== undefined && stateAfterPromotion.resources.stress < minStress) return false;
+      if (maxStress !== undefined && stateAfterPromotion.resources.stress > maxStress) return false;
+      if (minEnergy !== undefined && stateAfterPromotion.resources.energy < minEnergy) return false;
+      if (minMoney !== undefined && stateAfterPromotion.resources.money < minMoney) return false;
+      if (minSkill !== undefined && stateAfterPromotion.stats.skills.coding < minSkill) return false;
       if (track !== undefined && currentJob.track !== track) return false;
       if (jobTier !== undefined && currentJob.tier < jobTier) return false;
     }
     return true;
   });
 
-  if (eligibleEvents.length === 0) return state;
+  if (eligibleEvents.length === 0) return stateAfterPromotion;
 
   const triggeredEvent = eligibleEvents.find(event => Math.random() < event.baseProbability);
 
-  if (!triggeredEvent) return state;
+  if (!triggeredEvent) return stateAfterPromotion;
 
-  return applyEventEffect(state, triggeredEvent);
+  return applyEventEffect(stateAfterPromotion, triggeredEvent);
 }
 
 function applyEventEffect(state: GameState, event: RandomEvent): GameState {
@@ -70,6 +74,59 @@ function applyEventEffect(state: GameState, event: RandomEvent): GameState {
       skills: newSkills,
       xp: newXP,
     },
+    eventLog: [logEntry, ...state.eventLog].slice(0, 50),
+  };
+}
+
+/**
+ * Check if the player is ready for a promotion and add an event log entry.
+ * This notifies the player that promotion opportunities are available.
+ */
+function checkPromotionEvent(state: GameState): GameState {
+  // Check if player is ready for promotion based on XP
+  if (!isReadyForPromotion(state)) {
+    return state;
+  }
+
+  // Get available promotions
+  const availablePromotions = getAvailablePromotions(state);
+  if (availablePromotions.length === 0) {
+    return state;
+  }
+
+  const currentJob = JOB_REGISTRY[state.career.currentJobId];
+
+  // Check if at crossroads (L2 unlock point)
+  const atCrossroads = isAtCrossroads(state.career.currentJobId);
+
+  // Create appropriate event message
+  let message: string;
+  if (atCrossroads) {
+    message = `🎯 CROSSROADS: You've reached ${currentJob.title}! Multiple career paths are now available. Consider your next move carefully.`;
+  } else if (availablePromotions.length === 1) {
+    message = `📈 PROMOTION READY: You qualify for ${availablePromotions[0].title}! Visit the Career panel to apply.`;
+  } else {
+    message = `📈 PROMOTION READY: ${String(availablePromotions.length)} positions available! Visit the Career panel to apply.`;
+  }
+
+  const logEntry: EventLogEntry = {
+    tick: state.meta.tick,
+    eventId: atCrossroads ? 'career_crossroads' : 'promotion_ready',
+    message,
+  };
+
+  // Only add the event if it's not already in the log for this tick
+  const alreadyLogged = state.eventLog.some(
+    entry =>
+      entry.tick === state.meta.tick && (entry.eventId === 'promotion_ready' || entry.eventId === 'career_crossroads'),
+  );
+
+  if (alreadyLogged) {
+    return state;
+  }
+
+  return {
+    ...state,
     eventLog: [logEntry, ...state.eventLog].slice(0, 50),
   };
 }

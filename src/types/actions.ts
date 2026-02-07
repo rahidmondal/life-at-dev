@@ -31,6 +31,27 @@ export interface ActionRequirements {
 }
 
 /**
+ * JobRequirements: Conditions for filtering work actions by job context.
+ * All conditions are OR-based (action shows if ANY condition matches).
+ */
+export interface JobRequirements {
+  /** List of specific job IDs this action is available for. */
+  jobIds?: string[];
+  /** List of track names this action is available for (e.g., 'Corporate_L1'). */
+  tracks?: string[];
+  /** Minimum job tier required. */
+  minTier?: number;
+  /** Maximum job tier allowed. */
+  maxTier?: number;
+  /** Show for unemployed players. */
+  unemployed?: boolean;
+  /** Show for all jobs (universal action). */
+  universal?: boolean;
+  /** Show only for students (isScholar === true). */
+  studentOnly?: boolean;
+}
+
+/**
  * PassiveBuff: Permanent modifier from INVEST actions.
  */
 export interface PassiveBuff {
@@ -68,6 +89,9 @@ export interface GameAction {
 
   /** Optional preconditions. Action is locked if not met. */
   requirements?: ActionRequirements;
+
+  /** Job-based filtering for WORK actions. Defines which jobs can use this action. */
+  jobRequirements?: JobRequirements;
 
   /** Duration in weeks. 0 = instant, 1+ = multi-week commitment. */
   duration?: number;

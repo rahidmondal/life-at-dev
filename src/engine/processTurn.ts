@@ -1,6 +1,10 @@
 import { ACTIONS_REGISTRY } from '../data/actions';
 import { JOB_REGISTRY } from '../data/tracks';
 import type { GameState } from '../types/gamestate';
+import type { ActiveBuff } from '../types/resources';
+import { applyRecoveryBuffs, applySkillBuffs, applyStressBuffs, hasAlreadyPurchased } from './buffs';
+import { hasMissedPayment, makeDebtPayment, processWeeklyDebt } from './debt';
+import { generateEventLogEntry } from './eventLog';
 import { triggerRandomEvents } from './events';
 import { calculateBurnoutRisk, calculateDecay, calculateDiminishingGrowth } from './mechanics';
 import { advanceTime, calculateResourceDelta } from './time';
@@ -28,6 +32,12 @@ export function processTurn(state: GameState, actionId: string): GameState {
 
   const action = ACTIONS_REGISTRY[actionId];
 
+  if (action.category === 'INVEST' && action.passiveBuff && !action.isRecurring) {
+    if (hasAlreadyPurchased(state.flags.purchasedInvestments, actionId)) {
+      return state;
+    }
+  }
+
   if (state.resources.money < action.moneyCost) {
     throw new Error('Insufficient money');
   }
@@ -38,6 +48,7 @@ export function processTurn(state: GameState, actionId: string): GameState {
 
   const currentJob = JOB_REGISTRY[state.career.currentJobId];
   const weeks = Math.max(0, action.duration ?? 0);
+  const activeBuffs = state.flags.activeBuffs;
 
   let money = state.resources.money - action.moneyCost;
   let energy = calculateResourceDelta(
@@ -48,12 +59,16 @@ export function processTurn(state: GameState, actionId: string): GameState {
   );
 
   if (action.energyGain) {
-    energy = calculateResourceDelta(energy, action.energyGain, RESOURCE_BOUNDS.energy.min, RESOURCE_BOUNDS.energy.max);
+    const buffedEnergyGain = applyRecoveryBuffs(activeBuffs, action.energyGain);
+    energy = calculateResourceDelta(energy, buffedEnergyGain, RESOURCE_BOUNDS.energy.min, RESOURCE_BOUNDS.energy.max);
   }
+
+  const baseStressChange = action.rewards.stress ?? 0;
+  const buffedStressChange = baseStressChange > 0 ? applyStressBuffs(activeBuffs, baseStressChange) : baseStressChange;
 
   const stress = calculateResourceDelta(
     state.resources.stress,
-    action.rewards.stress ?? 0,
+    buffedStressChange,
     RESOURCE_BOUNDS.stress.min,
     RESOURCE_BOUNDS.stress.max,
   );
@@ -74,28 +89,31 @@ export function processTurn(state: GameState, actionId: string): GameState {
   if (weeks > 0) {
     const roleDisplacement = currentJob.roleDisplacement ?? ROLE_DISPLACEMENT[currentJob.tier];
 
+    const jobEnergyCost = (currentJob.energyCost ?? 0) * weeks;
+    energy = calculateResourceDelta(energy, -jobEnergyCost, RESOURCE_BOUNDS.energy.min, RESOURCE_BOUNDS.energy.max);
+
     coding = Math.max(0, coding - calculateDecay(coding, roleDisplacement) * weeks);
-    politics = Math.max(0, politics - calculateDecay(politics, roleDisplacement) * weeks);
 
     if (currentJob.weeklyGains) {
       if (currentJob.weeklyGains.coding) {
-        coding += calculateDiminishingGrowth(coding, currentJob.weeklyGains.coding * weeks);
+        const buffedCodingGain = applySkillBuffs(activeBuffs, currentJob.weeklyGains.coding * weeks);
+        coding += calculateDiminishingGrowth(coding, buffedCodingGain);
       }
 
       if (currentJob.weeklyGains.politics) {
-        politics += calculateDiminishingGrowth(politics, currentJob.weeklyGains.politics * weeks);
+        const buffedPoliticsGain = applySkillBuffs(activeBuffs, currentJob.weeklyGains.politics * weeks);
+        politics += calculateDiminishingGrowth(politics, buffedPoliticsGain);
       }
 
       corporate += (currentJob.weeklyGains.corporate ?? 0) * weeks;
       freelance += (currentJob.weeklyGains.freelance ?? 0) * weeks;
       reputation += (currentJob.weeklyGains.reputation ?? 0) * weeks;
     }
-
-    money += (currentJob.salary / 52) * weeks;
   }
 
   if (action.rewards.skill) {
-    coding += calculateDiminishingGrowth(coding, action.rewards.skill);
+    const buffedSkillGain = applySkillBuffs(activeBuffs, action.rewards.skill);
+    coding += calculateDiminishingGrowth(coding, buffedSkillGain);
   }
 
   if (action.rewards.politics) {
@@ -118,52 +136,72 @@ export function processTurn(state: GameState, actionId: string): GameState {
     money += action.rewards.money;
   }
 
-  const meta = advanceTime(state.meta, weeks);
-  const isBurnedOut = calculateBurnoutRisk(stress, energy);
+  const debtResult = processWeeklyDebt({
+    ...state,
+    meta: advanceTime(state.meta, weeks),
+  });
 
-  // Calculate actual deltas for action feedback
+  let finalDebt = debtResult.newDebt;
+  let debtStressPenalty = debtResult.stressPenalty;
+
+  if (debtResult.debtPayment > 0) {
+    if (hasMissedPayment(money, debtResult.debtPayment)) {
+      debtStressPenalty += 5;
+    } else {
+      money -= debtResult.debtPayment;
+      finalDebt = makeDebtPayment(finalDebt, debtResult.debtPayment);
+    }
+  }
+
+  const meta = advanceTime(state.meta, weeks);
+  const isBurnedOut = calculateBurnoutRisk(stress + debtStressPenalty, energy);
+
   const finalEnergy = Math.round(energy);
-  const finalStress = Math.round(stress);
+  const finalStress = Math.round(
+    calculateResourceDelta(stress + debtStressPenalty, 0, RESOURCE_BOUNDS.stress.min, RESOURCE_BOUNDS.stress.max),
+  );
   const finalMoney = money;
   const finalCoding = Math.floor(coding);
 
-  const deltaEnergy = finalEnergy - state.resources.energy;
-  const deltaStress = finalStress - state.resources.stress;
-  const deltaMoney = finalMoney - state.resources.money;
-  const deltaSkill = finalCoding - state.stats.skills.coding;
+  const newActiveBuffs = [...activeBuffs];
+  const newPurchasedInvestments = [...state.flags.purchasedInvestments];
 
-  // Build delta summary for terminal display (matching Terminal.tsx regex patterns)
-  const deltaFragments: string[] = [];
-  if (deltaSkill !== 0) {
-    deltaFragments.push(`${deltaSkill >= 0 ? '+' : ''}${deltaSkill.toString()} Skill`);
-  }
-  if (deltaEnergy !== 0) {
-    deltaFragments.push(`${deltaEnergy >= 0 ? '+' : ''}${deltaEnergy.toString()} Energy`);
-  }
-  if (deltaStress !== 0) {
-    deltaFragments.push(`${deltaStress >= 0 ? '+' : ''}${deltaStress.toString()} Stress`);
-  }
-  if (deltaMoney !== 0) {
-    deltaFragments.push(`${deltaMoney >= 0 ? '+' : ''}$${Math.abs(Math.round(deltaMoney)).toString()}`);
+  if (action.category === 'INVEST' && action.passiveBuff) {
+    const newBuff: ActiveBuff = {
+      sourceActionId: actionId,
+      stat: action.passiveBuff.stat,
+      type: action.passiveBuff.type,
+      value: action.passiveBuff.value,
+      description: action.passiveBuff.description,
+      acquiredAt: meta.tick,
+      isRecurring: action.isRecurring ?? false,
+      weeklyCost: action.isRecurring ? action.moneyCost : undefined,
+    };
+
+    newActiveBuffs.push(newBuff);
+
+    if (!action.isRecurring) {
+      newPurchasedInvestments.push(actionId);
+    }
   }
 
-  const deltaSummary = deltaFragments.length > 0 ? deltaFragments.join(', ') : 'No changes';
-
-  // Create action log entry with eventId triggering correct Terminal.tsx color
-  const eventIdSuffix = action.category === 'WORK' ? 'work' : 'success';
-  const actionLogEntry = {
-    tick: state.meta.tick,
-    eventId: `action_${actionId}_${eventIdSuffix}`,
-    message: `Executing ${action.label}... COMPLETE. ${deltaSummary}.`,
+  const deltas = {
+    skill: finalCoding - state.stats.skills.coding,
+    energy: finalEnergy - state.resources.energy,
+    stress: finalStress - state.resources.stress,
+    money: finalMoney - state.resources.money,
+    xp: action.rewards.xp ?? 0,
+    reputation: action.rewards.reputation ?? 0,
   };
 
-  const newState = {
+  const newState: GameState = {
     ...state,
     meta,
     resources: {
       energy: finalEnergy,
       stress: finalStress,
       money: finalMoney,
+      debt: finalDebt,
       fulfillment: Math.round(fulfillment),
     },
     stats: {
@@ -180,9 +218,15 @@ export function processTurn(state: GameState, actionId: string): GameState {
     flags: {
       ...state.flags,
       isBurnedOut,
+      activeBuffs: newActiveBuffs,
+      purchasedInvestments: newPurchasedInvestments,
     },
-    eventLog: [...state.eventLog, actionLogEntry],
   };
 
-  return triggerRandomEvents(newState);
+  const actionLogEntry = generateEventLogEntry(actionId, action.label, action.category, newState, deltas);
+
+  return triggerRandomEvents({
+    ...newState,
+    eventLog: [...state.eventLog, actionLogEntry],
+  });
 }

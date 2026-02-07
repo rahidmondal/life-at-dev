@@ -7,6 +7,7 @@ describe('advanceTime', () => {
     tick: 0,
     version: '2.0.0',
     startAge: 18,
+    playerName: 'TestPlayer',
   };
 
   it('should advance time by the specified number of weeks', () => {
