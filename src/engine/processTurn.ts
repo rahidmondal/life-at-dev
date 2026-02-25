@@ -89,8 +89,9 @@ export function processTurn(state: GameState, actionId: string): GameState {
   if (weeks > 0) {
     const roleDisplacement = currentJob.roleDisplacement ?? ROLE_DISPLACEMENT[currentJob.tier];
 
-    const jobEnergyCost = (currentJob.energyCost ?? 0) * weeks;
-    energy = calculateResourceDelta(energy, -jobEnergyCost, RESOURCE_BOUNDS.energy.min, RESOURCE_BOUNDS.energy.max);
+    // Note: Job weekly energy cost is NOT deducted here.
+    // The action's energyCost already represents the total energy spent.
+    // Time-based effects (decay, weekly gains) still apply during the duration.
 
     coding = Math.max(0, coding - calculateDecay(coding, roleDisplacement) * weeks);
 

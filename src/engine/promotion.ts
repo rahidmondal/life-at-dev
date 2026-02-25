@@ -224,3 +224,27 @@ export function getJobTierLabel(tier: number): string {
 export function isAtCrossroads(currentJobId: JobId): boolean {
   return L2_UNLOCK_JOBS.includes(currentJobId as (typeof L2_UNLOCK_JOBS)[number]);
 }
+
+/**
+ * Get the next possible positions for a player based on their current job.
+ * Returns positions regardless of whether the player meets requirements.
+ * Used by the "Apply for Job" modal to show the progression path.
+ */
+export function getNextPositions(currentJobId: string): JobNode[] {
+  // Unemployed: can start either corporate or hustler path
+  if (currentJobId === 'unemployed') {
+    return [JOB_REGISTRY['corp_intern'], JOB_REGISTRY['hustle_freelancer']].filter(Boolean);
+  }
+
+  const currentJob = JOB_REGISTRY[currentJobId];
+  if (!currentJob) return [];
+
+  // Terminal job (xpCap undefined): no further progression
+  if (currentJob.xpCap === undefined) return [];
+
+  // Combine next-in-track and L2 options (for crossroads)
+  const nextInTrack = getNextTierJobs(currentJob);
+  const l2Options = getL2TrackOptions(currentJobId);
+
+  return [...nextInTrack, ...l2Options];
+}

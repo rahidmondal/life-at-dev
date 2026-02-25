@@ -91,6 +91,74 @@ export function detectTrackSwitch(currentJob: JobNode, newJob: JobNode): boolean
   return currentJob.track !== newJob.track;
 }
 
+/**
+ * Detailed comparison of a player stat against a job requirement.
+ */
+export interface RequirementDetail {
+  stat: string;
+  label: string;
+  current: number;
+  required: number;
+  met: boolean;
+}
+
+/**
+ * Get a per-stat comparison of player stats against a job's requirements.
+ * Returns an array of requirement details with current vs required values.
+ */
+export function getRequirementDetails(stats: PlayerStats, job: JobNode): RequirementDetail[] {
+  const details: RequirementDetail[] = [];
+  const reqs = job.requirements;
+
+  if (reqs.coding !== undefined) {
+    details.push({
+      stat: 'coding',
+      label: 'Coding',
+      current: stats.skills.coding,
+      required: reqs.coding,
+      met: stats.skills.coding >= reqs.coding,
+    });
+  }
+  if (reqs.politics !== undefined) {
+    details.push({
+      stat: 'politics',
+      label: 'Politics',
+      current: stats.skills.politics,
+      required: reqs.politics,
+      met: stats.skills.politics >= reqs.politics,
+    });
+  }
+  if (reqs.corporate !== undefined) {
+    details.push({
+      stat: 'corporate',
+      label: 'Corporate XP',
+      current: stats.xp.corporate,
+      required: reqs.corporate,
+      met: stats.xp.corporate >= reqs.corporate,
+    });
+  }
+  if (reqs.freelance !== undefined) {
+    details.push({
+      stat: 'freelance',
+      label: 'Freelance XP',
+      current: stats.xp.freelance,
+      required: reqs.freelance,
+      met: stats.xp.freelance >= reqs.freelance,
+    });
+  }
+  if (reqs.reputation !== undefined) {
+    details.push({
+      stat: 'reputation',
+      label: 'Reputation',
+      current: stats.xp.reputation,
+      required: reqs.reputation,
+      met: stats.xp.reputation >= reqs.reputation,
+    });
+  }
+
+  return details;
+}
+
 export function promotePlayer(state: GameState, newJobId: string): GameState {
   if (!(newJobId in JOB_REGISTRY)) {
     throw new Error(`Job with ID "${newJobId}" not found in JOB_REGISTRY`);

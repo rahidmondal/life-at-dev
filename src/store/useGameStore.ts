@@ -197,7 +197,15 @@ export const useGameStore = create<GameStore>()(
           }
 
           const currentState = extractGameState(get());
-          const newState = processTurn(currentState, actionId);
+
+          let newState: GameState;
+          try {
+            newState = processTurn(currentState, actionId);
+          } catch {
+            // Action cannot be performed (insufficient resources or invalid action)
+            return;
+          }
+
           set({ ...newState }, false, `performAction:${actionId}`);
 
           // Check if year-end should be triggered after this action

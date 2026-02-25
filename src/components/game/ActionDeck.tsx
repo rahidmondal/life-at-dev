@@ -199,9 +199,8 @@ function ActionCard({ action }: { action: GameAction }) {
   const isLocked = !canAffordEnergy || !canAffordMoney;
 
   const handleClick = () => {
-    if (!isLocked) {
-      performAction(action.id);
-    }
+    if (isLocked) return;
+    performAction(action.id);
   };
 
   // Build categorized cost/gain effects for the hover tooltip
@@ -211,20 +210,16 @@ function ActionCard({ action }: { action: GameAction }) {
     const r = action.rewards;
 
     // --- Costs: resources spent + negative effects ---
-    if (action.energyCost > 0)
-      costs.push({ icon: <ZapIcon size={11} />, text: `-${action.energyCost}` });
-    if (action.moneyCost > 0)
-      costs.push({ icon: <DollarIcon size={11} />, text: `-$${action.moneyCost}` });
-    if (r.stress && r.stress > 0)
-      costs.push({ icon: <HeartPulseIcon size={11} />, text: `+${r.stress}` });
+    if (action.energyCost > 0) costs.push({ icon: <ZapIcon size={11} />, text: `-${action.energyCost}` });
+    if (action.moneyCost > 0) costs.push({ icon: <DollarIcon size={11} />, text: `-$${action.moneyCost}` });
+    if (r.stress && r.stress > 0) costs.push({ icon: <HeartPulseIcon size={11} />, text: `+${r.stress}` });
 
     // --- Gains: resources earned + positive effects ---
     if (action.energyGain && action.energyGain > 0)
       gains.push({ icon: <ZapIcon size={11} />, text: `+${action.energyGain}`, color: 'text-[#39D353]' });
     if (r.skill && r.skill > 0)
       gains.push({ icon: <CodeIcon size={11} />, text: `+${r.skill}`, color: 'text-[#39D353]' });
-    if (r.xp && r.xp > 0)
-      gains.push({ icon: <StarIcon size={11} />, text: `+${r.xp}`, color: 'text-[#A371F7]' });
+    if (r.xp && r.xp > 0) gains.push({ icon: <StarIcon size={11} />, text: `+${r.xp}`, color: 'text-[#A371F7]' });
     if (r.money && r.money > 0)
       gains.push({ icon: <DollarIcon size={11} />, text: `+$${r.money}`, color: 'text-[#FFA657]' });
     if (r.reputation && r.reputation > 0)

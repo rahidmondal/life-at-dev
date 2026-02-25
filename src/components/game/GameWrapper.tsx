@@ -23,6 +23,8 @@ export function GameWrapper() {
     resources,
     flags,
     meta,
+    career,
+    stats,
     resetGame,
     startNewGame,
     currentSaveId,
@@ -30,7 +32,6 @@ export function GameWrapper() {
     showJobApplicationModal,
     acknowledgeGraduation,
     closeJobApplication,
-    getAvailableJobs,
     applyForJob,
   } = useGameStore();
 
@@ -183,7 +184,8 @@ export function GameWrapper() {
       )}
       {showJobApplicationModal && (
         <JobApplicationModal
-          availableJobs={getAvailableJobs()}
+          currentJobId={career.currentJobId}
+          stats={stats}
           isStudent={flags.isScholar && !flags.hasGraduated}
           onSelectJob={applyForJob}
           onClose={closeJobApplication}
