@@ -204,6 +204,48 @@ function ActionCard({ action }: { action: GameAction }) {
     }
   };
 
+  // Build categorized cost/gain effects for the hover tooltip
+  const { costs, gains } = useMemo(() => {
+    const costs: { icon: React.ReactNode; text: string }[] = [];
+    const gains: { icon: React.ReactNode; text: string; color: string }[] = [];
+    const r = action.rewards;
+
+    // --- Costs: resources spent + negative effects ---
+    if (action.energyCost > 0)
+      costs.push({ icon: <ZapIcon size={11} />, text: `-${action.energyCost}` });
+    if (action.moneyCost > 0)
+      costs.push({ icon: <DollarIcon size={11} />, text: `-$${action.moneyCost}` });
+    if (r.stress && r.stress > 0)
+      costs.push({ icon: <HeartPulseIcon size={11} />, text: `+${r.stress}` });
+
+    // --- Gains: resources earned + positive effects ---
+    if (action.energyGain && action.energyGain > 0)
+      gains.push({ icon: <ZapIcon size={11} />, text: `+${action.energyGain}`, color: 'text-[#39D353]' });
+    if (r.skill && r.skill > 0)
+      gains.push({ icon: <CodeIcon size={11} />, text: `+${r.skill}`, color: 'text-[#39D353]' });
+    if (r.xp && r.xp > 0)
+      gains.push({ icon: <StarIcon size={11} />, text: `+${r.xp}`, color: 'text-[#A371F7]' });
+    if (r.money && r.money > 0)
+      gains.push({ icon: <DollarIcon size={11} />, text: `+$${r.money}`, color: 'text-[#FFA657]' });
+    if (r.reputation && r.reputation > 0)
+      gains.push({ icon: <UsersIcon size={11} />, text: `+${r.reputation}`, color: 'text-[#58A6FF]' });
+    if (r.corporate && r.corporate > 0)
+      gains.push({ icon: <BriefcaseIcon size={11} />, text: `+${r.corporate}`, color: 'text-[#58A6FF]' });
+    if (r.freelance && r.freelance > 0)
+      gains.push({ icon: <GlobeIcon size={11} />, text: `+${r.freelance}`, color: 'text-[#58A6FF]' });
+    if (r.politics && r.politics > 0)
+      gains.push({ icon: <FlagIcon size={11} />, text: `+${r.politics}`, color: 'text-[#8B949E]' });
+    if (r.fulfillment && r.fulfillment > 0)
+      gains.push({ icon: <HeartHandshakeIcon size={11} />, text: `+${r.fulfillment}`, color: 'text-[#F778BA]' });
+    if (r.stress && r.stress < 0)
+      gains.push({ icon: <HeartPulseIcon size={11} />, text: `${r.stress}`, color: 'text-[#39D353]' });
+
+    return { costs, gains };
+  }, [action]);
+
+  const hasDuration = action.duration !== undefined;
+  const hasBuff = !!action.passiveBuff;
+
   return (
     <div
       className={`relative rounded-lg overflow-hidden transition-all duration-300 cursor-pointer
@@ -237,50 +279,46 @@ function ActionCard({ action }: { action: GameAction }) {
       </div>
 
       {isHovered && !isLocked && (
-        <div className="absolute inset-0 bg-[#0D1117]/95 backdrop-blur-sm rounded-lg p-3 flex flex-col justify-between animate-fade-in border border-[#39D353]">
-          <div>
-            <h4 className="text-[#39D353] text-xs font-bold mb-1">{action.label}</h4>
-            <p className="text-[#8B949E] text-[10px] italic line-clamp-2">{getFlavorText(action)}</p>
-          </div>
+        <div className="absolute inset-0 bg-[#0D1117]/95 backdrop-blur-sm rounded-lg p-2.5 flex flex-col animate-fade-in border border-[#39D353]">
+          <h4 className="text-[#39D353] text-[11px] font-bold truncate">{action.label}</h4>
 
-          <div className="space-y-1">
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1 text-[#58A6FF]">
-                <ZapIcon size={12} />-{action.energyCost}
-              </span>
-              {action.moneyCost > 0 && (
-                <span className="flex items-center gap-1 text-[#D2A8FF]">
-                  <DollarIcon size={12} />
-                  -${action.moneyCost}
-                </span>
-              )}
-            </div>
+          <div className="mt-auto space-y-1.5">
+            {(costs.length > 0 || gains.length > 0) && (
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                {costs.map((c, i) => (
+                  <span key={`c${i}`} className="flex items-center gap-0.5 text-[11px] text-[#FF7B72]">
+                    {c.icon}
+                    {c.text}
+                  </span>
+                ))}
+                {gains.map((g, i) => (
+                  <span key={`g${i}`} className={`flex items-center gap-0.5 text-[11px] ${g.color}`}>
+                    {g.icon}
+                    {g.text}
+                  </span>
+                ))}
+              </div>
+            )}
 
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              {action.rewards.skill && action.rewards.skill > 0 && (
-                <span className="flex items-center gap-1 text-[#39D353]">
-                  <CodeIcon size={12} />+{action.rewards.skill}
-                </span>
-              )}
-              {action.rewards.xp && action.rewards.xp > 0 && (
-                <span className="flex items-center gap-1 text-[#A371F7]">+{action.rewards.xp} XP</span>
-              )}
-              {action.rewards.stress !== undefined && (
-                <span
-                  className={`flex items-center gap-1 ${action.rewards.stress > 0 ? 'text-[#FF7B72]' : 'text-[#39D353]'}`}
-                >
-                  <HeartPulseIcon size={12} />
-                  {action.rewards.stress > 0 ? '+' : ''}
-                  {action.rewards.stress}
-                </span>
-              )}
-              {action.rewards.money && action.rewards.money > 0 && (
-                <span className="flex items-center gap-1 text-[#D2A8FF]">+${action.rewards.money}</span>
-              )}
-            </div>
-
-            {action.duration && action.duration > 0 && (
-              <span className="text-[10px] text-[#8B949E]">⏱ {action.duration}w duration</span>
+            {/* Footer: Duration + Passive Buff */}
+            {(hasDuration || hasBuff) && (
+              <div className="flex items-center gap-2 pt-1 border-t border-[#30363D]/50">
+                {hasDuration && (
+                  <span className="flex items-center gap-0.5 text-[10px] text-[#8B949E]">
+                    <ClockIcon size={10} />
+                    {action.duration}w
+                  </span>
+                )}
+                {hasBuff && (
+                  <span
+                    className="flex items-center gap-0.5 text-[10px] text-[#58A6FF] truncate"
+                    title={action.passiveBuff!.description}
+                  >
+                    <SparklesIcon size={10} />
+                    {action.passiveBuff!.description}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
