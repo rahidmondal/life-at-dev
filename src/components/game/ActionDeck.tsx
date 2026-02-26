@@ -239,7 +239,7 @@ function ActionCard({ action }: { action: GameAction }) {
   }, [action]);
 
   const hasDuration = action.duration !== undefined;
-  const hasBuff = !!action.passiveBuff;
+  const hasBuff = Boolean(action.passiveBuff);
 
   return (
     <div
