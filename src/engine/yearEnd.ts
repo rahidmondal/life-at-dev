@@ -3,6 +3,7 @@ import type { GameState, PlayerStats } from '../types/gamestate';
 import type { Flags } from '../types/resources';
 import { processAnnualDebtPayment } from './debt';
 import { generateBankruptcyWarning, generateGraduationMessage, generateYearEndMessage } from './eventLog';
+import { isReadyForPromotion } from './promotion';
 import { getDateFromTick, isYearEnd } from './time';
 
 /**
@@ -28,6 +29,30 @@ const HUSTLER_FIXED_RENT = 12000;
  */
 const BANKRUPTCY_THRESHOLD_RATE = 0.5;
 
+/** Bonus rates keyed by performance rating. */
+const BONUS_RATES: Record<PerformanceRating, number> = {
+  exceptional: 0.2,
+  good: 0.1,
+  average: 0.05,
+  poor: 0,
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PUBLIC TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type PerformanceRating = 'exceptional' | 'good' | 'average' | 'poor';
+
+/** Annual performance review produced at year-end. */
+export interface PerformanceReview {
+  rating: PerformanceRating;
+  bonus: number;
+  skillLevel: number;
+  stressLevel: number;
+  reputationLevel: number;
+  isEligibleForPromotion: boolean;
+}
+
 /**
  * Result of year-end financial processing.
  */
@@ -40,6 +65,9 @@ export interface YearEndResult {
 
   /** Detailed breakdown of year-end finances. */
   summary: YearEndSummary;
+
+  /** Annual performance review. */
+  performanceReview: PerformanceReview;
 }
 
 export interface YearEndSummary {
@@ -145,8 +173,8 @@ function processScholarProgress(state: GameState): {
     stats: newStats,
     flags: {
       scholarYearsRemaining: newYearsRemaining,
-      isScholar: !isGraduating, // No longer a scholar after graduation
-      hasGraduated: isGraduating ? true : undefined, // Set hasGraduated on graduation
+      isScholar: !isGraduating,
+      hasGraduated: isGraduating ? true : undefined,
     },
     isGraduating,
   };
@@ -181,6 +209,14 @@ export function processYearEnd(state: GameState): YearEndResult {
         finalMoney: state.resources.money,
         finalDebt: state.resources.debt,
         message: 'Year ended. No changes.',
+      },
+      performanceReview: {
+        rating: 'average',
+        bonus: 0,
+        skillLevel: state.stats.skills.coding,
+        stressLevel: state.resources.stress,
+        reputationLevel: state.stats.xp.reputation,
+        isEligibleForPromotion: false,
       },
     };
   }
@@ -240,6 +276,14 @@ export function processYearEnd(state: GameState): YearEndResult {
         finalMoney: Math.round(newMoney),
         finalDebt: Math.round(newDebt),
         message: messages.join(' '),
+      },
+      performanceReview: {
+        rating: 'poor',
+        bonus: 0,
+        skillLevel: state.stats.skills.coding,
+        stressLevel: state.resources.stress,
+        reputationLevel: state.stats.xp.reputation,
+        isEligibleForPromotion: false,
       },
     };
   }
@@ -309,6 +353,14 @@ export function processYearEnd(state: GameState): YearEndResult {
     });
   }
 
+  // Performance review & annual bonus
+  const performanceReview = calculatePerformanceReview(state, salary);
+  const bonusAmount = performanceReview.bonus;
+  newMoney += bonusAmount;
+  if (bonusAmount > 0) {
+    messages.push(`Annual bonus: +$${bonusAmount.toLocaleString()}.`);
+  }
+
   const newState: GameState = {
     ...state,
     resources: {
@@ -341,6 +393,7 @@ export function processYearEnd(state: GameState): YearEndResult {
       finalDebt: Math.round(newDebt),
       message: messages.join(' '),
     },
+    performanceReview,
   };
 }
 
@@ -355,4 +408,55 @@ export { isYearEnd };
  */
 export function getCurrentYear(tick: number): number {
   return Math.floor(tick / 52) + 1;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PERFORMANCE REVIEW
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Calculate annual performance review.
+ * Rating is based on skill level relative to job tier expectations,
+ * stress management, and reputation growth.
+ * Bonus is a percentage of salary based on the rating.
+ */
+export function calculatePerformanceReview(state: GameState, salary: number): PerformanceReview {
+  const { stats, resources } = state;
+  const job = JOB_REGISTRY[state.career.currentJobId];
+  const tier = job?.tier ?? 0;
+
+  // Expected skill for the tier (rough ladder: tier 0→500, tier 6→8000)
+  const expectedSkill = 500 + tier * 1250;
+  const skillRatio = stats.skills.coding / Math.max(1, expectedSkill);
+
+  // Stress penalty: high stress hurts rating
+  const stressPenalty = resources.stress > 80 ? -1 : resources.stress > 60 ? -0.5 : 0;
+
+  // Reputation bonus
+  const repBonus = stats.xp.reputation > 3000 ? 0.5 : stats.xp.reputation > 1000 ? 0.25 : 0;
+
+  const score = skillRatio + repBonus + stressPenalty;
+
+  let rating: PerformanceRating;
+  if (score >= 1.5) {
+    rating = 'exceptional';
+  } else if (score >= 1.0) {
+    rating = 'good';
+  } else if (score >= 0.6) {
+    rating = 'average';
+  } else {
+    rating = 'poor';
+  }
+
+  const bonus = Math.round(salary * BONUS_RATES[rating]);
+  const eligible = isReadyForPromotion(state);
+
+  return {
+    rating,
+    bonus,
+    skillLevel: stats.skills.coding,
+    stressLevel: resources.stress,
+    reputationLevel: stats.xp.reputation,
+    isEligibleForPromotion: eligible,
+  };
 }

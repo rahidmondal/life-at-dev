@@ -183,6 +183,9 @@ describe('getEligibleJobs', () => {
       activeBuffs: [],
     },
     eventLog: [],
+    status: 'PLAYING',
+    gameOverReason: null,
+    gameOverOutcome: null,
   });
 
   it('should exclude current job from eligible jobs', () => {
@@ -369,6 +372,9 @@ describe('promotePlayer', () => {
       activeBuffs: [],
     },
     eventLog: [],
+    status: 'PLAYING',
+    gameOverReason: null,
+    gameOverOutcome: null,
   });
 
   it('should update currentJobId to new job', () => {
