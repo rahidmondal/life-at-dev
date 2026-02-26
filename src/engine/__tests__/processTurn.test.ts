@@ -68,6 +68,9 @@ function createMockState(overrides: MockOverrides = {}): GameState {
       activeBuffs: [],
     },
     eventLog: [],
+    status: 'PLAYING',
+    gameOverReason: null,
+    gameOverOutcome: null,
   };
 }
 

@@ -499,6 +499,34 @@ export function generateYearEndMessage(
   };
 }
 
+const RATING_LABELS: Record<string, string> = {
+  exceptional: '🌟 Exceptional',
+  good: '👍 Good',
+  average: '📊 Average',
+  poor: '⚠️ Needs Improvement',
+};
+
+/**
+ * Generate a performance-review event log entry shown at year-end.
+ */
+export function generatePerformanceReviewMessage(
+  year: number,
+  rating: string,
+  bonus: number,
+  isEligibleForPromotion: boolean,
+  tick: number,
+): EventLogEntry {
+  const ratingLabel = RATING_LABELS[rating] ?? rating;
+  const bonusPart = bonus > 0 ? ` Bonus: +$${bonus.toLocaleString()}.` : '';
+  const promoPart = isEligibleForPromotion ? ' 🚀 Eligible for promotion!' : '';
+
+  return {
+    tick,
+    eventId: 'performance_review',
+    message: `📋 Year ${String(year)} Performance Review: ${ratingLabel}.${bonusPart}${promoPart}`,
+  };
+}
+
 /**
  * Generate a random event message.
  */
@@ -591,5 +619,55 @@ export function generateGraduationMessage(
     tick: 0,
     eventId: 'graduation',
     message: pickRandom(messages),
+  };
+}
+
+/**
+ * Generate a game-over event log entry.
+ */
+export function generateGameOverMessage(
+  reason: 'burnout' | 'bankruptcy' | 'retirement' | 'aged_out',
+  outcome: 'win' | 'loss',
+  tick: number,
+): EventLogEntry {
+  const winMessages = [
+    "🏆 VICTORY! You've reached the pinnacle of tech. Time to write that autobiography.",
+    '🏆 GAME COMPLETE! From zero to tech legend. What a ride.',
+    '🏆 YOU WIN! The simulation ends, but your legacy lives on.',
+  ];
+
+  const burnoutMessages = [
+    '🔥 BURNOUT. The grind finally caught up. System.exit(1).',
+    '🔥 GAME OVER — Burnout. The terminal blinks, but nobody is typing.',
+    '🔥 CRITICAL FAILURE: Stress overflow. Human.exe has stopped responding.',
+  ];
+
+  const bankruptcyMessages = [
+    '💸 BANKRUPTCY. The bank account reads $NaN. Game over.',
+    "💸 GAME OVER — Bankrupt. Turns out you can't pay rent with git commits.",
+    '💸 FINANCIAL COLLAPSE. The debt collectors have entered the chat.',
+  ];
+
+  const agedOutMessages = [
+    "⏰ TIME'S UP. The clock ran out, but the memories remain.",
+    '⏰ GAME OVER — Retired by time. Not every ending is a failure.',
+    '⏰ END OF AN ERA. The IDE closes for the last time.',
+  ];
+
+  let message: string;
+  if (outcome === 'win') {
+    message = pickRandom(winMessages);
+  } else if (reason === 'burnout') {
+    message = pickRandom(burnoutMessages);
+  } else if (reason === 'bankruptcy') {
+    message = pickRandom(bankruptcyMessages);
+  } else {
+    message = pickRandom(agedOutMessages);
+  }
+
+  return {
+    tick,
+    eventId: `game_over_${reason}`,
+    message,
   };
 }

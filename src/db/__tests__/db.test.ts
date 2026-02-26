@@ -52,6 +52,9 @@ const createMockGameState = (): GameState => ({
     activeBuffs: [],
   },
   eventLog: [],
+  status: 'PLAYING',
+  gameOverReason: null,
+  gameOverOutcome: null,
 });
 
 const createMockSaveFile = (overrides?: Partial<SaveFile>): SaveFile => ({

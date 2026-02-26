@@ -2,6 +2,8 @@ import { UNEMPLOYED_JOB_ID } from '../data/tracks';
 import type { GameState } from '../types/gamestate';
 
 export const INITIAL_GAME_STATE: GameState = {
+  status: 'PLAYING',
+
   meta: {
     version: '2.0.0',
     tick: 0,
@@ -51,4 +53,7 @@ export const INITIAL_GAME_STATE: GameState = {
     activeBuffs: [],
   },
   eventLog: [],
+
+  gameOverReason: null,
+  gameOverOutcome: null,
 };
