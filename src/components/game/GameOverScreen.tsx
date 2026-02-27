@@ -7,10 +7,11 @@ import { PlayIcon, SaveIcon } from '../ui/icons';
 
 interface GameOverScreenProps {
   reason: 'bankruptcy' | 'burnout' | 'retirement' | 'aged_out';
+  outcome: 'win' | 'loss';
   onRestart: () => void;
 }
 
-export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
+export function GameOverScreen({ reason, outcome, onRestart }: GameOverScreenProps) {
   const { meta, resources, stats, career } = useGameStore();
   const gameOverRef = useRef<HTMLDivElement>(null);
 
@@ -108,7 +109,11 @@ export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
               {ending.title}
             </h1>
             <p className="text-[#8B949E] mt-2">
-              {reason === 'retirement' ? 'Retirement Certificate' : 'End of Journey'}
+              {outcome === 'win'
+                ? 'Victory Certificate'
+                : reason === 'retirement'
+                  ? 'Retirement Certificate'
+                  : 'End of Journey'}
             </p>
           </div>
 

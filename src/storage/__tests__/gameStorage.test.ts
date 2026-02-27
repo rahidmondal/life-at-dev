@@ -51,6 +51,9 @@ const createMockGameState = (overrides?: Partial<GameState>): GameState => ({
     activeBuffs: [],
   },
   eventLog: [],
+  status: 'PLAYING',
+  gameOverReason: null,
+  gameOverOutcome: null,
   ...overrides,
 });
 

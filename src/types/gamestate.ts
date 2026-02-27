@@ -3,6 +3,19 @@ import type { EventLogEntry } from './events';
 import type { Flags, Resources } from './resources';
 import type { SkillMap, XPCurrency } from './stats';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Game Phase & End-State Types
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Top-level game status. */
+export type GameStatus = 'PLAYING' | 'GAME_OVER';
+
+/** Why the game ended. */
+export type GameOverReason = 'burnout' | 'bankruptcy' | 'retirement' | 'aged_out';
+
+/** Whether the ending was a win or a loss. */
+export type GameOverOutcome = 'win' | 'loss';
+
 /**
  * GameMeta: Simulation metadata and time tracking.
  */
@@ -36,6 +49,9 @@ export interface PlayerStats {
  * This interface defines the shape of the Zustand store.
  */
 export interface GameState {
+  /** Current game phase. */
+  status: GameStatus;
+
   /** Simulation metadata and time. */
   meta: GameMeta;
 
@@ -53,4 +69,10 @@ export interface GameState {
 
   /** History of triggered events. */
   eventLog: EventLogEntry[];
+
+  /** Why the game ended (null while playing). */
+  gameOverReason: GameOverReason | null;
+
+  /** Win or loss (null while playing). */
+  gameOverOutcome: GameOverOutcome | null;
 }

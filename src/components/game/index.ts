@@ -6,6 +6,7 @@ export { GameOverScreen } from './GameOverScreen';
 export { GameWrapper } from './GameWrapper';
 export { GraduationModal } from './GraduationModal';
 export { HowToPlayModal } from './HowToPlayModal';
+export { InterviewModal } from './InterviewModal';
 export { JobApplicationModal } from './JobApplicationModal';
 export { LandingScreen } from './LandingScreen';
 export { Ledger } from './Ledger';

@@ -5,24 +5,27 @@ import { useGameStore } from '../../store/useGameStore';
 import { CommandCenter } from './CommandCenter';
 import { GameOverScreen } from './GameOverScreen';
 import { GraduationModal } from './GraduationModal';
+import { InterviewModal } from './InterviewModal';
 import { JobApplicationModal } from './JobApplicationModal';
 import { LandingScreen } from './LandingScreen';
 import { LoadingScreen } from './LoadingScreen';
 import { StartScreen } from './StartScreen';
 
 type GamePhase = 'landing' | 'loading' | 'selecting' | 'launching' | 'playing' | 'gameover';
-type GameOverReason = 'bankruptcy' | 'burnout' | 'retirement' | 'aged_out';
 
 export function GameWrapper() {
   const [phase, setPhase] = useState<GamePhase>('landing');
-  const [gameOverReason, setGameOverReason] = useState<GameOverReason>('retirement');
   const [playerName, setPlayerName] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
 
   const {
-    resources,
+    status,
+    gameOverReason,
+    gameOverOutcome,
     flags,
     meta,
+    career,
+    stats,
     resetGame,
     startNewGame,
     currentSaveId,
@@ -30,9 +33,11 @@ export function GameWrapper() {
     showJobApplicationModal,
     acknowledgeGraduation,
     closeJobApplication,
-    getAvailableJobs,
-    applyForJob,
+    isInterviewOpen,
+    startInterview: startInterviewRaw,
   } = useGameStore();
+
+  const startInterview = startInterviewRaw as (jobId: string) => void;
 
   useEffect(() => {
     const unsubFinishHydration = useGameStore.persist.onFinishHydration(() => {
@@ -48,51 +53,27 @@ export function GameWrapper() {
     };
   }, []);
 
+  // On hydration: determine initial phase from persisted state
   useEffect(() => {
     if (!isHydrated) return;
 
     if (currentSaveId && meta.tick > 0) {
-      // Check bankruptcy flag (set by year-end processing)
-      if (flags.isBankrupt) {
-        setGameOverReason('bankruptcy');
-        setPhase('gameover');
-      } else if (resources.stress >= 100) {
-        setGameOverReason('burnout');
+      if (status === 'GAME_OVER') {
         setPhase('gameover');
       } else {
-        const age = meta.startAge + Math.floor(meta.tick / 52);
-        if (age >= 65) {
-          setGameOverReason('aged_out');
-          setPhase('gameover');
-        } else {
-          setPhase('playing');
-        }
+        setPhase('playing');
       }
     }
-  }, [isHydrated, currentSaveId, meta.tick, meta.startAge, flags.isBankrupt, resources.stress]);
+  }, [isHydrated, currentSaveId, meta.tick, status]);
 
+  // React to game-over status changes while playing
   useEffect(() => {
     if (phase !== 'playing') return;
 
-    // Check bankruptcy flag (set by year-end processing)
-    if (flags.isBankrupt) {
-      setGameOverReason('bankruptcy');
-      setPhase('gameover');
-      return;
-    }
-
-    if (resources.stress >= 100) {
-      setGameOverReason('burnout');
-      setPhase('gameover');
-      return;
-    }
-
-    const age = meta.startAge + Math.floor(meta.tick / 52);
-    if (age >= 65) {
-      setGameOverReason('aged_out');
+    if (status === 'GAME_OVER') {
       setPhase('gameover');
     }
-  }, [phase, flags.isBankrupt, resources.stress, meta.tick, meta.startAge]);
+  }, [phase, status]);
 
   const handleStartClick = () => {
     resetGame();
@@ -122,11 +103,6 @@ export function GameWrapper() {
     resetGame();
     setPlayerName('');
     setPhase('landing');
-  };
-
-  const _handleRetire = () => {
-    setGameOverReason('retirement');
-    setPhase('gameover');
   };
 
   if (!isHydrated) {
@@ -168,7 +144,13 @@ export function GameWrapper() {
   }
 
   if (phase === 'gameover') {
-    return <GameOverScreen reason={gameOverReason} onRestart={handleRestart} />;
+    return (
+      <GameOverScreen
+        reason={(gameOverReason as 'burnout' | 'bankruptcy' | 'retirement' | 'aged_out' | null) ?? 'aged_out'}
+        outcome={(gameOverOutcome as 'win' | 'loss' | null) ?? 'loss'}
+        onRestart={handleRestart}
+      />
+    );
   }
 
   const handleExitGame = () => {
@@ -178,17 +160,22 @@ export function GameWrapper() {
   return (
     <>
       <CommandCenter onExitGame={handleExitGame} />
+
       {showGraduationModal && (
         <GraduationModal playerName={meta.playerName} path={flags.startingPath} onContinue={acknowledgeGraduation} />
       )}
+
       {showJobApplicationModal && (
         <JobApplicationModal
-          availableJobs={getAvailableJobs()}
+          currentJobId={career.currentJobId}
+          stats={stats}
           isStudent={flags.isScholar && !flags.hasGraduated}
-          onSelectJob={applyForJob}
+          onSelectJob={startInterview}
           onClose={closeJobApplication}
         />
       )}
+
+      {isInterviewOpen && <InterviewModal />}
     </>
   );
 }

@@ -66,6 +66,9 @@ function createTestState(
       activeBuffs: [],
     },
     eventLog: [],
+    status: 'PLAYING',
+    gameOverReason: null,
+    gameOverOutcome: null,
   };
 }
 

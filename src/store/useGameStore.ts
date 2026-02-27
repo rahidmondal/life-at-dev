@@ -1,8 +1,14 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { getInterviewSession, type InterviewQuestion } from '../data/interviews';
 import { JOB_REGISTRY } from '../data/tracks';
 import { getEligibleJobsForApplication, promotePlayer } from '../engine/career';
-import { generateJobChangeMessage } from '../engine/eventLog';
+import {
+  generateGameOverMessage,
+  generateJobChangeMessage,
+  generatePerformanceReviewMessage,
+} from '../engine/eventLog';
+import { checkGameOverConditions } from '../engine/gameOver';
 import { calculateProjectedSkillChange } from '../engine/mechanics';
 import { processTurn } from '../engine/processTurn';
 import { isYearEnd, processYearEnd } from '../engine/yearEnd';
@@ -69,6 +75,13 @@ interface GameActions {
   applyForJob: (jobId: string) => void;
   getAvailableJobs: () => JobNode[];
 
+  // Interview flow
+  startInterview: (jobId: string) => void;
+  submitInterviewAnswer: (optionIndex: number) => void;
+  advanceInterviewQuestion: () => void;
+  completeInterview: () => void;
+  closeInterview: () => void;
+
   // Graduation flow
   acknowledgeGraduation: () => void;
 
@@ -82,21 +95,35 @@ interface GameActions {
   getProjectedSkillChange: () => number;
 }
 
+interface InterviewState {
+  isInterviewOpen: boolean;
+  currentInterviewJobId: string | null;
+  interviewQuestions: InterviewQuestion[];
+  currentQuestionIndex: number;
+  correctAnswersCount: number;
+  interviewAnswers: { selectedOption: number; correct: boolean }[];
+  showInterviewFeedback: boolean;
+  interviewPhase: 'question' | 'results';
+}
+
 interface UIState {
   showJobApplicationModal: boolean;
   showGraduationModal: boolean;
 }
 
-type GameStore = GameState & { currentSaveId: string | null } & UIState & GameActions;
+type GameStore = GameState & { currentSaveId: string | null } & UIState & InterviewState & GameActions;
 
 function extractGameState(store: GameStore): GameState {
   return {
+    status: store.status,
     meta: store.meta,
     resources: store.resources,
     stats: store.stats,
     career: store.career,
     flags: store.flags,
     eventLog: store.eventLog,
+    gameOverReason: store.gameOverReason,
+    gameOverOutcome: store.gameOverOutcome,
   };
 }
 
@@ -108,6 +135,16 @@ export const useGameStore = create<GameStore>()(
         currentSaveId: null,
         showJobApplicationModal: false,
         showGraduationModal: false,
+
+        // Interview state
+        isInterviewOpen: false,
+        currentInterviewJobId: null,
+        interviewQuestions: [],
+        currentQuestionIndex: 0,
+        correctAnswersCount: 0,
+        interviewAnswers: [],
+        showInterviewFeedback: false,
+        interviewPhase: 'question' as const,
 
         tick: () =>
           set(
@@ -184,7 +221,20 @@ export const useGameStore = create<GameStore>()(
 
         resetGame: () =>
           set(
-            { ...INITIAL_GAME_STATE, currentSaveId: null, showJobApplicationModal: false, showGraduationModal: false },
+            {
+              ...INITIAL_GAME_STATE,
+              currentSaveId: null,
+              showJobApplicationModal: false,
+              showGraduationModal: false,
+              isInterviewOpen: false,
+              currentInterviewJobId: null,
+              interviewQuestions: [],
+              currentQuestionIndex: 0,
+              correctAnswersCount: 0,
+              interviewAnswers: [],
+              showInterviewFeedback: false,
+              interviewPhase: 'question' as const,
+            },
             false,
             'resetGame',
           ),
@@ -197,14 +247,91 @@ export const useGameStore = create<GameStore>()(
           }
 
           const currentState = extractGameState(get());
-          const newState = processTurn(currentState, actionId);
-          set({ ...newState }, false, `performAction:${actionId}`);
 
-          // Check if year-end should be triggered after this action
-          if (isYearEnd(newState.meta.tick)) {
-            get().triggerYearEnd();
+          // Don't process turns if game is over
+          if (currentState.status === 'GAME_OVER') {
+            return;
           }
 
+          let newState: GameState;
+          try {
+            newState = processTurn(currentState, actionId);
+          } catch {
+            // Action cannot be performed (insufficient resources or invalid action)
+            return;
+          }
+
+          // ── Game-over check (pre year-end) ──
+          const gameOverCheck = checkGameOverConditions(newState);
+          if (gameOverCheck.isGameOver) {
+            const reason = gameOverCheck.reason!;
+            const outcome = gameOverCheck.outcome!;
+            const entry = generateGameOverMessage(reason, outcome, newState.meta.tick);
+            set(
+              {
+                ...newState,
+                status: 'GAME_OVER',
+                gameOverReason: reason,
+                gameOverOutcome: outcome,
+                eventLog: [...newState.eventLog, entry],
+              },
+              false,
+              `gameOver:${reason}`,
+            );
+            void get().saveGame();
+            return;
+          }
+
+          // ── Year-end interceptor ──
+          if (isYearEnd(newState.meta.tick)) {
+            const wasGraduated = newState.flags.hasGraduated;
+            const result = processYearEnd(newState);
+
+            // Check bankruptcy from year-end
+            if (result.isBankrupt) {
+              const entry = generateGameOverMessage('bankruptcy', 'loss', newState.meta.tick);
+              set(
+                {
+                  ...result.newState,
+                  status: 'GAME_OVER',
+                  gameOverReason: 'bankruptcy',
+                  gameOverOutcome: 'loss',
+                  eventLog: [...result.newState.eventLog, entry],
+                },
+                false,
+                'gameOver:bankruptcy',
+              );
+              void get().saveGame();
+              return;
+            }
+
+            const justGraduated = !wasGraduated && result.newState.flags.hasGraduated;
+            const yearNumber = Math.floor(newState.meta.tick / 52) + 1;
+
+            // Log performance review to event log
+            const reviewEntry = generatePerformanceReviewMessage(
+              yearNumber,
+              result.performanceReview.rating,
+              result.performanceReview.bonus,
+              result.performanceReview.isEligibleForPromotion,
+              newState.meta.tick,
+            );
+
+            set(
+              {
+                ...result.newState,
+                eventLog: [...result.newState.eventLog, reviewEntry],
+                showGraduationModal: justGraduated,
+              },
+              false,
+              'yearEnd:processed',
+            );
+            void get().saveGame();
+            return;
+          }
+
+          // ── Normal state update ──
+          set({ ...newState }, false, `performAction:${actionId}`);
           void get().saveGame();
         },
 
@@ -231,11 +358,37 @@ export const useGameStore = create<GameStore>()(
           const oldJobTitle = oldJob.title;
           const jobChangeEntry = generateJobChangeMessage(oldJobTitle, newJob.title, newJob.salary);
 
+          const stateWithEvent: GameState = {
+            ...newState,
+            eventLog: [...newState.eventLog, { ...jobChangeEntry, tick: newState.meta.tick }],
+          };
+
+          // Check game-over after job change (e.g. reached terminal role → win)
+          const gameOverCheck = checkGameOverConditions(stateWithEvent);
+          if (gameOverCheck.isGameOver) {
+            const reason = gameOverCheck.reason!;
+            const outcome = gameOverCheck.outcome!;
+            const goEntry = generateGameOverMessage(reason, outcome, stateWithEvent.meta.tick);
+            set(
+              {
+                ...stateWithEvent,
+                status: 'GAME_OVER',
+                gameOverReason: reason,
+                gameOverOutcome: outcome,
+                eventLog: [...stateWithEvent.eventLog, goEntry],
+                showJobApplicationModal: false,
+              },
+              false,
+              `gameOver:${reason}`,
+            );
+            void get().saveGame();
+            return;
+          }
+
           // Merge the event into state
           set(
             {
-              ...newState,
-              eventLog: [...newState.eventLog, { ...jobChangeEntry, tick: newState.meta.tick }],
+              ...stateWithEvent,
               showJobApplicationModal: false,
             },
             false,
@@ -244,6 +397,115 @@ export const useGameStore = create<GameStore>()(
 
           void get().saveGame();
         },
+
+        // ── Interview flow ──────────────────────────────────────────────
+        startInterview: (jobId: string) => {
+          const questions = getInterviewSession(jobId);
+          set(
+            {
+              isInterviewOpen: true,
+              showJobApplicationModal: false,
+              currentInterviewJobId: jobId,
+              interviewQuestions: questions,
+              currentQuestionIndex: 0,
+              correctAnswersCount: 0,
+              interviewAnswers: [],
+              showInterviewFeedback: false,
+              interviewPhase: 'question',
+            },
+            false,
+            `startInterview:${jobId}`,
+          );
+        },
+
+        submitInterviewAnswer: (optionIndex: number) => {
+          const { interviewQuestions, currentQuestionIndex, correctAnswersCount, interviewAnswers } = get();
+          const currentQ = interviewQuestions[currentQuestionIndex];
+          if (!currentQ) return;
+
+          const isCorrect = optionIndex === currentQ.correctIndex;
+          set(
+            {
+              correctAnswersCount: isCorrect ? correctAnswersCount + 1 : correctAnswersCount,
+              interviewAnswers: [...interviewAnswers, { selectedOption: optionIndex, correct: isCorrect }],
+              showInterviewFeedback: true,
+            },
+            false,
+            'submitInterviewAnswer',
+          );
+        },
+
+        advanceInterviewQuestion: () => {
+          const { currentQuestionIndex } = get();
+          if (currentQuestionIndex < 2) {
+            set(
+              {
+                currentQuestionIndex: currentQuestionIndex + 1,
+                showInterviewFeedback: false,
+              },
+              false,
+              'advanceInterviewQuestion',
+            );
+          } else {
+            set({ interviewPhase: 'results', showInterviewFeedback: false }, false, 'interviewResults');
+          }
+        },
+
+        completeInterview: () => {
+          const { correctAnswersCount, currentInterviewJobId } = get();
+          const passed = correctAnswersCount >= 2;
+
+          if (passed && currentInterviewJobId) {
+            // Trigger actual promotion via applyForJob
+            set(
+              {
+                isInterviewOpen: false,
+                currentInterviewJobId: null,
+                interviewQuestions: [],
+                currentQuestionIndex: 0,
+                correctAnswersCount: 0,
+                interviewAnswers: [],
+                showInterviewFeedback: false,
+                interviewPhase: 'question',
+              },
+              false,
+              'interviewPassed',
+            );
+            get().applyForJob(currentInterviewJobId);
+          } else {
+            // Failed — just close
+            set(
+              {
+                isInterviewOpen: false,
+                currentInterviewJobId: null,
+                interviewQuestions: [],
+                currentQuestionIndex: 0,
+                correctAnswersCount: 0,
+                interviewAnswers: [],
+                showInterviewFeedback: false,
+                interviewPhase: 'question',
+              },
+              false,
+              'interviewFailed',
+            );
+          }
+        },
+
+        closeInterview: () =>
+          set(
+            {
+              isInterviewOpen: false,
+              currentInterviewJobId: null,
+              interviewQuestions: [],
+              currentQuestionIndex: 0,
+              correctAnswersCount: 0,
+              interviewAnswers: [],
+              showInterviewFeedback: false,
+              interviewPhase: 'question',
+            },
+            false,
+            'closeInterview',
+          ),
 
         // Graduation flow
         acknowledgeGraduation: () => set({ showGraduationModal: false }, false, 'acknowledgeGraduation'),
@@ -267,31 +529,41 @@ export const useGameStore = create<GameStore>()(
           const result = processYearEnd(currentState);
 
           if (result.isBankrupt) {
-            // Set bankruptcy flag
+            const entry = generateGameOverMessage('bankruptcy', 'loss', currentState.meta.tick);
             set(
               {
                 ...result.newState,
-                flags: {
-                  ...result.newState.flags,
-                  isBankrupt: true,
-                },
+                status: 'GAME_OVER',
+                gameOverReason: 'bankruptcy',
+                gameOverOutcome: 'loss',
+                eventLog: [...result.newState.eventLog, entry],
               },
               false,
               'yearEnd:bankruptcy',
             );
-            return true; // Returns true if bankrupt
+            return true;
           }
 
-          // Check if player just graduated
           const justGraduated = !wasGraduated && result.newState.flags.hasGraduated;
+          const yearNumber = Math.floor(currentState.meta.tick / 52) + 1;
+
+          // Log performance review to event log
+          const reviewEntry = generatePerformanceReviewMessage(
+            yearNumber,
+            result.performanceReview.rating,
+            result.performanceReview.bonus,
+            result.performanceReview.isEligibleForPromotion,
+            currentState.meta.tick,
+          );
 
           set(
             {
               ...result.newState,
+              eventLog: [...result.newState.eventLog, reviewEntry],
               showGraduationModal: justGraduated,
             },
             false,
-            justGraduated ? 'yearEnd:graduation' : 'yearEnd:success',
+            'yearEnd:processed',
           );
           return false;
         },
@@ -354,7 +626,25 @@ export const useGameStore = create<GameStore>()(
           await updateSave(currentSaveId, extractGameState(get()));
         },
 
-        resetState: () => set({ ...INITIAL_GAME_STATE, currentSaveId: null }, false, 'resetState'),
+        resetState: () =>
+          set(
+            {
+              ...INITIAL_GAME_STATE,
+              currentSaveId: null,
+              showJobApplicationModal: false,
+              showGraduationModal: false,
+              isInterviewOpen: false,
+              currentInterviewJobId: null,
+              interviewQuestions: [],
+              currentQuestionIndex: 0,
+              correctAnswersCount: 0,
+              interviewAnswers: [],
+              showInterviewFeedback: false,
+              interviewPhase: 'question' as const,
+            },
+            false,
+            'resetState',
+          ),
 
         getProjectedSkillChange: () => {
           const state = get();
@@ -393,6 +683,9 @@ export const useGameStore = create<GameStore>()(
           // Always ensure new fields exist (handles all versions)
           return {
             ...state,
+            status: (state as Record<string, unknown>).status ?? 'PLAYING',
+            gameOverReason: (state as Record<string, unknown>).gameOverReason ?? null,
+            gameOverOutcome: (state as Record<string, unknown>).gameOverOutcome ?? null,
             meta: {
               ...state.meta,
               playerName: state.meta?.playerName ?? 'Developer',
