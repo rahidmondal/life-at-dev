@@ -131,10 +131,10 @@ describe('eventLog', () => {
       expect(entry.eventId).toContain('_flow');
     });
 
-    it('should set broke suffix for large money loss', () => {
+    it('should set broke suffix for large money loss or low balance', () => {
       const state = createMockState();
       const entry = generateEventLogEntry('vacation', 'Take Vacation', 'RECOVER', state, {
-        money: -2000,
+        money: -6000,
       });
 
       expect(entry.eventId).toContain('_broke');

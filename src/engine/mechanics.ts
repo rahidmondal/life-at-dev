@@ -1,5 +1,5 @@
 const SKILL_CAP = 10000;
-const BASE_DECAY_RATE = 0.02;
+const BASE_DECAY_RATE = 0.0075; // Reduced from 0.02 to make skill maintenance possible
 const BURNOUT_STRESS_THRESHOLD = 95;
 const BURNOUT_ENERGY_THRESHOLD = 10;
 

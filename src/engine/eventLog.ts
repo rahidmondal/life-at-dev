@@ -462,8 +462,8 @@ export function generateEventLogEntry(
   else eventIdSuffix = 'invest'; // INVEST is the remaining category
 
   // Override with exceptional states (only if they make contextual sense)
-  // 'broke' can happen on any category when spending a lot of money
-  if (deltas.money && deltas.money < -1000) {
+  // 'broke' happens when: final balance is critically low OR huge spending
+  if (deltas.money && (state.resources.money < 2000 || deltas.money < -5000)) {
     eventIdSuffix = 'broke';
   }
   // 'flow' state: high energy + low stress (optimal performance state)

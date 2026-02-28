@@ -87,7 +87,7 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     energyCost: 18,
     roleDisplacement: 0.4,
     weeklyGains: {
-      coding: 4,
+      coding: 8,
       politics: 3,
       corporate: 12,
     },
@@ -107,7 +107,7 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     energyCost: 15,
     roleDisplacement: 0.6,
     weeklyGains: {
-      coding: 3,
+      coding: 10,
       politics: 5,
       corporate: 15,
     },
@@ -153,7 +153,7 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     energyCost: 18,
     roleDisplacement: 0.35,
     weeklyGains: {
-      coding: 3,
+      coding: 6,
       freelance: 15,
       reputation: 5,
     },
@@ -180,7 +180,7 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     energyCost: 20,
     roleDisplacement: 0.3,
     weeklyGains: {
-      coding: 2,
+      coding: 8,
       politics: 8,
       corporate: 20,
     },
@@ -247,7 +247,7 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     energyCost: 18,
     roleDisplacement: 0.5,
     weeklyGains: {
-      coding: 8,
+      coding: 12,
       politics: 3,
       corporate: 15,
     },
@@ -316,7 +316,7 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     energyCost: 25,
     roleDisplacement: 0.15,
     weeklyGains: {
-      coding: 2,
+      coding: 8,
       freelance: 18,
       reputation: 8,
     },
@@ -383,7 +383,7 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     energyCost: 20,
     roleDisplacement: 0.4,
     weeklyGains: {
-      coding: 6,
+      coding: 10,
       freelance: 12,
       reputation: 4,
     },
@@ -403,7 +403,7 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     energyCost: 18,
     roleDisplacement: 0.5,
     weeklyGains: {
-      coding: 8,
+      coding: 12,
       freelance: 15,
       reputation: 6,
     },
@@ -423,7 +423,7 @@ export const JOB_REGISTRY: Record<string, JobNode> = {
     energyCost: 15,
     roleDisplacement: 0.55,
     weeklyGains: {
-      coding: 10,
+      coding: 15,
       freelance: 18,
       reputation: 8,
     },
