@@ -57,7 +57,7 @@ export function JobApplicationModal({
   onSelectJob,
   onClose,
 }: JobApplicationModalProps) {
-  const currentJob: JobNode | undefined = JOB_REGISTRY[currentJobId];
+  const currentJob = JOB_REGISTRY[currentJobId];
 
   // Use the provided availableJobs list (already filtered by eligibility)
   const eligibleJobs = useMemo(() => {
@@ -68,7 +68,7 @@ export function JobApplicationModal({
   }, [availableJobs, isStudent]);
 
   // Terminal = job with no xpCap (top of track), but not unemployed special case
-  const isTerminal = currentJob !== undefined && currentJob.xpCap === undefined && currentJobId !== 'unemployed';
+  const isTerminal = currentJob.xpCap === undefined && currentJobId !== 'unemployed';
   const showCrossroads = eligibleJobs.length > 1 && currentJobId !== 'unemployed';
 
   return (
@@ -84,8 +84,8 @@ export function JobApplicationModal({
               {showCrossroads ? 'Career Crossroads' : 'Next Position'}
             </h2>
             <p className="text-[#8B949E] text-xs truncate">
-              Current: <span className="text-[#C9D1D9] font-medium">{currentJob?.title ?? 'Unemployed'}</span>
-              {currentJob && currentJob.salary > 0 ? ` · $${currentJob.salary.toLocaleString()}/yr` : ''}
+              Current: <span className="text-[#C9D1D9] font-medium">{currentJob.title}</span>
+              {currentJob.salary > 0 ? ` · $${currentJob.salary.toLocaleString()}/yr` : ''}
             </p>
           </div>
           <button
@@ -118,7 +118,7 @@ export function JobApplicationModal({
                   key={job.id}
                   job={job}
                   stats={stats}
-                  currentJobTitle={currentJob?.title ?? 'Unemployed'}
+                  currentJobTitle={currentJob.title}
                   onApply={() => {
                     onSelectJob(job.id);
                   }}
@@ -220,7 +220,7 @@ function NextPositionCard({
                   className={`h-full rounded-full transition-all ${
                     readiness >= 100 ? 'bg-[#39D353]' : readiness >= 60 ? 'bg-[#FFA657]' : 'bg-[#FF7B72]'
                   }`}
-                  style={{ width: `${readiness}%` }}
+                  style={{ width: `${String(readiness)}%` }}
                 />
               </div>
               <span
@@ -288,7 +288,7 @@ function StatRow({ requirement }: { requirement: RequirementDetail }) {
         <div className="h-1 bg-[#21262D] rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${met ? 'bg-[#39D353]' : 'bg-[#FF7B72]'}`}
-            style={{ width: `${progress}%` }}
+            style={{ width: `${String(progress)}%` }}
           />
         </div>
       </div>

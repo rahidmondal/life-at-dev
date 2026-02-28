@@ -263,9 +263,9 @@ export const useGameStore = create<GameStore>()(
 
           // ── Game-over check (pre year-end) ──
           const gameOverCheck = checkGameOverConditions(newState);
-          if (gameOverCheck.isGameOver) {
-            const reason = gameOverCheck.reason!;
-            const outcome = gameOverCheck.outcome!;
+          if (gameOverCheck.isGameOver && gameOverCheck.reason && gameOverCheck.outcome) {
+            const reason = gameOverCheck.reason;
+            const outcome = gameOverCheck.outcome;
             const entry = generateGameOverMessage(reason, outcome, newState.meta.tick);
             set(
               {
@@ -365,9 +365,9 @@ export const useGameStore = create<GameStore>()(
 
           // Check game-over after job change (e.g. reached terminal role → win)
           const gameOverCheck = checkGameOverConditions(stateWithEvent);
-          if (gameOverCheck.isGameOver) {
-            const reason = gameOverCheck.reason!;
-            const outcome = gameOverCheck.outcome!;
+          if (gameOverCheck.isGameOver && gameOverCheck.reason && gameOverCheck.outcome) {
+            const reason = gameOverCheck.reason;
+            const outcome = gameOverCheck.outcome;
             const goEntry = generateGameOverMessage(reason, outcome, stateWithEvent.meta.tick);
             set(
               {
@@ -421,8 +421,6 @@ export const useGameStore = create<GameStore>()(
         submitInterviewAnswer: (optionIndex: number) => {
           const { interviewQuestions, currentQuestionIndex, correctAnswersCount, interviewAnswers } = get();
           const currentQ = interviewQuestions[currentQuestionIndex];
-          if (!currentQ) return;
-
           const isCorrect = optionIndex === currentQ.correctIndex;
           set(
             {
