@@ -10,7 +10,8 @@ export function Terminal() {
   const terminalRef = useRef<HTMLDivElement>(null);
 
   const weekInYear = meta.tick % 52;
-  const entries = eventLog;
+
+  const entries = eventLog.slice(-200);
 
   useEffect(() => {
     if (terminalRef.current) {

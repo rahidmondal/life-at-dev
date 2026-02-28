@@ -676,13 +676,18 @@ export const useGameStore = create<GameStore>()(
               activeBuffs?: unknown[];
               [key: string]: unknown;
             };
+            eventLog?: unknown[];
             [key: string]: unknown;
           }
           const state = persistedState as OldState;
 
+          // Preserve event log (keep full history)
+          const eventLog = Array.isArray(state.eventLog) ? state.eventLog : [];
+
           // Always ensure new fields exist (handles all versions)
           return {
             ...state,
+            eventLog,
             status: (state as Record<string, unknown>).status ?? 'PLAYING',
             gameOverReason: (state as Record<string, unknown>).gameOverReason ?? null,
             gameOverOutcome: (state as Record<string, unknown>).gameOverOutcome ?? null,

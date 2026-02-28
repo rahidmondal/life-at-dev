@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import { JOB_REGISTRY } from '../../data/tracks';
 import { getRequirementDetails, type RequirementDetail } from '../../engine/career';
-import { getNextPositions } from '../../engine/promotion';
 import type { JobNode } from '../../types/career';
 import type { PlayerStats } from '../../types/gamestate';
 import { BriefcaseIcon, CheckIcon, CodeIcon, FlagIcon, GlobeIcon, LockIcon, UsersIcon, XIcon } from '../ui/icons';
@@ -12,6 +11,7 @@ interface JobApplicationModalProps {
   currentJobId: string;
   stats: PlayerStats;
   isStudent: boolean;
+  availableJobs: JobNode[];
   onSelectJob: (jobId: string) => void;
   onClose: () => void;
 }
@@ -46,29 +46,30 @@ function calcReadiness(requirements: RequirementDetail[]): number {
 }
 
 /**
- * JobApplicationModal: Shows the next unlockable position(s) in the player's
- * career track with a detailed stat comparison (current vs required).
+ * JobApplicationModal: Shows all positions the player is eligible to apply for,
+ * with a detailed stat comparison (current vs required).
  */
 export function JobApplicationModal({
   currentJobId,
   stats,
   isStudent,
+  availableJobs,
   onSelectJob,
   onClose,
 }: JobApplicationModalProps) {
   const currentJob: JobNode | undefined = JOB_REGISTRY[currentJobId];
 
-  const nextPositions = useMemo(() => {
-    const positions = getNextPositions(currentJobId);
+  // Use the provided availableJobs list (already filtered by eligibility)
+  const eligibleJobs = useMemo(() => {
     if (isStudent) {
-      return positions.filter(j => j.id === 'corp_intern' || j.id === 'hustle_freelancer');
+      return availableJobs.filter(j => j.id === 'corp_intern' || j.id === 'hustle_freelancer');
     }
-    return positions;
-  }, [currentJobId, isStudent]);
+    return availableJobs;
+  }, [availableJobs, isStudent]);
 
   // Terminal = job with no xpCap (top of track), but not unemployed special case
   const isTerminal = currentJob !== undefined && currentJob.xpCap === undefined && currentJobId !== 'unemployed';
-  const showCrossroads = nextPositions.length > 1 && currentJobId !== 'unemployed';
+  const showCrossroads = eligibleJobs.length > 1 && currentJobId !== 'unemployed';
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -99,7 +100,7 @@ export function JobApplicationModal({
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {isTerminal ? (
             <TerminalState jobTitle={currentJob.title} />
-          ) : nextPositions.length === 0 ? (
+          ) : eligibleJobs.length === 0 ? (
             <NoPositionsState isStudent={isStudent} />
           ) : (
             <div className="space-y-5">
@@ -112,7 +113,7 @@ export function JobApplicationModal({
                 </div>
               )}
 
-              {nextPositions.map(job => (
+              {eligibleJobs.map(job => (
                 <NextPositionCard
                   key={job.id}
                   job={job}

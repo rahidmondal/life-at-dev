@@ -35,6 +35,7 @@ export function GameWrapper() {
     closeJobApplication,
     isInterviewOpen,
     startInterview: startInterviewRaw,
+    getAvailableJobs,
   } = useGameStore();
 
   const startInterview = startInterviewRaw as (jobId: string) => void;
@@ -170,6 +171,7 @@ export function GameWrapper() {
           currentJobId={career.currentJobId}
           stats={stats}
           isStudent={flags.isScholar && !flags.hasGraduated}
+          availableJobs={getAvailableJobs()}
           onSelectJob={startInterview}
           onClose={closeJobApplication}
         />
