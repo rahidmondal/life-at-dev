@@ -1,13 +1,10 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { getDateFromTick } from '../../engine/time';
 import { useGameStore } from '../../store/useGameStore';
 import { PlayIcon, TerminalIcon } from '../ui/icons';
 
-/**
- * Terminal: The center feed showing game events and narrative.
- * Styled like VS Code terminal or Git log output.
- */
 export function Terminal() {
   const { meta, eventLog, performAction } = useGameStore();
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -15,7 +12,6 @@ export function Terminal() {
   const weekInYear = meta.tick % 52;
   const entries = eventLog;
 
-  // Auto-scroll to bottom when new events added
   useEffect(() => {
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
@@ -75,7 +71,6 @@ export function Terminal() {
   );
 }
 
-// Welcome message for new games
 function WelcomeMessage() {
   return (
     <div className="space-y-2 text-[#8B949E]">
@@ -88,7 +83,6 @@ function WelcomeMessage() {
   );
 }
 
-// Individual terminal entry
 interface TerminalEntryProps {
   entry: {
     tick: number;
@@ -98,8 +92,8 @@ interface TerminalEntryProps {
 }
 
 function TerminalEntry({ entry }: TerminalEntryProps) {
-  // Parse entry for special tags and effects
   const { tag, type } = parseEventType(entry.eventId);
+  const { year, week } = getDateFromTick(entry.tick);
 
   const tagColors: Record<string, string> = {
     SUCCESS: '#39D353',
@@ -118,7 +112,9 @@ function TerminalEntry({ entry }: TerminalEntryProps) {
     <div className="border-l-2 pl-3 py-1" style={{ borderColor: color }}>
       {/* Header */}
       <div className="flex items-center gap-2 text-xs mb-1">
-        <span className="text-[#484F58]">[WEEK {entry.tick}]</span>
+        <span className="text-[#484F58]">
+          [Y{year} W{week}]
+        </span>
         {tag && (
           <span
             className="px-1.5 py-0.5 rounded text-xs font-bold"
@@ -152,9 +148,7 @@ function TerminalEntry({ entry }: TerminalEntryProps) {
   );
 }
 
-// Helper to parse event type from ID
 function parseEventType(eventId: string): { tag: string; type: string } {
-  // Year-end events
   if (eventId.includes('year_end')) {
     if (eventId.includes('bankruptcy')) {
       return { tag: '💀 BANKRUPT', type: 'ERROR' };
@@ -162,22 +156,18 @@ function parseEventType(eventId: string): { tag: string; type: string } {
     return { tag: '📅 YEAR END', type: 'INFO' };
   }
 
-  // Debt events
   if (eventId.includes('debt')) {
     return { tag: '💳 DEBT', type: 'WARN' };
   }
 
-  // Job events
   if (eventId.includes('job_change')) {
     return { tag: '🎉 PROMOTED', type: 'SUCCESS' };
   }
 
-  // Random events
   if (eventId.includes('random')) {
     return { tag: '🎲 EVENT', type: 'EVENT' };
   }
 
-  // Action-based events
   if (eventId.includes('action_')) {
     if (eventId.includes('_work')) {
       return { tag: '💼 WORK', type: 'WORK' };
@@ -194,7 +184,6 @@ function parseEventType(eventId: string): { tag: string; type: string } {
     return { tag: '✓ DONE', type: 'SUCCESS' };
   }
 
-  // Legacy parsing
   if (eventId.includes('success') || eventId.includes('complete')) {
     return { tag: 'SUCCESS', type: 'SUCCESS' };
   }
@@ -208,18 +197,15 @@ function parseEventType(eventId: string): { tag: string; type: string } {
   return { tag: 'EVENT', type: 'EVENT' };
 }
 
-// Helper to parse stat effects from message
 function parseEffects(message: string): string[] {
   const effects: string[] = [];
   const patterns = [
-    // Standard format
     /[+-]\d+ Skill/gi,
     /[+-]\d+ XP/gi,
     /[+-]\d+ Rep/gi,
     /[+-]\$\d+/gi,
     /[+-]\d+ Energy/gi,
     /[+-]\d+ Stress/gi,
-    // Emoji format (from new system)
     /[+-]\d+ ⚡/gi,
     /[+-]\d+ 💢/gi,
   ];
