@@ -41,17 +41,8 @@ export function GameWrapper() {
   const startInterview = startInterviewRaw as (jobId: string) => void;
 
   useEffect(() => {
-    const unsubFinishHydration = useGameStore.persist.onFinishHydration(() => {
-      setIsHydrated(true);
-    });
-
-    if (useGameStore.persist.hasHydrated()) {
-      setIsHydrated(true);
-    }
-
-    return () => {
-      unsubFinishHydration();
-    };
+    // No persist middleware — state is always immediately available
+    setIsHydrated(true);
   }, []);
 
   // On hydration: determine initial phase from persisted state
