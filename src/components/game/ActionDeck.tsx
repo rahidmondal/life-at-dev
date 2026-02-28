@@ -207,38 +207,39 @@ function ActionCard({ action }: { action: GameAction }) {
   const { costs, gains } = useMemo(() => {
     const costs: { icon: React.ReactNode; text: string }[] = [];
     const gains: { icon: React.ReactNode; text: string; color: string }[] = [];
-    const r = action.rewards;
+    const rewards = action.rewards;
 
     // --- Costs: resources spent + negative effects ---
     if (action.energyCost > 0) costs.push({ icon: <ZapIcon size={11} />, text: `-${String(action.energyCost)}` });
     if (action.moneyCost > 0) costs.push({ icon: <DollarIcon size={11} />, text: `-$${String(action.moneyCost)}` });
-    if (r.stress && r.stress > 0) costs.push({ icon: <HeartPulseIcon size={11} />, text: `+${String(r.stress)}` });
+    if (rewards.stress && rewards.stress > 0)
+      costs.push({ icon: <HeartPulseIcon size={11} />, text: `+${String(rewards.stress)}` });
 
     // --- Gains: resources earned + positive effects ---
     if (action.energyGain && action.energyGain > 0)
       gains.push({ icon: <ZapIcon size={11} />, text: `+${String(action.energyGain)}`, color: 'text-[#39D353]' });
-    if (r.skill && r.skill > 0)
-      gains.push({ icon: <CodeIcon size={11} />, text: `+${String(r.skill)}`, color: 'text-[#39D353]' });
-    if (r.xp && r.xp > 0)
-      gains.push({ icon: <StarIcon size={11} />, text: `+${String(r.xp)}`, color: 'text-[#A371F7]' });
-    if (r.money && r.money > 0)
-      gains.push({ icon: <DollarIcon size={11} />, text: `+$${String(r.money)}`, color: 'text-[#FFA657]' });
-    if (r.reputation && r.reputation > 0)
-      gains.push({ icon: <UsersIcon size={11} />, text: `+${String(r.reputation)}`, color: 'text-[#58A6FF]' });
-    if (r.corporate && r.corporate > 0)
-      gains.push({ icon: <BriefcaseIcon size={11} />, text: `+${String(r.corporate)}`, color: 'text-[#58A6FF]' });
-    if (r.freelance && r.freelance > 0)
-      gains.push({ icon: <GlobeIcon size={11} />, text: `+${String(r.freelance)}`, color: 'text-[#58A6FF]' });
-    if (r.politics && r.politics > 0)
-      gains.push({ icon: <FlagIcon size={11} />, text: `+${String(r.politics)}`, color: 'text-[#8B949E]' });
-    if (r.fulfillment && r.fulfillment > 0)
+    if (rewards.skill && rewards.skill > 0)
+      gains.push({ icon: <CodeIcon size={11} />, text: `+${String(rewards.skill)}`, color: 'text-[#39D353]' });
+    if (rewards.xp && rewards.xp > 0)
+      gains.push({ icon: <StarIcon size={11} />, text: `+${String(rewards.xp)}`, color: 'text-[#A371F7]' });
+    if (rewards.money && rewards.money > 0)
+      gains.push({ icon: <DollarIcon size={11} />, text: `+$${String(rewards.money)}`, color: 'text-[#FFA657]' });
+    if (rewards.reputation && rewards.reputation > 0)
+      gains.push({ icon: <UsersIcon size={11} />, text: `+${String(rewards.reputation)}`, color: 'text-[#58A6FF]' });
+    if (rewards.corporate && rewards.corporate > 0)
+      gains.push({ icon: <BriefcaseIcon size={11} />, text: `+${String(rewards.corporate)}`, color: 'text-[#58A6FF]' });
+    if (rewards.freelance && rewards.freelance > 0)
+      gains.push({ icon: <GlobeIcon size={11} />, text: `+${String(rewards.freelance)}`, color: 'text-[#58A6FF]' });
+    if (rewards.politics && rewards.politics > 0)
+      gains.push({ icon: <FlagIcon size={11} />, text: `+${String(rewards.politics)}`, color: 'text-[#8B949E]' });
+    if (rewards.fulfillment && rewards.fulfillment > 0)
       gains.push({
         icon: <HeartHandshakeIcon size={11} />,
-        text: `+${String(r.fulfillment)}`,
+        text: `+${String(rewards.fulfillment)}`,
         color: 'text-[#F778BA]',
       });
-    if (r.stress && r.stress < 0)
-      gains.push({ icon: <HeartPulseIcon size={11} />, text: String(r.stress), color: 'text-[#39D353]' });
+    if (rewards.stress && rewards.stress < 0)
+      gains.push({ icon: <HeartPulseIcon size={11} />, text: String(rewards.stress), color: 'text-[#39D353]' });
 
     return { costs, gains };
   }, [action]);
