@@ -60,11 +60,16 @@ export function getEligibleJobsForApplication(state: GameState): JobNode[] {
   }
 
   // Non-students/graduates can apply to any eligible job
+  const currentJob = JOB_REGISTRY[currentJobId];
   return Object.values(JOB_REGISTRY).filter(job => {
     // Can't apply to current job
     if (job.id === currentJobId) return false;
     // Can't "apply" to unemployed
     if (job.id === 'unemployed') return false;
+    // Can't apply to lower or equal tier jobs in the same track
+    if (job.track === currentJob.track && job.tier <= currentJob.tier) return false;
+    // Can't apply to jobs already held
+    if (career.jobHistory.some(h => h.jobId === job.id)) return false;
     return checkJobRequirements(job, stats);
   });
 }

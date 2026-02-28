@@ -2,7 +2,14 @@ import { ACTIONS_REGISTRY } from '../data/actions';
 import { JOB_REGISTRY } from '../data/tracks';
 import type { GameState } from '../types/gamestate';
 import type { ActiveBuff } from '../types/resources';
-import { applyRecoveryBuffs, applySkillBuffs, applyStressBuffs, hasAlreadyPurchased } from './buffs';
+import {
+  applyRecoveryBuffs,
+  applySkillBuffs,
+  applyStressBuffs,
+  calculateRecurringBuffCosts,
+  hasAlreadyPurchased,
+  removeUnaffordableRecurringBuffs,
+} from './buffs';
 import { hasMissedPayment, makeDebtPayment, processWeeklyDebt } from './debt';
 import { generateEventLogEntry } from './eventLog';
 import { triggerRandomEvents } from './events';
@@ -137,20 +144,45 @@ export function processTurn(state: GameState, actionId: string): GameState {
     money += action.rewards.money;
   }
 
-  const debtResult = processWeeklyDebt({
-    ...state,
-    meta: advanceTime(state.meta, weeks),
-  });
+  // ── Debt processing (only for actions with duration > 0) ──
+  let finalDebt = state.resources.debt;
+  let debtStressPenalty = 0;
 
-  let finalDebt = debtResult.newDebt;
-  let debtStressPenalty = debtResult.stressPenalty;
+  if (weeks > 0) {
+    const debtResult = processWeeklyDebt({
+      ...state,
+      meta: advanceTime(state.meta, weeks),
+    });
 
-  if (debtResult.debtPayment > 0) {
-    if (hasMissedPayment(money, debtResult.debtPayment)) {
-      debtStressPenalty += 5;
-    } else {
-      money -= debtResult.debtPayment;
-      finalDebt = makeDebtPayment(finalDebt, debtResult.debtPayment);
+    finalDebt = debtResult.newDebt;
+    debtStressPenalty = debtResult.stressPenalty;
+
+    if (debtResult.debtPayment > 0) {
+      if (hasMissedPayment(money, debtResult.debtPayment)) {
+        debtStressPenalty += 5;
+      } else {
+        money -= debtResult.debtPayment;
+        finalDebt = makeDebtPayment(finalDebt, debtResult.debtPayment);
+      }
+    }
+  }
+
+  // ── Recurring investment costs (deducted per-week during the action) ──
+  if (weeks > 0) {
+    const weeklyRecurringCost = calculateRecurringBuffCosts(activeBuffs);
+    const totalRecurringCost = weeklyRecurringCost * weeks;
+    if (totalRecurringCost > 0) {
+      if (money >= totalRecurringCost) {
+        money -= totalRecurringCost;
+      } else {
+        // Can't afford all recurring buffs — remove the most expensive ones
+        const cleaned = removeUnaffordableRecurringBuffs(activeBuffs, money);
+        // Deduct what we can afford
+        const affordableCost = calculateRecurringBuffCosts(cleaned.buffs) * weeks;
+        money -= affordableCost;
+        // Update activeBuffs reference (will be used for newActiveBuffs below)
+        activeBuffs.splice(0, activeBuffs.length, ...cleaned.buffs);
+      }
     }
   }
 
@@ -228,6 +260,6 @@ export function processTurn(state: GameState, actionId: string): GameState {
 
   return triggerRandomEvents({
     ...newState,
-    eventLog: [...state.eventLog, actionLogEntry],
+    eventLog: [actionLogEntry, ...state.eventLog].slice(0, 50),
   });
 }
