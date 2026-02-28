@@ -83,7 +83,6 @@ function WelcomeMessage() {
       <p>&gt; Loading developer simulation...</p>
       <p>&gt; Connecting to career_engine.sys...</p>
       <p className="text-[#58A6FF]">[INFO] Welcome to Life@Dev v2.0</p>
-      <p className="text-[#F0883E]">[WARN] student_loans.sys detected</p>
       <p>&gt; Ready. Make your first move.</p>
     </div>
   );
