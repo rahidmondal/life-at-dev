@@ -451,11 +451,26 @@ export function generateEventLogEntry(
   },
 ): EventLogEntry {
   // Determine event ID suffix based on category and outcome
+  // Priority: Category first, then exceptional states that make sense
   let eventIdSuffix = 'complete';
-  if (category === 'WORK') eventIdSuffix = 'work';
-  if (category === 'RECOVER') eventIdSuffix = 'recover';
-  if (deltas.money && deltas.money < -1000) eventIdSuffix = 'broke';
-  if (state.resources.energy >= 90 && state.resources.stress <= 15) eventIdSuffix = 'flow';
+
+  // Set category-specific suffix
+  if (category === 'SKILL') eventIdSuffix = 'skill';
+  else if (category === 'WORK') eventIdSuffix = 'work';
+  else if (category === 'NETWORK') eventIdSuffix = 'network';
+  else if (category === 'RECOVER') eventIdSuffix = 'recover';
+  else eventIdSuffix = 'invest'; // INVEST is the remaining category
+
+  // Override with exceptional states (only if they make contextual sense)
+  // 'broke' can happen on any category when spending a lot of money
+  if (deltas.money && deltas.money < -1000) {
+    eventIdSuffix = 'broke';
+  }
+  // 'flow' state: high energy + low stress (optimal performance state)
+  // This can happen on any category but indicates peak performance
+  else if (state.resources.energy >= 90 && state.resources.stress <= 15) {
+    eventIdSuffix = 'flow';
+  }
 
   return {
     tick: state.meta.tick,

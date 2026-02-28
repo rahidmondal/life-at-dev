@@ -169,18 +169,30 @@ function parseEventType(eventId: string): { tag: string; type: string } {
   }
 
   if (eventId.includes('action_')) {
-    if (eventId.includes('_work')) {
-      return { tag: '💼 WORK', type: 'WORK' };
-    }
-    if (eventId.includes('_recover')) {
-      return { tag: '💤 REST', type: 'SUCCESS' };
-    }
+    // Check for exceptional states first (they should override category)
     if (eventId.includes('_flow')) {
       return { tag: '🔥 FLOW', type: 'FLOW' };
     }
     if (eventId.includes('_broke')) {
       return { tag: '💸 BROKE', type: 'BROKE' };
     }
+    // Then check for category-specific suffixes
+    if (eventId.includes('_skill')) {
+      return { tag: '📚 SKILL', type: 'SUCCESS' };
+    }
+    if (eventId.includes('_work')) {
+      return { tag: '💼 WORK', type: 'WORK' };
+    }
+    if (eventId.includes('_network')) {
+      return { tag: '🌐 NETWORK', type: 'INFO' };
+    }
+    if (eventId.includes('_recover')) {
+      return { tag: '💤 REST', type: 'SUCCESS' };
+    }
+    if (eventId.includes('_invest')) {
+      return { tag: '💰 INVEST', type: 'EVENT' };
+    }
+    // Fallback for any other action events
     return { tag: '✓ DONE', type: 'SUCCESS' };
   }
 
