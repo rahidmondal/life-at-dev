@@ -9,6 +9,7 @@ const withSerwist = withSerwistInit({
   additionalPrecacheEntries: [{ url: '/~offline', revision }],
   swSrc: 'src/app/sw.ts',
   swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV !== 'production',
 });
 
 const securityHeaders = [
@@ -35,6 +36,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  turbopack: {},
   headers() {
     return Promise.resolve([
       {

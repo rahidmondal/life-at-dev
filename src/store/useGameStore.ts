@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { getInterviewSession, type InterviewQuestion } from '../data/interviews';
 import { JOB_REGISTRY } from '../data/tracks';
-import { getEligibleJobsForApplication, promotePlayer } from '../engine/career';
+import { getEligibleJobsForApplication, getNextJobsForApplication, promotePlayer } from '../engine/career';
 import {
   generateGameOverMessage,
   generateJobChangeMessage,
@@ -74,6 +74,7 @@ interface GameActions {
   closeJobApplication: () => void;
   applyForJob: (jobId: string) => void;
   getAvailableJobs: () => JobNode[];
+  getNextJobs: () => JobNode[];
 
   // Interview flow
   startInterview: (jobId: string) => void;
@@ -348,6 +349,11 @@ export const useGameStore = create<GameStore>()(
       getAvailableJobs: () => {
         const currentState = extractGameState(get());
         return getEligibleJobsForApplication(currentState);
+      },
+
+      getNextJobs: () => {
+        const currentState = extractGameState(get());
+        return getNextJobsForApplication(currentState);
       },
 
       applyForJob: (jobId: string) => {

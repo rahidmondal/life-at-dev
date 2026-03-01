@@ -12,6 +12,7 @@ interface JobApplicationModalProps {
   stats: PlayerStats;
   isStudent: boolean;
   availableJobs: JobNode[];
+  nextJobs: JobNode[];
   onSelectJob: (jobId: string) => void;
   onClose: () => void;
 }
@@ -54,6 +55,7 @@ export function JobApplicationModal({
   stats,
   isStudent,
   availableJobs,
+  nextJobs,
   onSelectJob,
   onClose,
 }: JobApplicationModalProps) {
@@ -101,7 +103,12 @@ export function JobApplicationModal({
           {isTerminal ? (
             <TerminalState jobTitle={currentJob.title} />
           ) : eligibleJobs.length === 0 ? (
-            <NoPositionsState isStudent={isStudent} />
+            <UpcomingPositionsState
+              nextJobs={nextJobs}
+              stats={stats}
+              currentJobTitle={currentJob.title}
+              isStudent={isStudent}
+            />
           ) : (
             <div className="space-y-5">
               {showCrossroads && (
@@ -344,6 +351,42 @@ function NoPositionsState({ isStudent }: { isStudent: boolean }) {
           <li>• Network to gain reputation</li>
         </ul>
       </div>
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const noop = () => {};
+
+/**
+ * Shows upcoming positions that the player is working toward, with readiness progress.
+ * Displayed when no positions are currently eligible but next-tier jobs exist.
+ */
+function UpcomingPositionsState({
+  nextJobs,
+  stats,
+  currentJobTitle,
+  isStudent,
+}: {
+  nextJobs: JobNode[];
+  stats: PlayerStats;
+  currentJobTitle: string;
+  isStudent: boolean;
+}) {
+  if (nextJobs.length === 0) {
+    return <NoPositionsState isStudent={isStudent} />;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-lg border border-[#FFA657]/30 bg-[#FFA657]/5 px-4 py-3 text-center">
+        <p className="text-[#FFA657] text-sm font-bold mb-0.5">📋 Upcoming Positions</p>
+        <p className="text-[#8B949E] text-xs">Keep building your skills to unlock these roles.</p>
+      </div>
+
+      {nextJobs.map(job => (
+        <NextPositionCard key={job.id} job={job} stats={stats} currentJobTitle={currentJobTitle} onApply={noop} />
+      ))}
     </div>
   );
 }
