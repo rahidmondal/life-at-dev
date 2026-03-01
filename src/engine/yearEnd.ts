@@ -423,7 +423,7 @@ export function getCurrentYear(tick: number): number {
 export function calculatePerformanceReview(state: GameState, salary: number): PerformanceReview {
   const { stats, resources } = state;
   const job = JOB_REGISTRY[state.career.currentJobId];
-  const tier = job?.tier ?? 0;
+  const tier = job.tier;
 
   // Expected skill for the tier (rough ladder: tier 0→500, tier 6→8000)
   const expectedSkill = 500 + tier * 1250;

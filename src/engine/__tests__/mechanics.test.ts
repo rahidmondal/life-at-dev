@@ -63,24 +63,24 @@ describe('calculateDecay', () => {
 
   it('should apply partial decay with moderate role displacement', () => {
     const result = calculateDecay(1000, 0.5);
-    expect(result).toBe(10);
+    expect(result).toBe(3.75);
   });
 
   it('should apply higher decay for senior roles', () => {
     const result = calculateDecay(1000, 0.75);
-    expect(result).toBe(15);
+    expect(result).toBe(5.625);
   });
 
   it('should apply maximum decay at full role displacement', () => {
     const result = calculateDecay(1000, 1);
-    expect(result).toBe(20);
+    expect(result).toBe(7.5);
   });
 
   it('should scale linearly with core skill', () => {
     const lowSkill = calculateDecay(1000, 1);
     const highSkill = calculateDecay(5000, 1);
 
-    expect(highSkill).toBe(100);
+    expect(highSkill).toBe(37.5);
     expect(highSkill).toBe(lowSkill * 5);
   });
 
@@ -135,23 +135,23 @@ describe('calculateBurnoutRisk', () => {
 
 describe('calculateProjectedSkillChange', () => {
   it('returns positive change when gain > decay', () => {
-    // Skill 500, Gain 5, Decay ~3. Net > 0.
+    // Skill 500, Gain 5, Decay ~1.125. Net > 0.
     // Gain: 5 * (10000/10500) = 4.76
-    // Decay: 500 * 0.02 * 0.3 = 3
-    // Net: 1.76
+    // Decay: 500 * 0.0075 * 0.3 = 1.125
+    // Net: 3.64
     const change = calculateProjectedSkillChange(500, 0.3, 5);
     expect(change).toBeGreaterThan(0);
-    expect(change).toBeCloseTo(1.76, 1);
+    expect(change).toBeCloseTo(3.64, 1);
   });
 
   it('returns negative change when decay > gain', () => {
-    // Skill 5000, Gain 5, Decay 30. Net < 0.
+    // Skill 5000, Gain 5, Decay 11.25. Net < 0.
     // Gain: 5 * (10000/15000) = 3.33
-    // Decay: 5000 * 0.02 * 0.3 = 30
-    // Net: -26.6
+    // Decay: 5000 * 0.0075 * 0.3 = 11.25
+    // Net: -7.92
     const change = calculateProjectedSkillChange(5000, 0.3, 5);
     expect(change).toBeLessThan(0);
-    expect(change).toBeGreaterThan(-27);
-    expect(change).toBeLessThan(-26);
+    expect(change).toBeGreaterThan(-8);
+    expect(change).toBeLessThan(-7.9);
   });
 });

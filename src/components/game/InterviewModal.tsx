@@ -33,20 +33,19 @@ export function InterviewModal() {
 
   if (!isInterviewOpen || !currentInterviewJobId) return null;
 
-  const questions = interviewQuestions as InterviewQuestion[];
-  const answers = interviewAnswers as { selectedOption: number; correct: boolean }[];
-  const qIndex = currentQuestionIndex as number;
-  const score = correctAnswersCount as number;
-  const phase = interviewPhase as 'question' | 'results';
-  const showFeedback = showInterviewFeedback as boolean;
-  const onSubmit = submitInterviewAnswer as (i: number) => void;
-  const onAdvance = advanceInterviewQuestion as () => void;
-  const onComplete = completeInterview as () => void;
-  const onClose = closeInterview as () => void;
+  const questions = interviewQuestions;
+  const answers = interviewAnswers;
+  const qIndex = currentQuestionIndex;
+  const score = correctAnswersCount;
+  const phase = interviewPhase;
+  const showFeedback = showInterviewFeedback;
+  const onSubmit = submitInterviewAnswer;
+  const onAdvance = advanceInterviewQuestion;
+  const onComplete = completeInterview;
+  const onClose = closeInterview;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- store type unresolvable
   const jobId = currentInterviewJobId;
-  const targetJob = JOB_REGISTRY[jobId as string];
+  const targetJob = JOB_REGISTRY[jobId];
   const jobTitle = targetJob.title;
   const currentQuestion: InterviewQuestion | undefined = questions[qIndex];
   const passed = score >= PASSING_SCORE;

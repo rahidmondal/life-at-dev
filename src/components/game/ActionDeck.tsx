@@ -207,33 +207,39 @@ function ActionCard({ action }: { action: GameAction }) {
   const { costs, gains } = useMemo(() => {
     const costs: { icon: React.ReactNode; text: string }[] = [];
     const gains: { icon: React.ReactNode; text: string; color: string }[] = [];
-    const r = action.rewards;
+    const rewards = action.rewards;
 
     // --- Costs: resources spent + negative effects ---
-    if (action.energyCost > 0) costs.push({ icon: <ZapIcon size={11} />, text: `-${action.energyCost}` });
-    if (action.moneyCost > 0) costs.push({ icon: <DollarIcon size={11} />, text: `-$${action.moneyCost}` });
-    if (r.stress && r.stress > 0) costs.push({ icon: <HeartPulseIcon size={11} />, text: `+${r.stress}` });
+    if (action.energyCost > 0) costs.push({ icon: <ZapIcon size={11} />, text: `-${String(action.energyCost)}` });
+    if (action.moneyCost > 0) costs.push({ icon: <DollarIcon size={11} />, text: `-$${String(action.moneyCost)}` });
+    if (rewards.stress && rewards.stress > 0)
+      costs.push({ icon: <HeartPulseIcon size={11} />, text: `+${String(rewards.stress)}` });
 
     // --- Gains: resources earned + positive effects ---
     if (action.energyGain && action.energyGain > 0)
-      gains.push({ icon: <ZapIcon size={11} />, text: `+${action.energyGain}`, color: 'text-[#39D353]' });
-    if (r.skill && r.skill > 0)
-      gains.push({ icon: <CodeIcon size={11} />, text: `+${r.skill}`, color: 'text-[#39D353]' });
-    if (r.xp && r.xp > 0) gains.push({ icon: <StarIcon size={11} />, text: `+${r.xp}`, color: 'text-[#A371F7]' });
-    if (r.money && r.money > 0)
-      gains.push({ icon: <DollarIcon size={11} />, text: `+$${r.money}`, color: 'text-[#FFA657]' });
-    if (r.reputation && r.reputation > 0)
-      gains.push({ icon: <UsersIcon size={11} />, text: `+${r.reputation}`, color: 'text-[#58A6FF]' });
-    if (r.corporate && r.corporate > 0)
-      gains.push({ icon: <BriefcaseIcon size={11} />, text: `+${r.corporate}`, color: 'text-[#58A6FF]' });
-    if (r.freelance && r.freelance > 0)
-      gains.push({ icon: <GlobeIcon size={11} />, text: `+${r.freelance}`, color: 'text-[#58A6FF]' });
-    if (r.politics && r.politics > 0)
-      gains.push({ icon: <FlagIcon size={11} />, text: `+${r.politics}`, color: 'text-[#8B949E]' });
-    if (r.fulfillment && r.fulfillment > 0)
-      gains.push({ icon: <HeartHandshakeIcon size={11} />, text: `+${r.fulfillment}`, color: 'text-[#F778BA]' });
-    if (r.stress && r.stress < 0)
-      gains.push({ icon: <HeartPulseIcon size={11} />, text: `${r.stress}`, color: 'text-[#39D353]' });
+      gains.push({ icon: <ZapIcon size={11} />, text: `+${String(action.energyGain)}`, color: 'text-[#39D353]' });
+    if (rewards.skill && rewards.skill > 0)
+      gains.push({ icon: <CodeIcon size={11} />, text: `+${String(rewards.skill)}`, color: 'text-[#39D353]' });
+    if (rewards.xp && rewards.xp > 0)
+      gains.push({ icon: <StarIcon size={11} />, text: `+${String(rewards.xp)}`, color: 'text-[#A371F7]' });
+    if (rewards.money && rewards.money > 0)
+      gains.push({ icon: <DollarIcon size={11} />, text: `+$${String(rewards.money)}`, color: 'text-[#FFA657]' });
+    if (rewards.reputation && rewards.reputation > 0)
+      gains.push({ icon: <UsersIcon size={11} />, text: `+${String(rewards.reputation)}`, color: 'text-[#58A6FF]' });
+    if (rewards.corporate && rewards.corporate > 0)
+      gains.push({ icon: <BriefcaseIcon size={11} />, text: `+${String(rewards.corporate)}`, color: 'text-[#58A6FF]' });
+    if (rewards.freelance && rewards.freelance > 0)
+      gains.push({ icon: <GlobeIcon size={11} />, text: `+${String(rewards.freelance)}`, color: 'text-[#58A6FF]' });
+    if (rewards.politics && rewards.politics > 0)
+      gains.push({ icon: <FlagIcon size={11} />, text: `+${String(rewards.politics)}`, color: 'text-[#8B949E]' });
+    if (rewards.fulfillment && rewards.fulfillment > 0)
+      gains.push({
+        icon: <HeartHandshakeIcon size={11} />,
+        text: `+${String(rewards.fulfillment)}`,
+        color: 'text-[#F778BA]',
+      });
+    if (rewards.stress && rewards.stress < 0)
+      gains.push({ icon: <HeartPulseIcon size={11} />, text: String(rewards.stress), color: 'text-[#39D353]' });
 
     return { costs, gains };
   }, [action]);
@@ -281,13 +287,13 @@ function ActionCard({ action }: { action: GameAction }) {
             {(costs.length > 0 || gains.length > 0) && (
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                 {costs.map((c, i) => (
-                  <span key={`c${i}`} className="flex items-center gap-0.5 text-[11px] text-[#FF7B72]">
+                  <span key={`c${String(i)}`} className="flex items-center gap-0.5 text-[11px] text-[#FF7B72]">
                     {c.icon}
                     {c.text}
                   </span>
                 ))}
                 {gains.map((g, i) => (
-                  <span key={`g${i}`} className={`flex items-center gap-0.5 text-[11px] ${g.color}`}>
+                  <span key={`g${String(i)}`} className={`flex items-center gap-0.5 text-[11px] ${g.color}`}>
                     {g.icon}
                     {g.text}
                   </span>
@@ -304,13 +310,13 @@ function ActionCard({ action }: { action: GameAction }) {
                     {action.duration}w
                   </span>
                 )}
-                {hasBuff && (
+                {hasBuff && action.passiveBuff && (
                   <span
                     className="flex items-center gap-0.5 text-[10px] text-[#58A6FF] truncate"
-                    title={action.passiveBuff!.description}
+                    title={action.passiveBuff.description}
                   >
                     <SparklesIcon size={10} />
-                    {action.passiveBuff!.description}
+                    {action.passiveBuff.description}
                   </span>
                 )}
               </div>
@@ -322,7 +328,7 @@ function ActionCard({ action }: { action: GameAction }) {
   );
 }
 
-function getFlavorText(action: GameAction): string {
+function _getFlavorText(action: GameAction): string {
   const flavorTexts: Record<string, string> = {
     read_docs: 'RTFM. The timeless wisdom of developers.',
     tutorial: 'Learn by watching others do it first.',

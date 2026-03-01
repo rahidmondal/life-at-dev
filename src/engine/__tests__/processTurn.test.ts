@@ -138,22 +138,19 @@ describe('processTurn — skill decay', () => {
       energy: 100,
     });
 
-    // Expected Decay
-    // Decay = currentSkill * baseDecay(0.02) * displacement(0.3) * weeks(1)
-    // Decay = 5000 * 0.02 * 0.3 * 1 = 30
+    // Expected Decay (with new rate 0.0075)
+    // Decay = currentSkill * baseDecay(0.0075) * displacement(0.3) * weeks(1)
+    // Decay = 5000 * 0.0075 * 0.3 * 1 = 11.25
 
-    // Job Earnings
+    // Job Earnings (corp_junior now has 5 weekly coding gain)
     // corp_junior weekly gains: coding +5.
-    // Diminishing returns: 5 * (10000 / (10000 + 4970)) = 3.339
-    // Net change: -30 (decay) + 3.339 (gain) = -26.66
-    // Final Floor: 5000 - 26.66 = 4973.34 -> 4973
-
-    // Note: If previous test run showed -22 (4978), we need to investigate why.
-    // For now, setting expectation to 4973 assuming standard math.
+    // Diminishing returns: 5 * (10000 / (10000 + 4989)) = 3.34
+    // Net change: -11.25 (decay) + 3.34 (gain) = -7.91
+    // Final: 5000 - 7.91 = 4992.09 -> 4992
 
     const next = processTurn(state, actionId);
 
-    expect(next.stats.skills.coding).toBe(4973);
+    expect(next.stats.skills.coding).toBe(4992);
   });
 
   it('skip_week: should GAIN skill at LOW levels (Gain > Decay)', () => {

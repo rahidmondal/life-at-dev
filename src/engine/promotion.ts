@@ -233,11 +233,10 @@ export function isAtCrossroads(currentJobId: JobId): boolean {
 export function getNextPositions(currentJobId: string): JobNode[] {
   // Unemployed: can start either corporate or hustler path
   if (currentJobId === 'unemployed') {
-    return [JOB_REGISTRY['corp_intern'], JOB_REGISTRY['hustle_freelancer']].filter(Boolean);
+    return [JOB_REGISTRY.corp_intern, JOB_REGISTRY.hustle_freelancer];
   }
 
   const currentJob = JOB_REGISTRY[currentJobId];
-  if (!currentJob) return [];
 
   // Terminal job (xpCap undefined): no further progression
   if (currentJob.xpCap === undefined) return [];

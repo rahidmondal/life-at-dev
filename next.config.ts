@@ -1,4 +1,16 @@
+import withSerwistInit from '@serwist/next';
 import type { NextConfig } from 'next';
+import { spawnSync } from 'node:child_process';
+
+const result = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf-8' });
+const revision = result.stdout.trim() || crypto.randomUUID();
+
+const withSerwist = withSerwistInit({
+  additionalPrecacheEntries: [{ url: '/~offline', revision }],
+  swSrc: 'src/app/sw.ts',
+  swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV !== 'production',
+});
 
 const securityHeaders = [
   {
@@ -24,6 +36,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  turbopack: {},
   headers() {
     return Promise.resolve([
       {
@@ -34,4 +47,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

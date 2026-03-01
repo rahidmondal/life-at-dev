@@ -2,7 +2,13 @@ import type { JobNode } from '@/types/career';
 import { describe, expect, it } from 'vitest';
 import { JOB_REGISTRY } from '../../data/tracks';
 import type { GameState, PlayerStats } from '../../types/gamestate';
-import { checkJobRequirements, detectTrackSwitch, getEligibleJobs, promotePlayer } from '../career';
+import {
+  checkJobRequirements,
+  detectTrackSwitch,
+  getEligibleJobs,
+  getNextJobsForApplication,
+  promotePlayer,
+} from '../career';
 
 describe('checkJobRequirements', () => {
   const mockStats: PlayerStats = {
@@ -495,5 +501,113 @@ describe('promotePlayer', () => {
 
     expect(newState.stats.skills.coding).toBe(originalCoding);
     expect(newState.stats.xp).toEqual(originalXp);
+  });
+});
+
+describe('getNextJobsForApplication', () => {
+  const createMockState = (
+    currentJobId: string,
+    overrides: {
+      stats?: Partial<PlayerStats>;
+      isScholar?: boolean;
+    } = {},
+  ): GameState => ({
+    meta: {
+      tick: 0,
+      version: '2.0.0',
+      startAge: 18,
+      playerName: 'TestPlayer',
+    },
+    career: {
+      currentJobId,
+      jobStartTick: 0,
+      jobHistory: [],
+    },
+    stats: {
+      skills: {
+        coding: 0,
+        politics: 0,
+        ...overrides.stats?.skills,
+      },
+      xp: {
+        corporate: 0,
+        freelance: 0,
+        reputation: 0,
+        ...overrides.stats?.xp,
+      },
+    },
+    resources: {
+      energy: 100,
+      stress: 0,
+      money: 0,
+      debt: 0,
+      fulfillment: 0,
+    },
+    flags: {
+      isBurnedOut: false,
+      isBankrupt: false,
+      consecutiveMissedPayments: 0,
+      totalMissedPayments: 0,
+      streak: 0,
+      cooldowns: {},
+      accumulatesDebt: false,
+      startingPath: null,
+      isScholar: overrides.isScholar ?? false,
+      scholarYearsRemaining: overrides.isScholar ? 4 : 0,
+      hasGraduated: false,
+      purchasedInvestments: [],
+      activeBuffs: [],
+    },
+    eventLog: [],
+    status: 'PLAYING',
+    gameOverReason: null,
+    gameOverOutcome: null,
+  });
+
+  it('should return corp_intern and hustle_freelancer for a student with 0 stats', () => {
+    const state = createMockState('unemployed', { isScholar: true });
+
+    const nextJobs = getNextJobsForApplication(state);
+
+    expect(nextJobs.length).toBe(2);
+    const ids = nextJobs.map(j => j.id);
+    expect(ids).toContain('corp_intern');
+    expect(ids).toContain('hustle_freelancer');
+  });
+
+  it('should exclude current job for a student', () => {
+    const state = createMockState('corp_intern', { isScholar: true });
+
+    const nextJobs = getNextJobsForApplication(state);
+
+    expect(nextJobs.length).toBe(1);
+    expect(nextJobs[0].id).toBe('hustle_freelancer');
+  });
+
+  it('should return next-tier jobs for a non-student regardless of requirements', () => {
+    const state = createMockState('corp_intern', { isScholar: false });
+
+    const nextJobs = getNextJobsForApplication(state);
+
+    // Should include higher-tier corporate jobs + hustler jobs
+    expect(nextJobs.length).toBeGreaterThan(0);
+    const ids = nextJobs.map(j => j.id);
+    expect(ids).toContain('corp_junior'); // next in corporate track
+    expect(ids).not.toContain('corp_intern'); // current job excluded
+    expect(ids).not.toContain('unemployed'); // unemployed excluded
+  });
+
+  it('should not include jobs already in job history', () => {
+    const state = createMockState('corp_mid', { isScholar: false });
+    state.career.jobHistory = [
+      { jobId: 'corp_intern', startTick: 0, endTick: 10 },
+      { jobId: 'corp_junior', startTick: 10, endTick: 52 },
+    ];
+
+    const nextJobs = getNextJobsForApplication(state);
+
+    const ids = nextJobs.map(j => j.id);
+    expect(ids).not.toContain('corp_intern');
+    expect(ids).not.toContain('corp_junior');
   });
 });

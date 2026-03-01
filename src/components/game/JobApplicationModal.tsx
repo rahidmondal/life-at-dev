@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import { JOB_REGISTRY } from '../../data/tracks';
 import { getRequirementDetails, type RequirementDetail } from '../../engine/career';
-import { getNextPositions } from '../../engine/promotion';
 import type { JobNode } from '../../types/career';
 import type { PlayerStats } from '../../types/gamestate';
 import { BriefcaseIcon, CheckIcon, CodeIcon, FlagIcon, GlobeIcon, LockIcon, UsersIcon, XIcon } from '../ui/icons';
@@ -12,6 +11,8 @@ interface JobApplicationModalProps {
   currentJobId: string;
   stats: PlayerStats;
   isStudent: boolean;
+  availableJobs: JobNode[];
+  nextJobs: JobNode[];
   onSelectJob: (jobId: string) => void;
   onClose: () => void;
 }
@@ -46,29 +47,31 @@ function calcReadiness(requirements: RequirementDetail[]): number {
 }
 
 /**
- * JobApplicationModal: Shows the next unlockable position(s) in the player's
- * career track with a detailed stat comparison (current vs required).
+ * JobApplicationModal: Shows all positions the player is eligible to apply for,
+ * with a detailed stat comparison (current vs required).
  */
 export function JobApplicationModal({
   currentJobId,
   stats,
   isStudent,
+  availableJobs,
+  nextJobs,
   onSelectJob,
   onClose,
 }: JobApplicationModalProps) {
-  const currentJob: JobNode | undefined = JOB_REGISTRY[currentJobId];
+  const currentJob = JOB_REGISTRY[currentJobId];
 
-  const nextPositions = useMemo(() => {
-    const positions = getNextPositions(currentJobId);
+  // Use the provided availableJobs list (already filtered by eligibility)
+  const eligibleJobs = useMemo(() => {
     if (isStudent) {
-      return positions.filter(j => j.id === 'corp_intern' || j.id === 'hustle_freelancer');
+      return availableJobs.filter(j => j.id === 'corp_intern' || j.id === 'hustle_freelancer');
     }
-    return positions;
-  }, [currentJobId, isStudent]);
+    return availableJobs;
+  }, [availableJobs, isStudent]);
 
   // Terminal = job with no xpCap (top of track), but not unemployed special case
-  const isTerminal = currentJob !== undefined && currentJob.xpCap === undefined && currentJobId !== 'unemployed';
-  const showCrossroads = nextPositions.length > 1 && currentJobId !== 'unemployed';
+  const isTerminal = currentJob.xpCap === undefined && currentJobId !== 'unemployed';
+  const showCrossroads = eligibleJobs.length > 1 && currentJobId !== 'unemployed';
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -83,8 +86,8 @@ export function JobApplicationModal({
               {showCrossroads ? 'Career Crossroads' : 'Next Position'}
             </h2>
             <p className="text-[#8B949E] text-xs truncate">
-              Current: <span className="text-[#C9D1D9] font-medium">{currentJob?.title ?? 'Unemployed'}</span>
-              {currentJob && currentJob.salary > 0 ? ` · $${currentJob.salary.toLocaleString()}/yr` : ''}
+              Current: <span className="text-[#C9D1D9] font-medium">{currentJob.title}</span>
+              {currentJob.salary > 0 ? ` · $${currentJob.salary.toLocaleString()}/yr` : ''}
             </p>
           </div>
           <button
@@ -99,8 +102,13 @@ export function JobApplicationModal({
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {isTerminal ? (
             <TerminalState jobTitle={currentJob.title} />
-          ) : nextPositions.length === 0 ? (
-            <NoPositionsState isStudent={isStudent} />
+          ) : eligibleJobs.length === 0 ? (
+            <UpcomingPositionsState
+              nextJobs={nextJobs}
+              stats={stats}
+              currentJobTitle={currentJob.title}
+              isStudent={isStudent}
+            />
           ) : (
             <div className="space-y-5">
               {showCrossroads && (
@@ -112,12 +120,12 @@ export function JobApplicationModal({
                 </div>
               )}
 
-              {nextPositions.map(job => (
+              {eligibleJobs.map(job => (
                 <NextPositionCard
                   key={job.id}
                   job={job}
                   stats={stats}
-                  currentJobTitle={currentJob?.title ?? 'Unemployed'}
+                  currentJobTitle={currentJob.title}
                   onApply={() => {
                     onSelectJob(job.id);
                   }}
@@ -219,7 +227,7 @@ function NextPositionCard({
                   className={`h-full rounded-full transition-all ${
                     readiness >= 100 ? 'bg-[#39D353]' : readiness >= 60 ? 'bg-[#FFA657]' : 'bg-[#FF7B72]'
                   }`}
-                  style={{ width: `${readiness}%` }}
+                  style={{ width: `${String(readiness)}%` }}
                 />
               </div>
               <span
@@ -287,7 +295,7 @@ function StatRow({ requirement }: { requirement: RequirementDetail }) {
         <div className="h-1 bg-[#21262D] rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${met ? 'bg-[#39D353]' : 'bg-[#FF7B72]'}`}
-            style={{ width: `${progress}%` }}
+            style={{ width: `${String(progress)}%` }}
           />
         </div>
       </div>
@@ -343,6 +351,42 @@ function NoPositionsState({ isStudent }: { isStudent: boolean }) {
           <li>• Network to gain reputation</li>
         </ul>
       </div>
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const noop = () => {};
+
+/**
+ * Shows upcoming positions that the player is working toward, with readiness progress.
+ * Displayed when no positions are currently eligible but next-tier jobs exist.
+ */
+function UpcomingPositionsState({
+  nextJobs,
+  stats,
+  currentJobTitle,
+  isStudent,
+}: {
+  nextJobs: JobNode[];
+  stats: PlayerStats;
+  currentJobTitle: string;
+  isStudent: boolean;
+}) {
+  if (nextJobs.length === 0) {
+    return <NoPositionsState isStudent={isStudent} />;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-lg border border-[#FFA657]/30 bg-[#FFA657]/5 px-4 py-3 text-center">
+        <p className="text-[#FFA657] text-sm font-bold mb-0.5">📋 Upcoming Positions</p>
+        <p className="text-[#8B949E] text-xs">Keep building your skills to unlock these roles.</p>
+      </div>
+
+      {nextJobs.map(job => (
+        <NextPositionCard key={job.id} job={job} stats={stats} currentJobTitle={currentJobTitle} onApply={noop} />
+      ))}
     </div>
   );
 }

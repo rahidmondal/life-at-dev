@@ -7,6 +7,9 @@ import type { GameState } from '../types/gamestate';
 /** Amount of debt accumulated per year during university (funded path). */
 const YEARLY_DEBT_ACCUMULATION = 10000;
 
+/** Maximum total student debt that can be accumulated (hard cap). */
+const MAXIMUM_STUDENT_DEBT = 40000;
+
 /** Base annual interest rate (5%). */
 const ANNUAL_INTEREST_RATE = 0.05;
 
@@ -51,7 +54,12 @@ export function isInUniversityPeriod(tick: number, startAge: number): boolean {
   return currentAge < UNIVERSITY_END_AGE;
 }
 
-export function calculateWeeklyDebtAccumulation(tick: number, startAge: number, accumulatesDebt: boolean): number {
+export function calculateWeeklyDebtAccumulation(
+  tick: number,
+  startAge: number,
+  accumulatesDebt: boolean,
+  currentDebt = 0,
+): number {
   if (!accumulatesDebt) {
     return 0;
   }
@@ -60,7 +68,14 @@ export function calculateWeeklyDebtAccumulation(tick: number, startAge: number, 
     return 0;
   }
 
-  return YEARLY_DEBT_ACCUMULATION / 52;
+  // Enforce hard cap on student debt accumulation
+  if (currentDebt >= MAXIMUM_STUDENT_DEBT) {
+    return 0;
+  }
+
+  const weeklyAmount = YEARLY_DEBT_ACCUMULATION / 52;
+  // Don't exceed the cap
+  return Math.min(weeklyAmount, MAXIMUM_STUDENT_DEBT - currentDebt);
 }
 
 export function calculateDebtInterest(debt: number, tick: number, startAge: number, hasMissedPayments = false): number {
@@ -126,7 +141,7 @@ export function processWeeklyDebt(state: GameState): {
   const { accumulatesDebt, totalMissedPayments } = state.flags;
   let debt = state.resources.debt;
 
-  const accumulation = calculateWeeklyDebtAccumulation(tick, startAge, accumulatesDebt);
+  const accumulation = calculateWeeklyDebtAccumulation(tick, startAge, accumulatesDebt, debt);
   debt += accumulation;
 
   // Apply penalty interest rate if player has missed payments

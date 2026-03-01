@@ -60,12 +60,42 @@ export function getEligibleJobsForApplication(state: GameState): JobNode[] {
   }
 
   // Non-students/graduates can apply to any eligible job
+  const currentJob = JOB_REGISTRY[currentJobId];
   return Object.values(JOB_REGISTRY).filter(job => {
     // Can't apply to current job
     if (job.id === currentJobId) return false;
     // Can't "apply" to unemployed
     if (job.id === 'unemployed') return false;
+    // Can't apply to lower or equal tier jobs in the same track
+    if (job.track === currentJob.track && job.tier <= currentJob.tier) return false;
+    // Can't apply to jobs already held
+    if (career.jobHistory.some(h => h.jobId === job.id)) return false;
     return checkJobRequirements(job, stats);
+  });
+}
+
+/**
+ * Get the next logical jobs for the modal preview, WITHOUT filtering by requirements.
+ * This lets the UI show "upcoming" positions with readiness progress,
+ * even when the player doesn't yet qualify for any of them.
+ */
+export function getNextJobsForApplication(state: GameState): JobNode[] {
+  const { flags, career } = state;
+  const currentJobId = career.currentJobId;
+
+  // Students: always show the two entry-level jobs
+  if (flags.isScholar) {
+    return STUDENT_ELIGIBLE_JOBS.filter(jobId => jobId !== currentJobId).map(jobId => JOB_REGISTRY[jobId]);
+  }
+
+  // Non-students/graduates: same filtering as getEligibleJobsForApplication but skip checkJobRequirements
+  const currentJob = JOB_REGISTRY[currentJobId];
+  return Object.values(JOB_REGISTRY).filter(job => {
+    if (job.id === currentJobId) return false;
+    if (job.id === 'unemployed') return false;
+    if (job.track === currentJob.track && job.tier <= currentJob.tier) return false;
+    if (career.jobHistory.some(h => h.jobId === job.id)) return false;
+    return true;
   });
 }
 
